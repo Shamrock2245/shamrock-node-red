@@ -4664,5 +4664,3035 @@
     "x": 1460,
     "y": 160,
     "wires": []
+  },
+  {
+    "id": "47a279345d2c43f7",
+    "type": "tab",
+    "label": "GAS Scheduler",
+    "disabled": false,
+    "info": "CENTRALIZED SCHEDULER \u2014 Node-RED is the single control plane.\nAll GAS time-driven triggers have been migrated here.\nRun migrateTriggersToNodeRED() in GAS to remove old triggers."
+  },
+  {
+    "id": "69340ef44bd94ffe",
+    "type": "comment",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a1 GAS SCHEDULER \u2014 Node-RED is the Single Control Plane",
+    "info": "This tab replaces ALL GAS time-driven triggers.\n\nHOW IT WORKS:\n  1. Cron inject fires at the scheduled time\n  2. Function node preps the GAS action payload\n  3. HTTP request calls GAS web app\n  4. Result handler checks success/failure\n  5. On failure \u2192 alerts Slack #alerts\n\nTO DISABLE: Click the inject node \u2192 set to disabled\nTO RE-SCHEDULE: Click inject \u2192 change cron expression",
+    "x": 360,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "22022bff8918461d",
+    "type": "comment",
+    "z": "47a279345d2c43f7",
+    "name": "\u2501\u2501\u2501 HIGH-FREQUENCY (every 5-30 min) \u2501\u2501\u2501",
+    "info": "",
+    "x": 300,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "e8cd9ab1fec34c81",
+    "type": "comment",
+    "z": "47a279345d2c43f7",
+    "name": "\u2501\u2501\u2501 HOURLY / MULTI-HOUR \u2501\u2501\u2501",
+    "info": "",
+    "x": 260,
+    "y": 380,
+    "wires": []
+  },
+  {
+    "id": "69502bd4ff8d422d",
+    "type": "comment",
+    "z": "47a279345d2c43f7",
+    "name": "\u2501\u2501\u2501 DAILY \u2501\u2501\u2501",
+    "info": "",
+    "x": 220,
+    "y": 520,
+    "wires": []
+  },
+  {
+    "id": "0700701f28574cb7",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 Every 5 min",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "*/5 * * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 120,
+    "wires": [
+      [
+        "ac6f6151346a4276"
+      ]
+    ]
+  },
+  {
+    "id": "ac6f6151346a4276",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 runAutoPostingEngine",
+    "func": "msg.payload = { action: 'runAutoPostingEngine' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=runAutoPostingEngine';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"runAutoPostingEngine...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 120,
+    "wires": [
+      [
+        "832eeace5660458d"
+      ]
+    ]
+  },
+  {
+    "id": "832eeace5660458d",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 120,
+    "wires": [
+      [
+        "5bfc3985a7c841f3"
+      ]
+    ]
+  },
+  {
+    "id": "5bfc3985a7c841f3",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 120,
+    "wires": [
+      [
+        "8ffb18537a304c21"
+      ]
+    ]
+  },
+  {
+    "id": "8ffb18537a304c21",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 120,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "c2f35535e3cc4fb9",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 Every 10 min",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "*/10 * * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 180,
+    "wires": [
+      [
+        "e4946af6757e4e97"
+      ]
+    ]
+  },
+  {
+    "id": "e4946af6757e4e97",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 processConciergeQueue",
+    "func": "msg.payload = { action: 'processConciergeQueue' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=processConciergeQueue';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"processConciergeQueue...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 180,
+    "wires": [
+      [
+        "65ad696e83b34ca2"
+      ]
+    ]
+  },
+  {
+    "id": "65ad696e83b34ca2",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 180,
+    "wires": [
+      [
+        "22dc3a7245274a64"
+      ]
+    ]
+  },
+  {
+    "id": "22dc3a7245274a64",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 180,
+    "wires": [
+      [
+        "8fdcfb0faab644ec"
+      ]
+    ]
+  },
+  {
+    "id": "8fdcfb0faab644ec",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 180,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "786b8de0367b447e",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 Every 15 min",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "*/15 * * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 240,
+    "wires": [
+      [
+        "fc0793fa9f254d4a"
+      ]
+    ]
+  },
+  {
+    "id": "fc0793fa9f254d4a",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 scoreAndSyncQualifiedRows",
+    "func": "msg.payload = { action: 'scoreAndSyncQualifiedRows' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=scoreAndSyncQualifiedRows';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"scoreAndSyncQualifiedRows...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 240,
+    "wires": [
+      [
+        "d1d562f107b94b64"
+      ]
+    ]
+  },
+  {
+    "id": "d1d562f107b94b64",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 240,
+    "wires": [
+      [
+        "2f08fa3e7e6c4000"
+      ]
+    ]
+  },
+  {
+    "id": "2f08fa3e7e6c4000",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 240,
+    "wires": [
+      [
+        "12dd9fbc8460485b"
+      ]
+    ]
+  },
+  {
+    "id": "12dd9fbc8460485b",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 240,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "9813c94555a048a5",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 Every 30 min",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "*/30 * * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 300,
+    "wires": [
+      [
+        "73c2310d054f452b"
+      ]
+    ]
+  },
+  {
+    "id": "73c2310d054f452b",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 pollWixIntakeQueue",
+    "func": "msg.payload = { action: 'pollWixIntakeQueue' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=pollWixIntakeQueue';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"pollWixIntakeQueue...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 300,
+    "wires": [
+      [
+        "a48231d1e5de4d42"
+      ]
+    ]
+  },
+  {
+    "id": "a48231d1e5de4d42",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 300,
+    "wires": [
+      [
+        "dbce8bcf62d74642"
+      ]
+    ]
+  },
+  {
+    "id": "dbce8bcf62d74642",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 300,
+    "wires": [
+      [
+        "a772f117f98c4181"
+      ]
+    ]
+  },
+  {
+    "id": "a772f117f98c4181",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 300,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "7734c9f1ecd44537",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 Every 30 min",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "*/30 * * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 360,
+    "wires": [
+      [
+        "4ed08d5409cb443b"
+      ]
+    ]
+  },
+  {
+    "id": "4ed08d5409cb443b",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 refreshGoogleTokens",
+    "func": "msg.payload = { action: 'refreshGoogleTokens' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=refreshGoogleTokens';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"refreshGoogleTokens...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 360,
+    "wires": [
+      [
+        "67d80ecc8d7048d8"
+      ]
+    ]
+  },
+  {
+    "id": "67d80ecc8d7048d8",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 360,
+    "wires": [
+      [
+        "6d85f16c68b8450a"
+      ]
+    ]
+  },
+  {
+    "id": "6d85f16c68b8450a",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 360,
+    "wires": [
+      [
+        "88a169c0761c4bd7"
+      ]
+    ]
+  },
+  {
+    "id": "88a169c0761c4bd7",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 360,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "b0a8b7e707314dc0",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 Every 30 min",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "*/30 * * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 420,
+    "wires": [
+      [
+        "143851ef455441be"
+      ]
+    ]
+  },
+  {
+    "id": "143851ef455441be",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 TG_processCourtDateReminders",
+    "func": "msg.payload = { action: 'TG_processCourtDateReminders' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=TG_processCourtDateReminders';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"TG_processCourtDateReminders...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 420,
+    "wires": [
+      [
+        "0c207d04edf4428e"
+      ]
+    ]
+  },
+  {
+    "id": "0c207d04edf4428e",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 420,
+    "wires": [
+      [
+        "b1a70079a54645a5"
+      ]
+    ]
+  },
+  {
+    "id": "b1a70079a54645a5",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 420,
+    "wires": [
+      [
+        "242181ebcd5d4ace"
+      ]
+    ]
+  },
+  {
+    "id": "242181ebcd5d4ace",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 420,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "7e931f955c534fd4",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 Every 6 hours",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 */6 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 480,
+    "wires": [
+      [
+        "c7097ad228754507"
+      ]
+    ]
+  },
+  {
+    "id": "c7097ad228754507",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 checkForChanges",
+    "func": "msg.payload = { action: 'checkForChanges' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=checkForChanges';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"checkForChanges...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 480,
+    "wires": [
+      [
+        "d440e8f113264752"
+      ]
+    ]
+  },
+  {
+    "id": "d440e8f113264752",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 480,
+    "wires": [
+      [
+        "6a75baa88fd34bbc"
+      ]
+    ]
+  },
+  {
+    "id": "6a75baa88fd34bbc",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 480,
+    "wires": [
+      [
+        "dc223a5d573f4db6"
+      ]
+    ]
+  },
+  {
+    "id": "dc223a5d573f4db6",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 480,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "2d626dfd126c4332",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 3:00 AM (Tokens)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 3 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 560,
+    "wires": [
+      [
+        "85b3a2f8f5c34319"
+      ]
+    ]
+  },
+  {
+    "id": "85b3a2f8f5c34319",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 refreshLongLivedTokens",
+    "func": "msg.payload = { action: 'refreshLongLivedTokens' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=refreshLongLivedTokens';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"refreshLongLivedTokens...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 560,
+    "wires": [
+      [
+        "60bf2aa96efa48a6"
+      ]
+    ]
+  },
+  {
+    "id": "60bf2aa96efa48a6",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 560,
+    "wires": [
+      [
+        "a37f060b7e424bbf"
+      ]
+    ]
+  },
+  {
+    "id": "a37f060b7e424bbf",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 560,
+    "wires": [
+      [
+        "f8b93305ba944d9d"
+      ]
+    ]
+  },
+  {
+    "id": "f8b93305ba944d9d",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 560,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "e902263901fb43a0",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 6:00 AM (Offenders)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 6 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 620,
+    "wires": [
+      [
+        "ecf89f1cf0b04fa6"
+      ]
+    ]
+  },
+  {
+    "id": "ecf89f1cf0b04fa6",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 runDailyRepeatOffenderScan",
+    "func": "msg.payload = { action: 'runDailyRepeatOffenderScan' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=runDailyRepeatOffenderScan';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"runDailyRepeatOffenderScan...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 620,
+    "wires": [
+      [
+        "99323c4ea0e848c7"
+      ]
+    ]
+  },
+  {
+    "id": "99323c4ea0e848c7",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 620,
+    "wires": [
+      [
+        "a33cb2720ab34313"
+      ]
+    ]
+  },
+  {
+    "id": "a33cb2720ab34313",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 620,
+    "wires": [
+      [
+        "57f690aefd754cd4"
+      ]
+    ]
+  },
+  {
+    "id": "57f690aefd754cd4",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 620,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "147c7bc9cd6f432f",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 7:00 AM (Risk)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 7 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 680,
+    "wires": [
+      [
+        "d7bf314b973243b0"
+      ]
+    ]
+  },
+  {
+    "id": "d7bf314b973243b0",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 runRiskIntelligenceLoop",
+    "func": "msg.payload = { action: 'runRiskIntelligenceLoop' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=runRiskIntelligenceLoop';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"runRiskIntelligenceLoop...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 680,
+    "wires": [
+      [
+        "07a90b0b64a1445a"
+      ]
+    ]
+  },
+  {
+    "id": "07a90b0b64a1445a",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 680,
+    "wires": [
+      [
+        "8382a01e49634f5b"
+      ]
+    ]
+  },
+  {
+    "id": "8382a01e49634f5b",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 680,
+    "wires": [
+      [
+        "2e4a7a8fb5464ec4"
+      ]
+    ]
+  },
+  {
+    "id": "2e4a7a8fb5464ec4",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 680,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "b03932733add4f42",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 9:00 AM (Court)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 9 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 740,
+    "wires": [
+      [
+        "f77437452e6e4296"
+      ]
+    ]
+  },
+  {
+    "id": "f77437452e6e4296",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 processDailyCourtReminders",
+    "func": "msg.payload = { action: 'processDailyCourtReminders' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=processDailyCourtReminders';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"processDailyCourtReminders...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 740,
+    "wires": [
+      [
+        "dc473ace368f41f2"
+      ]
+    ]
+  },
+  {
+    "id": "dc473ace368f41f2",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 740,
+    "wires": [
+      [
+        "e806b03d9b5f4fd6"
+      ]
+    ]
+  },
+  {
+    "id": "e806b03d9b5f4fd6",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 740,
+    "wires": [
+      [
+        "0f20abbd3cc34b66"
+      ]
+    ]
+  },
+  {
+    "id": "0f20abbd3cc34b66",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 740,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "088aac2d1f72469a",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 10:00 AM Mon (Payments)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 10 * * 1",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 800,
+    "wires": [
+      [
+        "5aab15b511274d5b"
+      ]
+    ]
+  },
+  {
+    "id": "5aab15b511274d5b",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 TG_processWeeklyPaymentProgress",
+    "func": "msg.payload = { action: 'TG_processWeeklyPaymentProgress' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=TG_processWeeklyPaymentProgress';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"TG_processWeeklyPaymentProgress...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 800,
+    "wires": [
+      [
+        "a438ae24ef9c4085"
+      ]
+    ]
+  },
+  {
+    "id": "a438ae24ef9c4085",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 800,
+    "wires": [
+      [
+        "29e9d3e3bf944b89"
+      ]
+    ]
+  },
+  {
+    "id": "29e9d3e3bf944b89",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 800,
+    "wires": [
+      [
+        "759e94059721477b"
+      ]
+    ]
+  },
+  {
+    "id": "759e94059721477b",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 800,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "bead7dddcd7e412b",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 11:00 AM (Retry Posts)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 11 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 860,
+    "wires": [
+      [
+        "e6e02a0cb8b84253"
+      ]
+    ]
+  },
+  {
+    "id": "e6e02a0cb8b84253",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 retryFailedPosts",
+    "func": "msg.payload = { action: 'retryFailedPosts' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=retryFailedPosts';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"retryFailedPosts...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 860,
+    "wires": [
+      [
+        "34500bac48c8428d"
+      ]
+    ]
+  },
+  {
+    "id": "34500bac48c8428d",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 860,
+    "wires": [
+      [
+        "5daa759b8f364a64"
+      ]
+    ]
+  },
+  {
+    "id": "5daa759b8f364a64",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 860,
+    "wires": [
+      [
+        "1f6d0207ca6a4a9e"
+      ]
+    ]
+  },
+  {
+    "id": "1f6d0207ca6a4a9e",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 860,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "9a89ea3b1b714a2b",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 11:00 AM (Check-ins)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 11 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 920,
+    "wires": [
+      [
+        "4c3fcd25f58a4adb"
+      ]
+    ]
+  },
+  {
+    "id": "4c3fcd25f58a4adb",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 sendAutomatedCheckIns",
+    "func": "msg.payload = { action: 'sendAutomatedCheckIns' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=sendAutomatedCheckIns';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"sendAutomatedCheckIns...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 920,
+    "wires": [
+      [
+        "2a40e55dcce746ef"
+      ]
+    ]
+  },
+  {
+    "id": "2a40e55dcce746ef",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 920,
+    "wires": [
+      [
+        "bed6178e83d948be"
+      ]
+    ]
+  },
+  {
+    "id": "bed6178e83d948be",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 920,
+    "wires": [
+      [
+        "e244b91238c94a57"
+      ]
+    ]
+  },
+  {
+    "id": "e244b91238c94a57",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 920,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "f33a62cff2dc4a13",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 1:00 PM (Geofence)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 13 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 980,
+    "wires": [
+      [
+        "61a58f942ed84b9b"
+      ]
+    ]
+  },
+  {
+    "id": "61a58f942ed84b9b",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 checkCourtDateProximity",
+    "func": "msg.payload = { action: 'checkCourtDateProximity' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=checkCourtDateProximity';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"checkCourtDateProximity...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 980,
+    "wires": [
+      [
+        "67e7e0d4f2114cfe"
+      ]
+    ]
+  },
+  {
+    "id": "67e7e0d4f2114cfe",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 980,
+    "wires": [
+      [
+        "ca82a3f204cb4d9c"
+      ]
+    ]
+  },
+  {
+    "id": "ca82a3f204cb4d9c",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 980,
+    "wires": [
+      [
+        "26b3dc0c6ec94339"
+      ]
+    ]
+  },
+  {
+    "id": "26b3dc0c6ec94339",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 980,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "f6197160723841c0",
+    "type": "inject",
+    "z": "47a279345d2c43f7",
+    "name": "\u23f0 2:00 PM (Reconcile)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 14 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 1040,
+    "wires": [
+      [
+        "e0192db80f924ef2"
+      ]
+    ]
+  },
+  {
+    "id": "e0192db80f924ef2",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83d\udce6 reconcilePaymentPlans",
+    "func": "msg.payload = { action: 'reconcilePaymentPlans' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=reconcilePaymentPlans';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"reconcilePaymentPlans...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 30,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 1040,
+    "wires": [
+      [
+        "97373448e1a844e5"
+      ]
+    ]
+  },
+  {
+    "id": "97373448e1a844e5",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 1040,
+    "wires": [
+      [
+        "07ad318db6114283"
+      ]
+    ]
+  },
+  {
+    "id": "07ad318db6114283",
+    "type": "function",
+    "z": "47a279345d2c43f7",
+    "name": "\u2705 Result",
+    "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 1040,
+    "wires": [
+      [
+        "ae194c6a03fc455d"
+      ]
+    ]
+  },
+  {
+    "id": "ae194c6a03fc455d",
+    "type": "http request",
+    "z": "47a279345d2c43f7",
+    "name": "\u26a0\ufe0f Slack Alert (on error)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 1040,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "e6949e9df6bc4905",
+    "type": "tab",
+    "label": "WhatsApp Campaigns",
+    "disabled": true,
+    "info": "\u26a0\ufe0f DISABLED \u2014 Waiting on 10DLC/A2P campaign approval.\nEnable this tab once approved.\n\nMirrors The Closer's SMS drip with WhatsApp via Twilio.\n98% open rates vs 20% for SMS."
+  },
+  {
+    "id": "e1ffe2c13c804c2e",
+    "type": "comment",
+    "z": "e6949e9df6bc4905",
+    "name": "\ud83d\udcf1 WHATSAPP DRIP CAMPAIGN",
+    "info": "\u26a0\ufe0f THIS TAB IS DISABLED until 10DLC/A2P approval.\nEnable from Node-RED \u2192 double-click tab \u2192 uncheck Disabled.\n\nMirrors The Closer but via WhatsApp (98% open rates).\nDrip tiers: 1h, 24h, 72h after abandonment.",
+    "x": 300,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "ab402003ae6b412f",
+    "type": "inject",
+    "z": "e6949e9df6bc4905",
+    "name": "\u23f0 Every 30 Min",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "*/30 * * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 160,
+    "wires": [
+      [
+        "44bfbdc925b146ab"
+      ]
+    ]
+  },
+  {
+    "id": "44bfbdc925b146ab",
+    "type": "function",
+    "z": "e6949e9df6bc4905",
+    "name": "\ud83d\udce8 Fetch Abandoned",
+    "func": "// Fetch abandoned intakes from GAS\nmsg.payload = { action: 'getAbandonedIntakes' };\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"blue\", shape:\"ring\", text:\"Fetching abandoned intakes...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 160,
+    "wires": [
+      [
+        "2f40ac0ecefd44ee"
+      ]
+    ]
+  },
+  {
+    "id": "2f40ac0ecefd44ee",
+    "type": "http request",
+    "z": "e6949e9df6bc4905",
+    "name": "\ud83c\udf10 GAS: Get Leads",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=getAbandonedIntakes",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 540,
+    "y": 160,
+    "wires": [
+      [
+        "a666b20f177d48dd"
+      ]
+    ]
+  },
+  {
+    "id": "a666b20f177d48dd",
+    "type": "function",
+    "z": "e6949e9df6bc4905",
+    "name": "\ud83d\udd0d Filter Eligible",
+    "func": "// Filter leads eligible for WhatsApp (have phone, not yet WA-contacted)\nconst result = msg.payload || {};\nconst leads = Array.isArray(result.leads) ? result.leads : [];\n\nconst eligible = leads.filter(l => {\n    const phone = l.phone || l.phoneNumber || '';\n    const waContacted = l.whatsappContacted || false;\n    return phone.length >= 10 && !waContacted;\n});\n\nif (eligible.length === 0) {\n    node.status({fill:\"grey\", shape:\"ring\", text:\"No eligible leads\"});\n    return null;\n}\n\nmsg.eligibleLeads = eligible;\nnode.status({fill:\"yellow\", shape:\"dot\", text: eligible.length + \" leads to reach\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 740,
+    "y": 160,
+    "wires": [
+      [
+        "ab02778a0b954500"
+      ]
+    ]
+  },
+  {
+    "id": "ab02778a0b954500",
+    "type": "function",
+    "z": "e6949e9df6bc4905",
+    "name": "\ud83d\udcdd Build WA Messages",
+    "func": "// Build WhatsApp messages for each lead\n// Uses Twilio WhatsApp Sandbox format\nconst leads = msg.eligibleLeads || [];\nconst messages = leads.map(lead => {\n    const name = lead.name || lead.firstName || 'there';\n    const phone = (lead.phone || lead.phoneNumber || '').replace(/\\D/g, '');\n    \n    // Determine drip tier based on time since abandonment\n    const hoursAgo = lead.hoursAbandoned || 1;\n    let template;\n    \n    if (hoursAgo <= 2) {\n        template = `Hi ${name}, this is Shamrock Bail Bonds. We noticed you started an application \u2014 we're here to help 24/7. Reply YES to continue or call (239) 955-0178. \ud83c\udf40`;\n    } else if (hoursAgo <= 24) {\n        template = `${name}, just checking in from Shamrock Bail Bonds. We know this is stressful \u2014 our team is standing by to help your loved one come home. Call/text anytime: (239) 955-0178 \ud83c\udf40`;\n    } else {\n        template = `Hi ${name}, Shamrock Bail Bonds here. We're still available to help with your bail application. Fast, confidential service. Call us 24/7: (239) 955-0178 \ud83c\udf40`;\n    }\n    \n    return {\n        to: 'whatsapp:+1' + phone,\n        from: 'whatsapp:+1' + (global.get('TWILIO_WA_NUMBER') || ''),\n        body: template,\n        leadId: lead.id || lead.caseId\n    };\n});\n\nmsg.waMessages = messages;\nmsg.payload = { \n    action: 'sendWhatsAppBatch',\n    messages: messages \n};\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"green\", shape:\"dot\", text: messages.length + \" messages queued\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 960,
+    "y": 160,
+    "wires": [
+      [
+        "5c04fc2f4c05479a"
+      ]
+    ]
+  },
+  {
+    "id": "5c04fc2f4c05479a",
+    "type": "http request",
+    "z": "e6949e9df6bc4905",
+    "name": "\ud83d\udce4 GAS: Send Batch",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=sendWhatsAppBatch",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1180,
+    "y": 160,
+    "wires": [
+      [
+        "9239a2c3059f4255"
+      ]
+    ]
+  },
+  {
+    "id": "9239a2c3059f4255",
+    "type": "function",
+    "z": "e6949e9df6bc4905",
+    "name": "\u2705 Check Result",
+    "func": "const result = msg.payload || {};\nconst sent = result.sent || 0;\nconst failed = result.failed || 0;\n\nmsg.waResult = { sent, failed };\nnode.status({fill: failed > 0 ? \"yellow\" : \"green\", shape:\"dot\", text: `\u2705 ${sent} sent, \u274c ${failed} failed`});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1380,
+    "y": 160,
+    "wires": [
+      [
+        "ab98e87d89e04660"
+      ]
+    ]
+  },
+  {
+    "id": "ab98e87d89e04660",
+    "type": "function",
+    "z": "e6949e9df6bc4905",
+    "name": "\ud83d\udce2 Slack Report",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nconst r = msg.waResult;\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\ud83d\udcf1 *WhatsApp Campaign Report*\\n\\n\u2705 Sent: ${r.sent}\\n\u274c Failed: ${r.failed}\\n\\n_Via Twilio WhatsApp Business_`\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1560,
+    "y": 160,
+    "wires": [
+      [
+        "6be054058f6343ce"
+      ]
+    ]
+  },
+  {
+    "id": "6be054058f6343ce",
+    "type": "http request",
+    "z": "e6949e9df6bc4905",
+    "name": "\ud83d\udce4 Slack Post",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1740,
+    "y": 160,
+    "wires": [
+      [
+        "3bf3ec66374d46d7"
+      ]
+    ]
+  },
+  {
+    "id": "3bf3ec66374d46d7",
+    "type": "debug",
+    "z": "e6949e9df6bc4905",
+    "name": "\ud83d\udd0d Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1900,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "6647cd5307914885",
+    "type": "tab",
+    "label": "SignNow Tracker",
+    "disabled": false,
+    "info": "Polls SignNow for unsigned packets and sends reminders.\nAuto-reminds at 2h, 12h, 24h after sending."
+  },
+  {
+    "id": "f536a5cda4c146aa",
+    "type": "comment",
+    "z": "6647cd5307914885",
+    "name": "\ud83d\udcdd SIGNNOW DOCUMENT TRACKER",
+    "info": "Polls for pending signatures every 30 min.\nAuto-reminds: 2h (gentle), 12h (moderate), 24h (urgent).\n30+ hours \u2192 escalates to Slack for manual follow-up.",
+    "x": 300,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "7b035f9c2263465b",
+    "type": "inject",
+    "z": "6647cd5307914885",
+    "name": "\u23f0 Every 30 Min",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "*/30 * * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 200,
+    "wires": [
+      [
+        "c87dfe4c7e1a46ee"
+      ]
+    ]
+  },
+  {
+    "id": "c87dfe4c7e1a46ee",
+    "type": "function",
+    "z": "6647cd5307914885",
+    "name": "\ud83d\udce8 Fetch Pending",
+    "func": "msg.payload = { action: 'getPendingSignatures' };\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"blue\", shape:\"ring\", text:\"Checking SignNow...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 200,
+    "wires": [
+      [
+        "61bc9387cbde4dd5"
+      ]
+    ]
+  },
+  {
+    "id": "61bc9387cbde4dd5",
+    "type": "http request",
+    "z": "6647cd5307914885",
+    "name": "\ud83c\udf10 GAS: Pending Sigs",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=getPendingSignatures",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 540,
+    "y": 200,
+    "wires": [
+      [
+        "7cec1b6568154517"
+      ]
+    ]
+  },
+  {
+    "id": "7cec1b6568154517",
+    "type": "function",
+    "z": "6647cd5307914885",
+    "name": "\ud83d\udd0d Categorize by Age",
+    "func": "// Parse pending signatures and categorize by age\nconst result = msg.payload || {};\nconst pending = Array.isArray(result.pending) ? result.pending : [];\n\nif (pending.length === 0) {\n    node.status({fill:\"grey\", shape:\"ring\", text:\"All docs signed \u2705\"});\n    return null;\n}\n\n// Categorize by hours since sent\nconst now = Date.now();\nconst categorized = {\n    remind_2h: [],   // 2-6 hours old\n    remind_12h: [],  // 6-18 hours old\n    remind_24h: [],  // 18-30 hours old\n    escalate: []     // 30+ hours old\n};\n\npending.forEach(doc => {\n    const sentAt = new Date(doc.sentAt || doc.createdAt).getTime();\n    const hoursOld = (now - sentAt) / 3600000;\n    \n    if (hoursOld >= 30) categorized.escalate.push({...doc, hoursOld: Math.round(hoursOld)});\n    else if (hoursOld >= 18) categorized.remind_24h.push({...doc, hoursOld: Math.round(hoursOld)});\n    else if (hoursOld >= 6) categorized.remind_12h.push({...doc, hoursOld: Math.round(hoursOld)});\n    else if (hoursOld >= 2) categorized.remind_2h.push({...doc, hoursOld: Math.round(hoursOld)});\n});\n\nmsg.categorized = categorized;\nmsg.totalPending = pending.length;\n\nconst counts = `2h:${categorized.remind_2h.length} 12h:${categorized.remind_12h.length} 24h:${categorized.remind_24h.length} ESC:${categorized.escalate.length}`;\nnode.status({fill:\"yellow\", shape:\"dot\", text: pending.length + \" pending | \" + counts});\n\n// Send to all 4 outputs\nreturn [\n    categorized.remind_2h.length > 0 ? {payload: categorized.remind_2h, category: '2h'} : null,\n    categorized.remind_12h.length > 0 ? {payload: categorized.remind_12h, category: '12h'} : null,\n    categorized.remind_24h.length > 0 ? {payload: categorized.remind_24h, category: '24h'} : null,\n    categorized.escalate.length > 0 ? {payload: categorized.escalate, category: 'escalate'} : null\n];",
+    "outputs": 4,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 760,
+    "y": 200,
+    "wires": [
+      [
+        "30db2a36e3114c76"
+      ],
+      [
+        "695e422211384551"
+      ],
+      [
+        "770e32fc9ac64124"
+      ],
+      [
+        "e57643ccc67447b4"
+      ]
+    ]
+  },
+  {
+    "id": "30db2a36e3114c76",
+    "type": "function",
+    "z": "6647cd5307914885",
+    "name": "\ud83d\udc9a 2h Gentle",
+    "func": "// Gentle 2-hour reminder\nconst docs = msg.payload || [];\nmsg.payload = {\n    action: 'sendSigningReminder',\n    tier: 'gentle',\n    documents: docs.map(d => ({\n        documentId: d.documentId || d.id,\n        recipientName: d.recipientName || d.name,\n        recipientPhone: d.recipientPhone || d.phone,\n        recipientEmail: d.recipientEmail || d.email,\n        message: `Hi ${d.recipientName || 'there'}, just a friendly reminder \u2014 your bail bond paperwork is ready for your signature. Tap the link in your email to sign in under 2 minutes. Questions? Call (239) 955-0178 \ud83c\udf40`\n    }))\n};\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"green\", shape:\"dot\", text: docs.length + \" gentle reminders\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1000,
+    "y": 100,
+    "wires": [
+      [
+        "b9d12c3d7f284c4b"
+      ]
+    ]
+  },
+  {
+    "id": "695e422211384551",
+    "type": "function",
+    "z": "6647cd5307914885",
+    "name": "\ud83d\udfe1 12h Moderate",
+    "func": "// Moderate 12-hour reminder\nconst docs = msg.payload || [];\nmsg.payload = {\n    action: 'sendSigningReminder',\n    tier: 'moderate',\n    documents: docs.map(d => ({\n        documentId: d.documentId || d.id,\n        recipientName: d.recipientName || d.name,\n        recipientPhone: d.recipientPhone || d.phone,\n        recipientEmail: d.recipientEmail || d.email,\n        message: `${d.recipientName || 'Hi'}, your bail bond paperwork still needs your signature. Your loved one is waiting \u2014 please sign ASAP so we can get them home. Link in your email or call (239) 955-0178 \ud83c\udf40`\n    }))\n};\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"yellow\", shape:\"dot\", text: docs.length + \" moderate reminders\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1000,
+    "y": 180,
+    "wires": [
+      [
+        "b9d12c3d7f284c4b"
+      ]
+    ]
+  },
+  {
+    "id": "770e32fc9ac64124",
+    "type": "function",
+    "z": "6647cd5307914885",
+    "name": "\ud83d\udd34 24h Urgent",
+    "func": "// Urgent 24-hour reminder\nconst docs = msg.payload || [];\nmsg.payload = {\n    action: 'sendSigningReminder',\n    tier: 'urgent',\n    documents: docs.map(d => ({\n        documentId: d.documentId || d.id,\n        recipientName: d.recipientName || d.name,\n        recipientPhone: d.recipientPhone || d.phone,\n        recipientEmail: d.recipientEmail || d.email,\n        message: `\u26a0\ufe0f ${d.recipientName || 'Hi'}, URGENT: Your bail bond paperwork has been unsigned for 24+ hours. We need your signature to proceed with getting your loved one released. Please sign NOW or call (239) 955-0178 \ud83c\udf40`\n    }))\n};\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"red\", shape:\"dot\", text: docs.length + \" urgent reminders\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1000,
+    "y": 260,
+    "wires": [
+      [
+        "b9d12c3d7f284c4b"
+      ]
+    ]
+  },
+  {
+    "id": "e57643ccc67447b4",
+    "type": "function",
+    "z": "6647cd5307914885",
+    "name": "\ud83d\udea8 30h+ ESCALATE",
+    "func": "// Escalate to staff \u2014 30+ hours unsigned\nconst docs = msg.payload || [];\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\n\nconst docList = docs.map(d => \n    `\u2022 *${d.recipientName || 'Unknown'}* \u2014 ${d.hoursOld}h unsigned`\n).join('\\n');\n\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\ud83d\udea8 *SignNow ESCALATION \u2014 ${docs.length} Doc(s) Unsigned 30+ Hours*\\n\\n${docList}\\n\\n_Manual follow-up required. These deals may be going cold._`\n};\nnode.status({fill:\"red\", shape:\"ring\", text: docs.length + \" ESCALATED!\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1000,
+    "y": 340,
+    "wires": [
+      [
+        "fb8d478d9b2b4fb9"
+      ]
+    ]
+  },
+  {
+    "id": "b9d12c3d7f284c4b",
+    "type": "http request",
+    "z": "6647cd5307914885",
+    "name": "\ud83d\udce4 GAS: Send Reminder",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=sendSigningReminder",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1240,
+    "y": 180,
+    "wires": [
+      [
+        "26b056527d9e4f20"
+      ]
+    ]
+  },
+  {
+    "id": "26b056527d9e4f20",
+    "type": "function",
+    "z": "6647cd5307914885",
+    "name": "\ud83d\udce2 Slack Summary",
+    "func": "const result = msg.payload || {};\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\ud83d\udcdd *SignNow Tracker*: ${result.sent || 0} reminder(s) sent (${msg.category || 'unknown'} tier)`\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1460,
+    "y": 180,
+    "wires": [
+      [
+        "fb8d478d9b2b4fb9"
+      ]
+    ]
+  },
+  {
+    "id": "fb8d478d9b2b4fb9",
+    "type": "http request",
+    "z": "6647cd5307914885",
+    "name": "\ud83d\udce4 Slack",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1660,
+    "y": 260,
+    "wires": [
+      [
+        "4c5bbe30bede4c92"
+      ]
+    ]
+  },
+  {
+    "id": "4c5bbe30bede4c92",
+    "type": "debug",
+    "z": "6647cd5307914885",
+    "name": "\ud83d\udd0d Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1840,
+    "y": 260,
+    "wires": []
+  },
+  {
+    "id": "2916c0669be64f55",
+    "type": "tab",
+    "label": "Review Harvester",
+    "disabled": false,
+    "info": "48h after bond posted \u2192 auto-text asking for Google review.\nBoosts SEO and Google Business Profile."
+  },
+  {
+    "id": "1516526bc5ee4b47",
+    "type": "comment",
+    "z": "2916c0669be64f55",
+    "name": "\u2b50 GOOGLE REVIEW HARVESTER",
+    "info": "48 hours after a bond is posted \u2192 texts the indemnitor\nasking for a Google review. Boosts SEO + GBP.\nRuns daily at 10 AM.",
+    "x": 300,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "713beabdb6ba4732",
+    "type": "inject",
+    "z": "2916c0669be64f55",
+    "name": "\u23f0 10:00 AM Daily",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 10 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 160,
+    "wires": [
+      [
+        "ab54a51b8b584257"
+      ]
+    ]
+  },
+  {
+    "id": "ab54a51b8b584257",
+    "type": "function",
+    "z": "2916c0669be64f55",
+    "name": "\ud83d\udcca Fetch Posted Bonds",
+    "func": "msg.payload = { action: 'getRecentlyPostedBonds' };\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"blue\", shape:\"ring\", text:\"Checking posted bonds...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 160,
+    "wires": [
+      [
+        "7edd402207f2459e"
+      ]
+    ]
+  },
+  {
+    "id": "7edd402207f2459e",
+    "type": "http request",
+    "z": "2916c0669be64f55",
+    "name": "\ud83c\udf10 GAS: Recent Bonds",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=getRecentlyPostedBonds",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 560,
+    "y": 160,
+    "wires": [
+      [
+        "4954f20e6bad4667"
+      ]
+    ]
+  },
+  {
+    "id": "4954f20e6bad4667",
+    "type": "function",
+    "z": "2916c0669be64f55",
+    "name": "\ud83d\udd0d Filter 48h Window",
+    "func": "// Filter bonds posted 48h ago that haven't been review-requested\nconst result = msg.payload || {};\nconst bonds = Array.isArray(result.bonds) ? result.bonds : [];\nconst now = Date.now();\n\nconst eligible = bonds.filter(b => {\n    const postedAt = new Date(b.postedDate || b.createdAt).getTime();\n    const hoursAgo = (now - postedAt) / 3600000;\n    // Between 44-52 hours (window to catch the 48h mark)\n    return hoursAgo >= 44 && hoursAgo <= 52 && !b.reviewRequested;\n});\n\nif (eligible.length === 0) {\n    node.status({fill:\"grey\", shape:\"ring\", text:\"No eligible bonds\"});\n    return null;\n}\n\nmsg.eligibleBonds = eligible;\nnode.status({fill:\"green\", shape:\"dot\", text: eligible.length + \" review requests\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 160,
+    "wires": [
+      [
+        "5dc95e8c4d114b19"
+      ]
+    ]
+  },
+  {
+    "id": "5dc95e8c4d114b19",
+    "type": "function",
+    "z": "2916c0669be64f55",
+    "name": "\ud83d\udcdd Build Review Msgs",
+    "func": "// Build review request messages\nconst bonds = msg.eligibleBonds || [];\nconst REVIEW_URL = 'https://g.page/r/shamrockbailbonds/review';\n\nmsg.payload = {\n    action: 'sendReviewRequests',\n    requests: bonds.map(b => {\n        const name = b.indemnitorName || b.cosignerName || 'there';\n        const phone = b.indemnitorPhone || b.cosignerPhone || '';\n        return {\n            bondId: b.bondId || b.id,\n            phone: phone,\n            name: name,\n            message: `Hi ${name}, thank you for choosing Shamrock Bail Bonds! \ud83c\udf40\\n\\nWe hope your experience was positive. If so, a Google review would mean the world to our small team:\\n\\n${REVIEW_URL}\\n\\nThank you! \u2014 The Shamrock Team`\n        };\n    })\n};\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"green\", shape:\"dot\", text: bonds.length + \" requests queued\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1000,
+    "y": 160,
+    "wires": [
+      [
+        "9ef857bb09304ee5"
+      ]
+    ]
+  },
+  {
+    "id": "9ef857bb09304ee5",
+    "type": "http request",
+    "z": "2916c0669be64f55",
+    "name": "\ud83d\udce4 GAS: Send Reviews",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=sendReviewRequests",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1220,
+    "y": 160,
+    "wires": [
+      [
+        "9f8dae6fc3bc4385"
+      ]
+    ]
+  },
+  {
+    "id": "9f8dae6fc3bc4385",
+    "type": "function",
+    "z": "2916c0669be64f55",
+    "name": "\ud83d\udce2 Slack Report",
+    "func": "const result = msg.payload || {};\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\u2b50 *Review Harvester*: ${result.sent || 0} review request(s) sent\\n_Boosting that Google SEO! \ud83c\udf40_`\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1420,
+    "y": 160,
+    "wires": [
+      [
+        "189ee9e27327478b"
+      ]
+    ]
+  },
+  {
+    "id": "189ee9e27327478b",
+    "type": "http request",
+    "z": "2916c0669be64f55",
+    "name": "\ud83d\udce4 Slack",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1600,
+    "y": 160,
+    "wires": [
+      [
+        "2f5f347469b04f7f"
+      ]
+    ]
+  },
+  {
+    "id": "2f5f347469b04f7f",
+    "type": "debug",
+    "z": "2916c0669be64f55",
+    "name": "\ud83d\udd0d Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1760,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "3f0cdaee1ab64048",
+    "type": "tab",
+    "label": "Payment Reminders",
+    "disabled": true,
+    "info": "\u26a0\ufe0f DISABLED \u2014 Waiting on text campaign approval.\n3 days before payment plan installment \u2192 SMS reminder.\nReduces missed payments and forfeiture risk."
+  },
+  {
+    "id": "260764c2c98d492a",
+    "type": "comment",
+    "z": "3f0cdaee1ab64048",
+    "name": "\ud83d\udcb0 PAYMENT DUE REMINDERS",
+    "info": "\u26a0\ufe0f DISABLED \u2014 awaiting text campaign approval.\n3 days before installment due \u2192 SMS + optional WhatsApp.\nReduces missed payments and forfeiture risk.",
+    "x": 300,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "7211a06c32d24e57",
+    "type": "inject",
+    "z": "3f0cdaee1ab64048",
+    "name": "\u23f0 9:00 AM Daily",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 9 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 160,
+    "wires": [
+      [
+        "5e58bf48809d4dfe"
+      ]
+    ]
+  },
+  {
+    "id": "5e58bf48809d4dfe",
+    "type": "function",
+    "z": "3f0cdaee1ab64048",
+    "name": "\ud83d\udcca Fetch Payments",
+    "func": "msg.payload = { action: 'getUpcomingPayments' };\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"blue\", shape:\"ring\", text:\"Checking payment plans...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 160,
+    "wires": [
+      [
+        "cac38cf037c44f33"
+      ]
+    ]
+  },
+  {
+    "id": "cac38cf037c44f33",
+    "type": "http request",
+    "z": "3f0cdaee1ab64048",
+    "name": "\ud83c\udf10 GAS: Payments",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=getUpcomingPayments",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 540,
+    "y": 160,
+    "wires": [
+      [
+        "2d0c8899939747a3"
+      ]
+    ]
+  },
+  {
+    "id": "2d0c8899939747a3",
+    "type": "function",
+    "z": "3f0cdaee1ab64048",
+    "name": "\ud83d\udd0d Filter 3-Day Window",
+    "func": "// Filter payments due in 3 days that haven't been reminded\nconst result = msg.payload || {};\nconst payments = Array.isArray(result.payments) ? result.payments : [];\nconst now = new Date();\nconst threeDaysFromNow = new Date(now.getTime() + 3 * 86400000);\n\nconst upcoming = payments.filter(p => {\n    const dueDate = new Date(p.dueDate);\n    const daysUntil = (dueDate - now) / 86400000;\n    return daysUntil > 0 && daysUntil <= 3.5 && !p.reminded;\n});\n\nif (upcoming.length === 0) {\n    node.status({fill:\"grey\", shape:\"ring\", text:\"No upcoming payments\"});\n    return null;\n}\n\nmsg.upcomingPayments = upcoming;\nnode.status({fill:\"yellow\", shape:\"dot\", text: upcoming.length + \" reminders due\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 740,
+    "y": 160,
+    "wires": [
+      [
+        "276ac0ede499401c"
+      ]
+    ]
+  },
+  {
+    "id": "276ac0ede499401c",
+    "type": "function",
+    "z": "3f0cdaee1ab64048",
+    "name": "\ud83d\udcdd Build Reminders",
+    "func": "// Build payment reminder messages\nconst payments = msg.upcomingPayments || [];\n\nmsg.payload = {\n    action: 'sendPaymentReminders',\n    reminders: payments.map(p => {\n        const name = p.indemnitorName || p.name || 'there';\n        const amount = p.amount ? '$' + p.amount : 'your installment';\n        const dueDate = new Date(p.dueDate).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});\n        return {\n            paymentId: p.id,\n            phone: p.phone || p.indemnitorPhone,\n            name: name,\n            message: `Hi ${name}, friendly reminder from Shamrock Bail Bonds \ud83c\udf40\\n\\nYour payment of ${amount} is due on ${dueDate}.\\n\\nPay now: ${p.paymentLink || 'Call (239) 955-0178'}\\n\\nThank you for staying current!`\n        };\n    })\n};\nmsg.headers = { 'Content-Type': 'application/json' };\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 960,
+    "y": 160,
+    "wires": [
+      [
+        "5255ea36eb974904"
+      ]
+    ]
+  },
+  {
+    "id": "5255ea36eb974904",
+    "type": "http request",
+    "z": "3f0cdaee1ab64048",
+    "name": "\ud83d\udce4 GAS: Send",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=sendPaymentReminders",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1160,
+    "y": 160,
+    "wires": [
+      [
+        "787bd108514b42fa"
+      ]
+    ]
+  },
+  {
+    "id": "787bd108514b42fa",
+    "type": "function",
+    "z": "3f0cdaee1ab64048",
+    "name": "\ud83d\udce2 Slack",
+    "func": "const result = msg.payload || {};\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\ud83d\udcb0 *Payment Reminders*: ${result.sent || 0} reminder(s) sent for upcoming installments`\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1340,
+    "y": 160,
+    "wires": [
+      [
+        "a1b1dfc819c843db"
+      ]
+    ]
+  },
+  {
+    "id": "a1b1dfc819c843db",
+    "type": "http request",
+    "z": "3f0cdaee1ab64048",
+    "name": "\ud83d\udce4 Slack",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1500,
+    "y": 160,
+    "wires": [
+      [
+        "d272d7b3d42349a4"
+      ]
+    ]
+  },
+  {
+    "id": "d272d7b3d42349a4",
+    "type": "debug",
+    "z": "3f0cdaee1ab64048",
+    "name": "\ud83d\udd0d",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1640,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "92127b16db094acd",
+    "type": "tab",
+    "label": "No-Show Escalation",
+    "disabled": false,
+    "info": "Monitors check-ins and court appearances.\nMissed check-in or court date \u2192 instant Slack + staff call.\nProtects the bottom line on active bonds."
+  },
+  {
+    "id": "87a0317c6e084bd6",
+    "type": "comment",
+    "z": "92127b16db094acd",
+    "name": "\ud83d\udea8 NO-SHOW ESCALATION",
+    "info": "Checks defendant compliance every hour.\nMissed check-in \u2192 Yellow alert (attempt contact).\nMissed court date \u2192 RED CRITICAL (immediate action).\nProtects the bottom line on active bonds.",
+    "x": 300,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "48d638161e7e4766",
+    "type": "inject",
+    "z": "92127b16db094acd",
+    "name": "\u23f0 Every Hour",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 * * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 180,
+    "wires": [
+      [
+        "1ba0923346104ec4"
+      ]
+    ]
+  },
+  {
+    "id": "1ba0923346104ec4",
+    "type": "function",
+    "z": "92127b16db094acd",
+    "name": "\ud83d\udcca Fetch Compliance",
+    "func": "msg.payload = { action: 'getComplianceStatus' };\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"blue\", shape:\"ring\", text:\"Checking compliance...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 180,
+    "wires": [
+      [
+        "d3ebf4360cb74503"
+      ]
+    ]
+  },
+  {
+    "id": "d3ebf4360cb74503",
+    "type": "http request",
+    "z": "92127b16db094acd",
+    "name": "\ud83c\udf10 GAS: Compliance",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=getComplianceStatus",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 540,
+    "y": 180,
+    "wires": [
+      [
+        "360f7e6097414a00"
+      ]
+    ]
+  },
+  {
+    "id": "360f7e6097414a00",
+    "type": "function",
+    "z": "92127b16db094acd",
+    "name": "\ud83d\udd0d Detect No-Shows",
+    "func": "// Parse compliance data \u2014 find no-shows\nconst result = msg.payload || {};\nconst defendants = Array.isArray(result.defendants) ? result.defendants : [];\n\nconst missedCheckins = defendants.filter(d => d.missedLastCheckIn);\nconst missedCourt = defendants.filter(d => d.missedCourtDate);\n\nif (missedCheckins.length === 0 && missedCourt.length === 0) {\n    node.status({fill:\"green\", shape:\"dot\", text: defendants.length + \" all compliant \u2705\"});\n    return [null, null];\n}\n\nnode.status({fill:\"red\", shape:\"ring\", text: `\u26a0\ufe0f ${missedCheckins.length} checkins, ${missedCourt.length} court`});\n\nreturn [\n    missedCheckins.length > 0 ? {payload: missedCheckins, escalationType: 'check-in'} : null,\n    missedCourt.length > 0 ? {payload: missedCourt, escalationType: 'court'} : null\n];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 760,
+    "y": 180,
+    "wires": [
+      [
+        "88e7f2da658d4375"
+      ],
+      [
+        "86318961ab874289"
+      ]
+    ]
+  },
+  {
+    "id": "88e7f2da658d4375",
+    "type": "function",
+    "z": "92127b16db094acd",
+    "name": "\u26a0\ufe0f Missed Check-In",
+    "func": "// Format missed check-in alert (YELLOW priority)\nconst defendants = msg.payload || [];\nconst list = defendants.map(d => \n    `\u2022 *${d.name}* \u2014 Bond: $${d.bondAmount || 'N/A'} | Last check-in: ${d.lastCheckIn || 'NEVER'}`\n).join('\\n');\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\u26a0\ufe0f *MISSED CHECK-IN \u2014 ${defendants.length} Defendant(s)*\\n\\n${list}\\n\\n_Action: Attempt contact. If unreachable for 48h \u2192 escalate to recovery._`\n};\nnode.status({fill:\"yellow\", shape:\"dot\", text: defendants.length + \" missed check-ins\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1000,
+    "y": 140,
+    "wires": [
+      [
+        "66c6287c2eac4402"
+      ]
+    ]
+  },
+  {
+    "id": "86318961ab874289",
+    "type": "function",
+    "z": "92127b16db094acd",
+    "name": "\ud83d\udea8 Missed COURT",
+    "func": "// Format missed court date alert (RED \u2014 CRITICAL)\nconst defendants = msg.payload || [];\nconst list = defendants.map(d => \n    `\ud83d\udea8 *${d.name}* \u2014 Bond: $${d.bondAmount || 'N/A'} | Court: ${d.courtDate || 'TODAY'} | County: ${d.county || 'Unknown'}`\n).join('\\n');\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"blocks\": [\n        {\n            \"type\": \"header\",\n            \"text\": {\"type\": \"plain_text\", \"text\": \"\ud83d\udea8 CRITICAL: MISSED COURT DATE\", \"emoji\": true}\n        },\n        {\"type\": \"divider\"},\n        {\n            \"type\": \"section\",\n            \"text\": {\"type\": \"mrkdwn\", \"text\": list}\n        },\n        {\"type\": \"divider\"},\n        {\n            \"type\": \"section\",\n            \"text\": {\"type\": \"mrkdwn\", \"text\": \"\u26a1 *IMMEDIATE ACTION REQUIRED:*\\n1. Contact defendant + indemnitor NOW\\n2. If unreachable \u2192 file motion with court\\n3. Activate recovery process\"}\n        }\n    ],\n    \"text\": \"\ud83d\udea8 MISSED COURT DATE \u2014 \" + defendants.length + \" defendant(s)\"\n};\nnode.status({fill:\"red\", shape:\"ring\", text: \"\ud83d\udea8 \" + defendants.length + \" MISSED COURT!\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1000,
+    "y": 240,
+    "wires": [
+      [
+        "66c6287c2eac4402"
+      ]
+    ]
+  },
+  {
+    "id": "66c6287c2eac4402",
+    "type": "http request",
+    "z": "92127b16db094acd",
+    "name": "\ud83d\udce4 Slack: #alerts",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1240,
+    "y": 180,
+    "wires": [
+      [
+        "1baa660f180c4d95"
+      ]
+    ]
+  },
+  {
+    "id": "1baa660f180c4d95",
+    "type": "debug",
+    "z": "92127b16db094acd",
+    "name": "\ud83d\udd0d Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1420,
+    "y": 180,
+    "wires": []
   }
 ]
