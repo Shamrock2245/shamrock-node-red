@@ -7694,5 +7694,970 @@
     "x": 1420,
     "y": 180,
     "wires": []
+  },
+  {
+    "id": "47df6624715c4999",
+    "type": "tab",
+    "label": "Intake Pipeline",
+    "disabled": false,
+    "info": "End-to-end intake: Webhook \u2192 Slack \u2192 SignNow packet \u2192 Signing link \u2192 Confirmation.\nNo manual steps. Fully automated from intake to bond posting."
+  },
+  {
+    "id": "9297f4a667714913",
+    "type": "comment",
+    "z": "47df6624715c4999",
+    "name": "\ud83d\udd04 END-TO-END INTAKE PIPELINE",
+    "info": "Webhook \u2192 Validate \u2192 Slack Alert \u2192 Create SignNow Packet \u2192 Send Signing Link \u2192 Confirm.\nFully automated \u2014 no manual steps needed.",
+    "x": 340,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "d5d6364796504126",
+    "type": "http in",
+    "z": "47df6624715c4999",
+    "name": "\ud83d\udce5 /intake-pipeline",
+    "url": "/intake-pipeline",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 160,
+    "y": 180,
+    "wires": [
+      [
+        "c8bd100fad38449e"
+      ]
+    ]
+  },
+  {
+    "id": "c8bd100fad38449e",
+    "type": "function",
+    "z": "47df6624715c4999",
+    "name": "\u2705 Validate Intake",
+    "func": "// Validate intake data \u2014 ensure minimum fields present\nconst intake = msg.payload || {};\nconst name = intake.name || intake.firstName || intake.defendantName || '';\nconst phone = intake.phone || intake.phoneNumber || '';\nconst county = intake.county || intake.location || 'Unknown';\n\nif (!name || !phone) {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c Missing name/phone\"});\n    return null; // Drop incomplete intakes\n}\n\nmsg.intake = {\n    name: name,\n    phone: phone.replace(/\\D/g, ''),\n    county: county,\n    charges: intake.charges || 'Pending',\n    bondAmount: intake.bondAmount || intake.bond_amount || 'TBD',\n    email: intake.email || '',\n    caseId: intake.caseId || intake.id || 'NEW-' + Date.now(),\n    timestamp: new Date().toISOString()\n};\n\nnode.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + name + \" | \" + county});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 180,
+    "wires": [
+      [
+        "a801661036954453",
+        "0a8676e393144195"
+      ]
+    ]
+  },
+  {
+    "id": "a801661036954453",
+    "type": "function",
+    "z": "47df6624715c4999",
+    "name": "\ud83d\udce2 Slack: New Intake",
+    "func": "// Alert Slack about new intake\nconst i = msg.intake;\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"C09MP494D1T\",\n    \"blocks\": [\n        {\"type\": \"header\", \"text\": {\"type\": \"plain_text\", \"text\": \"\ud83d\udea8 New Intake \u2014 \" + i.county, \"emoji\": true}},\n        {\"type\": \"divider\"},\n        {\"type\": \"section\", \"fields\": [\n            {\"type\": \"mrkdwn\", \"text\": \"*Client:*\\n\" + i.name},\n            {\"type\": \"mrkdwn\", \"text\": \"*Phone:*\\n\" + i.phone}\n        ]},\n        {\"type\": \"section\", \"fields\": [\n            {\"type\": \"mrkdwn\", \"text\": \"*Charges:*\\n\" + i.charges},\n            {\"type\": \"mrkdwn\", \"text\": \"*Bond:*\\n$\" + i.bondAmount}\n        ]},\n        {\"type\": \"context\", \"elements\": [\n            {\"type\": \"mrkdwn\", \"text\": \"_Case \" + i.caseId + \" \u2014 Pipeline auto-processing..._\"}\n        ]}\n    ]\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 620,
+    "y": 120,
+    "wires": [
+      [
+        "d63c8e9142fc4afb"
+      ]
+    ]
+  },
+  {
+    "id": "d63c8e9142fc4afb",
+    "type": "http request",
+    "z": "47df6624715c4999",
+    "name": "\ud83d\udce4 Slack",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 840,
+    "y": 120,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "0a8676e393144195",
+    "type": "function",
+    "z": "47df6624715c4999",
+    "name": "\ud83d\udcdd Create Packet",
+    "func": "// Prepare SignNow document creation request\nmsg.payload = {\n    action: 'createSignNowPacket',\n    caseId: msg.intake.caseId,\n    defendantName: msg.intake.name,\n    indemnitorPhone: msg.intake.phone,\n    indemnitorEmail: msg.intake.email,\n    county: msg.intake.county,\n    bondAmount: msg.intake.bondAmount,\n    charges: msg.intake.charges\n};\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"blue\", shape:\"ring\", text:\"Creating packet...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 620,
+    "y": 240,
+    "wires": [
+      [
+        "e7a9e389fb614e98"
+      ]
+    ]
+  },
+  {
+    "id": "e7a9e389fb614e98",
+    "type": "http request",
+    "z": "47df6624715c4999",
+    "name": "\ud83c\udf10 GAS: SignNow",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=createSignNowPacket",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 840,
+    "y": 240,
+    "wires": [
+      [
+        "30859efe4f5e4c96"
+      ]
+    ]
+  },
+  {
+    "id": "30859efe4f5e4c96",
+    "type": "function",
+    "z": "47df6624715c4999",
+    "name": "\ud83d\udce4 Send Signing Link",
+    "func": "// Send signing link via SMS\nconst result = msg.payload || {};\nconst signingLink = result.signingLink || result.url || '';\n\nif (!signingLink) {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c No signing link returned\"});\n    return null;\n}\n\nmsg.signingLink = signingLink;\nmsg.payload = {\n    action: 'sendSigningLink',\n    phone: msg.intake.phone,\n    name: msg.intake.name,\n    caseId: msg.intake.caseId,\n    link: signingLink,\n    message: `Hi ${msg.intake.name}, your Shamrock Bail Bonds paperwork is ready! \ud83c\udf40\\n\\nSign here (takes ~2 min): ${signingLink}\\n\\nQuestions? Call (239) 955-0178`\n};\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"green\", shape:\"dot\", text:\"\ud83d\udce4 Sending link...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1060,
+    "y": 240,
+    "wires": [
+      [
+        "aa5bfc0002fc4801"
+      ]
+    ]
+  },
+  {
+    "id": "aa5bfc0002fc4801",
+    "type": "http request",
+    "z": "47df6624715c4999",
+    "name": "\ud83c\udf10 GAS: SMS Link",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=sendSigningLink",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1280,
+    "y": 240,
+    "wires": [
+      [
+        "4330d58a38674a01"
+      ]
+    ]
+  },
+  {
+    "id": "4330d58a38674a01",
+    "type": "function",
+    "z": "47df6624715c4999",
+    "name": "\u2705 Pipeline Complete",
+    "func": "const result = msg.payload || {};\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\u2705 *Intake Pipeline Complete*\\n\\n\ud83d\udc64 ${msg.intake.name}\\n\ud83d\udcdd SignNow packet created\\n\ud83d\udce4 Signing link sent via SMS\\n\ud83d\udd17 ${msg.signingLink || 'Link sent'}\\n\\n_Case ${msg.intake.caseId} \u2014 now tracking in SignNow Tracker_`\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1500,
+    "y": 240,
+    "wires": [
+      [
+        "3e8f20ccfd7f401a"
+      ]
+    ]
+  },
+  {
+    "id": "3e8f20ccfd7f401a",
+    "type": "http request",
+    "z": "47df6624715c4999",
+    "name": "\ud83d\udce4 Slack",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1700,
+    "y": 240,
+    "wires": [
+      [
+        "a6859d72059e4a7b"
+      ]
+    ]
+  },
+  {
+    "id": "a6859d72059e4a7b",
+    "type": "debug",
+    "z": "47df6624715c4999",
+    "name": "\ud83d\udd0d",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1860,
+    "y": 240,
+    "wires": []
+  },
+  {
+    "id": "f2d97261ecba4bcc",
+    "type": "http response",
+    "z": "47df6624715c4999",
+    "name": "\u21a9\ufe0f 200 OK",
+    "statusCode": "200",
+    "headers": {},
+    "x": 380,
+    "y": 260,
+    "wires": []
+  },
+  {
+    "id": "c9cd99104acc4337",
+    "type": "tab",
+    "label": "Revenue Snapshot",
+    "disabled": false,
+    "info": "Daily at 6 PM \u2014 pulls payment data, calculates revenue stats, sends to Slack + Telegram."
+  },
+  {
+    "id": "adbeb18a19584ef2",
+    "type": "comment",
+    "z": "c9cd99104acc4337",
+    "name": "\ud83d\udcb0 DAILY REVENUE SNAPSHOT",
+    "info": "6 PM daily \u2014 pulls payment data from GAS/SwipeSimple.\nCalculates daily/weekly/monthly stats.\nSends to Slack + Telegram.",
+    "x": 300,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "9e01c35f7eb34389",
+    "type": "inject",
+    "z": "c9cd99104acc4337",
+    "name": "\u23f0 6:00 PM Daily",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 18 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 160,
+    "wires": [
+      [
+        "f43c959825a94d45"
+      ]
+    ]
+  },
+  {
+    "id": "f43c959825a94d45",
+    "type": "function",
+    "z": "c9cd99104acc4337",
+    "name": "\ud83d\udcca Fetch Revenue",
+    "func": "msg.payload = { action: 'getDailyRevenueData' };\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"blue\", shape:\"ring\", text:\"Pulling revenue...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 160,
+    "wires": [
+      [
+        "aa682054eefd4cf6"
+      ]
+    ]
+  },
+  {
+    "id": "aa682054eefd4cf6",
+    "type": "http request",
+    "z": "c9cd99104acc4337",
+    "name": "\ud83c\udf10 GAS: Revenue",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=getDailyRevenueData",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 540,
+    "y": 160,
+    "wires": [
+      [
+        "ddcfd5c586ed46ee"
+      ]
+    ]
+  },
+  {
+    "id": "ddcfd5c586ed46ee",
+    "type": "function",
+    "z": "c9cd99104acc4337",
+    "name": "\ud83d\udcc8 Calculate Stats",
+    "func": "// Calculate daily/weekly/monthly revenue stats\nconst result = msg.payload || {};\nconst today = result.todayRevenue || 0;\nconst week = result.weekRevenue || 0;\nconst month = result.monthRevenue || 0;\nconst bondsPosted = result.bondsPostedToday || 0;\nconst premiums = result.premiumsCollected || 0;\nconst outstanding = result.outstandingPayments || 0;\n\nconst now = new Date().toLocaleDateString('en-US', {\n    timeZone: 'America/New_York', weekday: 'long', month: 'long', day: 'numeric'\n});\n\nmsg.revenueReport = `\ud83d\udcb0 *SHAMROCK REVENUE SNAPSHOT*\\n${now}\\n${'\u2500'.repeat(30)}\\n\\n` +\n    `\ud83d\udcca *Today*\\n` +\n    `  Bonds Posted: ${bondsPosted}\\n` +\n    `  Premiums Collected: $${today.toLocaleString()}\\n\\n` +\n    `\ud83d\udcc8 *This Week*: $${week.toLocaleString()}\\n` +\n    `\ud83d\udcc5 *This Month*: $${month.toLocaleString()}\\n\\n` +\n    `\u26a0\ufe0f Outstanding Payments: $${outstanding.toLocaleString()}\\n\\n` +\n    `_Auto-generated by Node-RED Revenue Snapshot_`;\n\nnode.status({fill:\"green\", shape:\"dot\", text: \"$\" + today + \" today\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 740,
+    "y": 160,
+    "wires": [
+      [
+        "195aa4aa68574788"
+      ]
+    ]
+  },
+  {
+    "id": "195aa4aa68574788",
+    "type": "function",
+    "z": "c9cd99104acc4337",
+    "name": "\ud83d\udce2 Format Report",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": msg.revenueReport\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 940,
+    "y": 160,
+    "wires": [
+      [
+        "f34385d073c24e10"
+      ]
+    ]
+  },
+  {
+    "id": "f34385d073c24e10",
+    "type": "http request",
+    "z": "c9cd99104acc4337",
+    "name": "\ud83d\udce4 Slack",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1120,
+    "y": 160,
+    "wires": [
+      [
+        "a74795a83f92458a"
+      ]
+    ]
+  },
+  {
+    "id": "a74795a83f92458a",
+    "type": "debug",
+    "z": "c9cd99104acc4337",
+    "name": "\ud83d\udd0d",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1280,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "887060be91704551",
+    "type": "tab",
+    "label": "The Scout",
+    "disabled": false,
+    "info": "Geographic expansion \u2014 scrapes county jails for new arrest data.\nTargets counties beyond current coverage.\nFeeds into Bounty Hunter for lead scoring."
+  },
+  {
+    "id": "3878629b262c4ab1",
+    "type": "comment",
+    "z": "887060be91704551",
+    "name": "\ud83d\udd2d THE SCOUT \u2014 GEOGRAPHIC EXPANSION",
+    "info": "Daily 5 AM scan of expansion county jails.\nTargets: Sarasota, Manatee, Glades, DeSoto, Highlands.\nHigh-value arrests get routed to Bounty Hunter.",
+    "x": 340,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "e9b3b6db782c4d28",
+    "type": "inject",
+    "z": "887060be91704551",
+    "name": "\u23f0 5:00 AM Daily",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 5 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 180,
+    "wires": [
+      [
+        "3169e5208d884fdc"
+      ]
+    ]
+  },
+  {
+    "id": "3169e5208d884fdc",
+    "type": "function",
+    "z": "887060be91704551",
+    "name": "\ud83d\uddfa\ufe0f Build Target List",
+    "func": "// Build list of target counties to scrape\n// Current coverage: Lee, Collier, Charlotte, Hendry\n// Expansion targets:\nconst expansionCounties = [\n    { name: 'Sarasota', url: 'sarasota', state: 'FL' },\n    { name: 'Manatee', url: 'manatee', state: 'FL' },\n    { name: 'Glades', url: 'glades', state: 'FL' },\n    { name: 'DeSoto', url: 'desoto', state: 'FL' },\n    { name: 'Highlands', url: 'highlands', state: 'FL' }\n];\n\nmsg.payload = {\n    action: 'scrapeExpansionCounties',\n    counties: expansionCounties\n};\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.counties = expansionCounties;\nnode.status({fill:\"blue\", shape:\"ring\", text: expansionCounties.length + \" counties...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 180,
+    "wires": [
+      [
+        "5a7d50feb8d14ad9"
+      ]
+    ]
+  },
+  {
+    "id": "5a7d50feb8d14ad9",
+    "type": "http request",
+    "z": "887060be91704551",
+    "name": "\ud83c\udf10 GAS: Scrape Counties",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec?action=scrapeExpansionCounties",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 600,
+    "y": 180,
+    "wires": [
+      [
+        "755665ab6e204977"
+      ]
+    ]
+  },
+  {
+    "id": "755665ab6e204977",
+    "type": "function",
+    "z": "887060be91704551",
+    "name": "\ud83d\udcca Parse Results",
+    "func": "const result = msg.payload || {};\nconst totalArrests = result.totalNewArrests || 0;\nconst byCounty = result.byCounty || {};\n\nif (totalArrests === 0) {\n    node.status({fill:\"grey\", shape:\"ring\", text:\"No new arrests in expansion zones\"});\n    return null;\n}\n\n// Filter high-value only\nconst highValue = (result.arrests || []).filter(a => {\n    const bond = parseFloat(String(a.BondAmount || '0').replace(/[^0-9.]/g, ''));\n    return bond >= 2500;\n});\n\nmsg.scoutResult = {\n    total: totalArrests,\n    highValue: highValue.length,\n    byCounty: byCounty\n};\nmsg.highValueLeads = highValue;\nnode.status({fill:\"green\", shape:\"dot\", text: `${totalArrests} arrests (${highValue.length} high-value)`});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 820,
+    "y": 180,
+    "wires": [
+      [
+        "b8081fc75e914f60"
+      ]
+    ]
+  },
+  {
+    "id": "b8081fc75e914f60",
+    "type": "function",
+    "z": "887060be91704551",
+    "name": "\ud83d\udce2 Scout Report",
+    "func": "const r = msg.scoutResult;\nconst countyBreakdown = Object.entries(r.byCounty)\n    .map(([county, count]) => `  \ud83d\udccd ${county}: ${count}`)\n    .join('\\n');\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\ud83d\udd2d *THE SCOUT \u2014 Expansion Report*\\n\\n` +\n            `\ud83d\udcca Total New Arrests: ${r.total}\\n` +\n            `\ud83d\udd25 High-Value (>$2.5k): ${r.highValue}\\n\\n` +\n            `${countyBreakdown}\\n\\n` +\n            `_Expansion targets: Sarasota, Manatee, Glades, DeSoto, Highlands_`\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1020,
+    "y": 180,
+    "wires": [
+      [
+        "c5798a4b094242da"
+      ]
+    ]
+  },
+  {
+    "id": "c5798a4b094242da",
+    "type": "http request",
+    "z": "887060be91704551",
+    "name": "\ud83d\udce4 Slack",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1220,
+    "y": 180,
+    "wires": [
+      [
+        "1580094e87e446aa"
+      ]
+    ]
+  },
+  {
+    "id": "1580094e87e446aa",
+    "type": "debug",
+    "z": "887060be91704551",
+    "name": "\ud83d\udd0d",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1380,
+    "y": 180,
+    "wires": []
+  },
+  {
+    "id": "50d6f3b3f3794f04",
+    "type": "tab",
+    "label": "Staff Performance",
+    "disabled": false,
+    "info": "Weekly staff performance report \u2014 response times, cases closed, revenue per agent."
+  },
+  {
+    "id": "9cb76d49a5834f01",
+    "type": "comment",
+    "z": "50d6f3b3f3794f04",
+    "name": "\ud83d\udcca STAFF PERFORMANCE",
+    "info": "Weekly (Friday 5 PM) \u2014 tracks response times, cases closed, revenue.\nBuilds a leaderboard and posts to Slack.",
+    "x": 280,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "8ddee0a26c72460e",
+    "type": "inject",
+    "z": "50d6f3b3f3794f04",
+    "name": "\u23f0 Friday 5 PM",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 17 * * 5",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 160,
+    "wires": [
+      [
+        "1ddb8bcab1fe44d4"
+      ]
+    ]
+  },
+  {
+    "id": "1ddb8bcab1fe44d4",
+    "type": "function",
+    "z": "50d6f3b3f3794f04",
+    "name": "\ud83d\udcca Fetch Metrics",
+    "func": "msg.payload = { action: 'getStaffPerformanceData' };\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"blue\", shape:\"ring\", text:\"Pulling staff metrics...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 160,
+    "wires": [
+      [
+        "cbc48d02efa945ab"
+      ]
+    ]
+  },
+  {
+    "id": "cbc48d02efa945ab",
+    "type": "http request",
+    "z": "50d6f3b3f3794f04",
+    "name": "\ud83c\udf10 GAS: Staff Data",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=getStaffPerformanceData",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 540,
+    "y": 160,
+    "wires": [
+      [
+        "41d4410b811a4a94"
+      ]
+    ]
+  },
+  {
+    "id": "41d4410b811a4a94",
+    "type": "function",
+    "z": "50d6f3b3f3794f04",
+    "name": "\ud83c\udfc6 Build Leaderboard",
+    "func": "const result = msg.payload || {};\nconst staff = Array.isArray(result.staff) ? result.staff : [];\n\nif (staff.length === 0) {\n    node.status({fill:\"grey\", shape:\"ring\", text:\"No staff data\"});\n    return null;\n}\n\n// Build leaderboard\nconst sorted = staff.sort((a, b) => (b.casesClosedThisWeek || 0) - (a.casesClosedThisWeek || 0));\nconst now = new Date().toLocaleDateString('en-US', {timeZone: 'America/New_York'});\n\nconst leaderboard = sorted.map((s, i) => {\n    const medal = i === 0 ? '\ud83e\udd47' : i === 1 ? '\ud83e\udd48' : i === 2 ? '\ud83e\udd49' : '  ';\n    const name = s.name || 'Agent ' + (i + 1);\n    const cases = s.casesClosedThisWeek || 0;\n    const revenue = s.revenueThisWeek || 0;\n    const avgResponse = s.avgResponseMinutes || 'N/A';\n    return `${medal} *${name}*: ${cases} cases | $${revenue.toLocaleString()} rev | ${avgResponse}m avg response`;\n}).join('\\n');\n\nmsg.performanceReport = `\ud83d\udcca *STAFF PERFORMANCE \u2014 Week of ${now}*\\n${'\u2500'.repeat(35)}\\n\\n${leaderboard}\\n\\n_Auto-generated weekly by Node-RED_`;\nnode.status({fill:\"green\", shape:\"dot\", text: staff.length + \" agents tracked\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 740,
+    "y": 160,
+    "wires": [
+      [
+        "29e8d94273c643f1"
+      ]
+    ]
+  },
+  {
+    "id": "29e8d94273c643f1",
+    "type": "function",
+    "z": "50d6f3b3f3794f04",
+    "name": "\ud83d\udce2 Format Report",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": msg.performanceReport\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 940,
+    "y": 160,
+    "wires": [
+      [
+        "ae74109a6a59411c"
+      ]
+    ]
+  },
+  {
+    "id": "ae74109a6a59411c",
+    "type": "http request",
+    "z": "50d6f3b3f3794f04",
+    "name": "\ud83d\udce4 Slack",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1120,
+    "y": 160,
+    "wires": [
+      [
+        "7bb1493e70f64792"
+      ]
+    ]
+  },
+  {
+    "id": "7bb1493e70f64792",
+    "type": "debug",
+    "z": "50d6f3b3f3794f04",
+    "name": "\ud83d\udd0d",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1280,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "3733b542a5e24d06",
+    "type": "tab",
+    "label": "Weather Posting",
+    "disabled": false,
+    "info": "Adjusts social posting based on local weather and events.\nStorms + holidays = higher arrest rates = more posts."
+  },
+  {
+    "id": "235fcb59ebfc4567",
+    "type": "comment",
+    "z": "3733b542a5e24d06",
+    "name": "\ud83c\udf24\ufe0f WEATHER-BASED POSTING",
+    "info": "6 AM daily \u2014 checks weather + events.\nStorms, holidays, weekends \u2192 extra social posts.\nUses free Open-Meteo API for Fort Myers weather.",
+    "x": 300,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "ec518cd7a5a748b2",
+    "type": "inject",
+    "z": "3733b542a5e24d06",
+    "name": "\u23f0 6:00 AM Daily",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 6 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 180,
+    "wires": [
+      [
+        "2421af60335b43ec"
+      ]
+    ]
+  },
+  {
+    "id": "2421af60335b43ec",
+    "type": "function",
+    "z": "3733b542a5e24d06",
+    "name": "\ud83c\udf21\ufe0f Fetch Weather",
+    "func": "// Fetch weather for Fort Myers area (Lee County)\nmsg.url = 'https://api.open-meteo.com/v1/forecast?latitude=26.6406&longitude=-81.8723&daily=weathercode,temperature_2m_max&timezone=America/New_York&forecast_days=1';\nmsg.method = 'GET';\nmsg.headers = {};\nnode.status({fill:\"blue\", shape:\"ring\", text:\"Checking weather...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 180,
+    "wires": [
+      [
+        "0a61addd1b0247c9"
+      ]
+    ]
+  },
+  {
+    "id": "0a61addd1b0247c9",
+    "type": "http request",
+    "z": "3733b542a5e24d06",
+    "name": "\ud83c\udf10 Open-Meteo API",
+    "method": "GET",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 540,
+    "y": 180,
+    "wires": [
+      [
+        "0f472b5749244fda"
+      ]
+    ]
+  },
+  {
+    "id": "0f472b5749244fda",
+    "type": "function",
+    "z": "3733b542a5e24d06",
+    "name": "\ud83d\udcca Analyze & Decide",
+    "func": "// Analyze weather and decide posting strategy\nconst weather = msg.payload || {};\nconst daily = weather.daily || {};\nconst weatherCode = (daily.weathercode || [0])[0];\nconst tempMax = (daily.temperature_2m_max || [85])[0];\n\n// Weather codes: 0-3 clear, 45-48 fog, 51-67 rain, 71-77 snow, 80-82 showers, 95-99 thunderstorm\nlet postBoost = false;\nlet weatherContext = '';\nlet extraPosts = 0;\n\nif (weatherCode >= 95) {\n    // Thunderstorms \u2014 historically correlated with more arrests\n    weatherContext = '\u26c8\ufe0f Severe weather alert! Historically, storm days see 20% more arrests.';\n    extraPosts = 2;\n    postBoost = true;\n} else if (weatherCode >= 80) {\n    weatherContext = '\ud83c\udf27\ufe0f Rainy day \u2014 indoor posting boost.';\n    extraPosts = 1;\n    postBoost = true;\n} else if (tempMax > 95) {\n    weatherContext = '\ud83c\udf21\ufe0f Extreme heat \u2014 stay safe, SWFL.';\n    extraPosts = 1;\n    postBoost = true;\n}\n\n// Check for holidays/events (simplified)\nconst today = new Date();\nconst month = today.getMonth() + 1;\nconst day = today.getDate();\nconst dayOfWeek = today.getDay();\n\n// Weekends + holidays = more arrests\nif (dayOfWeek === 0 || dayOfWeek === 6) {\n    weatherContext += '\\n\ud83d\udcc5 Weekend \u2014 higher arrest rates typical.';\n    extraPosts += 1;\n    postBoost = true;\n}\n\n// Major holidays\nif ((month === 7 && day === 4) || (month === 12 && (day >= 24 && day <= 31)) ||\n    (month === 1 && day === 1) || (month === 11 && day >= 22 && day <= 28)) {\n    weatherContext += '\\n\ud83c\udf89 Holiday period \u2014 significantly elevated arrest rates.';\n    extraPosts += 2;\n    postBoost = true;\n}\n\nif (!postBoost) {\n    node.status({fill:\"grey\", shape:\"ring\", text: \"Normal day (code:\" + weatherCode + \" \" + tempMax + \"\u00b0F)\"});\n    return null;\n}\n\nmsg.payload = {\n    action: 'publishSocial',\n    content: `\ud83c\udf40 Shamrock Bail Bonds is here 24/7. ${weatherContext.split('\\n')[0]} If you or a loved one needs help, call (239) 955-0178. Fast, confidential service across SWFL. shamrockbailbonds.biz`,\n    platforms: ['twitter', 'facebook', 'telegram'],\n    postType: 'weather-boost',\n    extraPosts: extraPosts\n};\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.weatherContext = weatherContext;\nnode.status({fill:\"yellow\", shape:\"dot\", text: `${extraPosts} extra post(s) triggered`});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 760,
+    "y": 180,
+    "wires": [
+      [
+        "667075d4ea4047f3"
+      ]
+    ]
+  },
+  {
+    "id": "667075d4ea4047f3",
+    "type": "http request",
+    "z": "3733b542a5e24d06",
+    "name": "\ud83c\udf10 GAS: Boost Post",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=publishSocial",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 980,
+    "y": 180,
+    "wires": [
+      [
+        "7db7a2f52f5747d9"
+      ]
+    ]
+  },
+  {
+    "id": "7db7a2f52f5747d9",
+    "type": "function",
+    "z": "3733b542a5e24d06",
+    "name": "\ud83d\udce2 Slack Report",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\ud83c\udf24\ufe0f *Weather-Based Posting*\\n\\n${msg.weatherContext || 'Boost triggered'}\\n\\n_Extra posts scheduled by Node-RED_`\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1180,
+    "y": 180,
+    "wires": [
+      [
+        "50b03a1ea37a4376"
+      ]
+    ]
+  },
+  {
+    "id": "50b03a1ea37a4376",
+    "type": "http request",
+    "z": "3733b542a5e24d06",
+    "name": "\ud83d\udce4 Slack",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1360,
+    "y": 180,
+    "wires": [
+      [
+        "a85e4f95291e4d8b"
+      ]
+    ]
+  },
+  {
+    "id": "a85e4f95291e4d8b",
+    "type": "debug",
+    "z": "3733b542a5e24d06",
+    "name": "\ud83d\udd0d",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1520,
+    "y": 180,
+    "wires": []
   }
 ]
