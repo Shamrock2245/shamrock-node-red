@@ -3458,40 +3458,5 @@
         "x": 630,
         "y": 1060,
         "wires": []
-    },
-    {
-        "id": "temp-set-globals",
-        "type": "inject",
-        "name": "Set Static URL Globals",
-        "z": "tab-advanced",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "payload": "{\"base\":\"https://pseudospherical-etta-untactually.ngrok-free.dev\",\"endpoints\":{\"Wix Intake\":\"https://pseudospherical-etta-untactually.ngrok-free.dev/wix-intake\",\"Wix Intake Start\":\"https://pseudospherical-etta-untactually.ngrok-free.dev/intake-start\",\"Wix Intake Complete\":\"https://pseudospherical-etta-untactually.ngrok-free.dev/intake-complete\",\"Scraper Update\":\"https://pseudospherical-etta-untactually.ngrok-free.dev/api/scraper/webhook\",\"Scraper Results\":\"https://pseudospherical-etta-untactually.ngrok-free.dev/webhook/scraper-results\",\"WhatsApp (Twilio)\":\"https://pseudospherical-etta-untactually.ngrok-free.dev/whatsapp\",\"Telegram (legacy)\":\"https://pseudospherical-etta-untactually.ngrok-free.dev/telegram\",\"Telegram Bot\":\"https://pseudospherical-etta-untactually.ngrok-free.dev/webhook/telegram-bot\",\"Telegram Convo\":\"https://pseudospherical-etta-untactually.ngrok-free.dev/webhook/telegram-conversation\",\"Telegram MiniApp\":\"https://pseudospherical-etta-untactually.ngrok-free.dev/webhook/telegram-miniapp\",\"ElevenLabs Status\":\"https://pseudospherical-etta-untactually.ngrok-free.dev/webhook/elevenlabs-status\",\"SignNow Events\":\"https://pseudospherical-etta-untactually.ngrok-free.dev/signnow-event\",\"Scout/Arrest\":\"https://pseudospherical-etta-untactually.ngrok-free.dev/webhook/scout\"}}",
-        "payloadType": "json",
-        "once": true,
-        "onceDelay": "0.5",
-        "wires": [
-            [
-                "temp-func-globals"
-            ]
-        ],
-        "x": 150,
-        "y": 900
-    },
-    {
-        "id": "temp-func-globals",
-        "type": "function",
-        "name": "Apply Globals",
-        "z": "tab-advanced",
-        "func": "global.set('NGROK_BASE_URL', msg.payload.base);\nglobal.set('WEBHOOK_ENDPOINTS', msg.payload.endpoints);\nnode.warn('✅ Globals updated to: ' + msg.payload.base);\nreturn msg;",
-        "outputs": 1,
-        "wires": [
-            []
-        ],
-        "x": 400,
-        "y": 900
     }
 ]

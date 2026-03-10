@@ -1,0 +1,1208 @@
+[
+  {
+    "id": "075324f9f77c4bfe",
+    "type": "tab",
+    "label": "Social Auto-Pilot",
+    "disabled": false,
+    "info": "Automated social media posting \u2014 3x daily via GAS SocialPublisher"
+  },
+  {
+    "id": "1faafa67972642cb",
+    "type": "comment",
+    "z": "075324f9f77c4bfe",
+    "name": "\u2618\ufe0f SOCIAL AUTO-PILOT",
+    "info": "Posts to 5+ social platforms 3x daily (8AM, 2PM, 8PM ET).\nUses GAS SocialPublisher.publishPost() for each platform.\nContent rotates between tips, CTAs, testimonials, and informational posts.",
+    "x": 100,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "45f1a3d6c636482d",
+    "type": "inject",
+    "z": "075324f9f77c4bfe",
+    "name": "\u23f0 8:00 AM ET",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 8 * * 1,2,3,4,5",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 120,
+    "wires": [
+      [
+        "e0c7c2a3244b4ad2"
+      ]
+    ]
+  },
+  {
+    "id": "2896570f53ab4e0d",
+    "type": "inject",
+    "z": "075324f9f77c4bfe",
+    "name": "\u23f0 2:00 PM ET",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 14 * * 1,2,3,4,5",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 180,
+    "wires": [
+      [
+        "e0c7c2a3244b4ad2"
+      ]
+    ]
+  },
+  {
+    "id": "0726999533664333",
+    "type": "inject",
+    "z": "075324f9f77c4bfe",
+    "name": "\u23f0 8:00 PM ET",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 20 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 240,
+    "wires": [
+      [
+        "e0c7c2a3244b4ad2"
+      ]
+    ]
+  },
+  {
+    "id": "e0c7c2a3244b4ad2",
+    "type": "function",
+    "z": "075324f9f77c4bfe",
+    "name": "\ud83d\udcdd Generate Post Content",
+    "func": "// Generate social media post content\nconst topics = [\n    { type: 'tip', text: '\ud83c\udf40 **Bail Tip:** If your loved one has been arrested, acting fast matters. A bail bond allows them to come home while awaiting trial. Call Shamrock Bail Bonds 24/7: (239) 955-0178 #BailBonds #SWFL' },\n    { type: 'tip', text: '\ud83c\udf40 **Know Your Rights:** You have the right to a reasonable bail amount. If you can\\'t afford it, a bail bondsman can help for just 10% of the total. Call us: (239) 955-0178 #BailBonds' },\n    { type: 'cta', text: '\ud83c\udf40 **Need Bail FAST?** Shamrock Bail Bonds offers 24/7 service across Lee, Collier, Charlotte, and Hendry counties. Mobile-friendly applications \u2014 start from your phone! (239) 955-0178 shamrockbailbonds.biz' },\n    { type: 'cta', text: '\ud83c\udf40 **Don\\'t Let Your Loved One Spend Another Night in Jail.** Shamrock Bail Bonds \u2014 fast, confidential, compassionate. Call now: (239) 955-0178 #FortMyers #CapeCoral #Naples' },\n    { type: 'testimonial', text: '\ud83c\udf40 \"Shamrock got my son out in under 2 hours. Professional and compassionate.\" \u2014 Verified Client \u2b50\u2b50\u2b50\u2b50\u2b50 #BailBonds #SWFL #FortMyers' },\n    { type: 'testimonial', text: '\ud83c\udf40 \"They walked me through every step. I was scared, but they made it easy.\" \u2014 Google Review \u2b50\u2b50\u2b50\u2b50\u2b50 shamrockbailbonds.biz #BailBonds' },\n    { type: 'community', text: '\ud83c\udf40 **Community Spotlight:** Shamrock Bail Bonds proudly serves Southwest Florida \u2014 Lee, Collier, Charlotte & Hendry counties. Locally owned, locally trusted. (239) 955-0178' },\n    { type: 'seasonal', text: '\ud83c\udf40 Arrests don\\'t follow a schedule. Neither do we. Shamrock Bail Bonds is available 24 hours a day, 7 days a week, 365 days a year. (239) 955-0178 #AlwaysOpen' },\n    { type: 'informational', text: '\ud83c\udf40 **What is a Bail Bond?** A bail bond is a financial guarantee that a defendant will appear in court. The typical cost is 10% of the total bail amount. Learn more: shamrockbailbonds.biz' },\n    { type: 'informational', text: '\ud83c\udf40 **The Bail Process Explained:** 1\ufe0f\u20e3 Arrest 2\ufe0f\u20e3 Booking 3\ufe0f\u20e3 Bail Set 4\ufe0f\u20e3 Call Shamrock 5\ufe0f\u20e3 Home in hours! Start now: (239) 955-0178 #BailBonds #HowBailWorks' },\n];\n\n// Pick based on hour of day + day of year for variety\nconst now = new Date();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);\nconst hourSlot = now.getHours() < 12 ? 0 : now.getHours() < 18 ? 1 : 2;\nconst index = (dayOfYear * 3 + hourSlot) % topics.length;\n\nconst post = topics[index];\n\n// Add timestamp to prevent duplicate content\nconst ts = now.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' });\n\nmsg.payload = {\n    action: 'publishSocial',\n    content: post.text,\n    platforms: ['twitter', 'facebook', 'linkedin', 'telegram', 'gbp'],\n    postType: post.type,\n    timestamp: ts\n};\n\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"green\", shape:\"dot\", text: post.type + \" post @ \" + ts});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 10,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 180,
+    "wires": [
+      [
+        "48611752b91644a7"
+      ]
+    ]
+  },
+  {
+    "id": "48611752b91644a7",
+    "type": "http request",
+    "z": "075324f9f77c4bfe",
+    "name": "\ud83d\udd25 GAS: Publish Social",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=publishSocial",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 600,
+    "y": 180,
+    "wires": [
+      [
+        "ff16a5e49b5c4c20"
+      ]
+    ]
+  },
+  {
+    "id": "ff16a5e49b5c4c20",
+    "type": "function",
+    "z": "075324f9f77c4bfe",
+    "name": "\u2705 Check Result",
+    "func": "// Check GAS publish result\nconst result = msg.payload;\nconst success = result && (result.success || result.status === 'ok');\n\nmsg.publishResult = {\n    success: success,\n    platforms: result ? (result.platforms || result.results || 'unknown') : 'error',\n    timestamp: new Date().toISOString()\n};\n\nif (success) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 Posted\"});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c Failed: \" + (result ? result.error || 'unknown' : 'no response')});\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 820,
+    "y": 180,
+    "wires": [
+      [
+        "e916bffd5bdd410e"
+      ]
+    ]
+  },
+  {
+    "id": "e916bffd5bdd410e",
+    "type": "function",
+    "z": "075324f9f77c4bfe",
+    "name": "\ud83d\udce2 Format Slack Alert",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\u2618\ufe0f *Social Auto-Pilot*\\n` + (msg.publishResult.success ? `\u2705 Posted successfully` : `\u274c Post failed: ${JSON.stringify(msg.publishResult.platforms)}`) + `\\n_${msg.publishResult.timestamp}_`\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1040,
+    "y": 180,
+    "wires": [
+      [
+        "337130795c6249ba"
+      ]
+    ]
+  },
+  {
+    "id": "337130795c6249ba",
+    "type": "http request",
+    "z": "075324f9f77c4bfe",
+    "name": "\ud83d\udce4 Slack: #alerts",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1260,
+    "y": 180,
+    "wires": [
+      [
+        "9e71bb42ceaa4468"
+      ]
+    ]
+  },
+  {
+    "id": "9e71bb42ceaa4468",
+    "type": "debug",
+    "z": "075324f9f77c4bfe",
+    "name": "\ud83d\udd0d Social Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1460,
+    "y": 180,
+    "wires": []
+  },
+  {
+    "id": "349776f462c04333",
+    "type": "tab",
+    "label": "The Court Clerk",
+    "disabled": false,
+    "info": "Processes court emails every 30 min via GAS CourtEmailProcessor"
+  },
+  {
+    "id": "f219c04fbc5e4fb6",
+    "type": "comment",
+    "z": "349776f462c04333",
+    "name": "\ud83d\udccb THE COURT CLERK",
+    "info": "Scans admin@shamrockbailbonds.biz every 30 min.\nAuto-processes court dates, forfeitures, and discharges.\nCreates calendar events + sends Slack alerts.",
+    "x": 100,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "447fdd419e45439f",
+    "type": "inject",
+    "z": "349776f462c04333",
+    "name": "\u23f0 Every 30 Min",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "*/30 * * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 160,
+    "wires": [
+      [
+        "47d6733c5b804171"
+      ]
+    ]
+  },
+  {
+    "id": "47d6733c5b804171",
+    "type": "function",
+    "z": "349776f462c04333",
+    "name": "\ud83d\udce8 Prep Email Scan",
+    "func": "// Prepare request for court email processing\nmsg.payload = { action: 'processCourtEmails' };\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"blue\", shape:\"ring\", text:\"Scanning inbox...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 160,
+    "wires": [
+      [
+        "beb6a63c81cd4173"
+      ]
+    ]
+  },
+  {
+    "id": "beb6a63c81cd4173",
+    "type": "http request",
+    "z": "349776f462c04333",
+    "name": "\ud83c\udfdb\ufe0f GAS: Process Emails",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=processCourtEmails",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 560,
+    "y": 160,
+    "wires": [
+      [
+        "8d497a89645743c3"
+      ]
+    ]
+  },
+  {
+    "id": "8d497a89645743c3",
+    "type": "function",
+    "z": "349776f462c04333",
+    "name": "\ud83d\udd0d Parse Results",
+    "func": "// Parse GAS response and determine event type\nconst result = msg.payload || {};\nconst processed = result.processed || 0;\nconst courtDates = result.courtDates || 0;\nconst forfeitures = result.forfeitures || 0;\nconst discharges = result.discharges || 0;\n\nmsg.courtResult = { processed, courtDates, forfeitures, discharges };\n\nif (processed === 0) {\n    node.status({fill:\"grey\", shape:\"ring\", text:\"No new emails\"});\n    return null; // Nothing to report\n}\n\nnode.status({fill:\"green\", shape:\"dot\", text: processed + \" processed\"});\n\n// Determine category for routing\nif (forfeitures > 0) msg.eventType = 'forfeiture';\nelse if (courtDates > 0) msg.eventType = 'court_date';\nelse if (discharges > 0) msg.eventType = 'discharge';\nelse msg.eventType = 'mixed';\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 160,
+    "wires": [
+      [
+        "7bb015ab7a684b9a"
+      ]
+    ]
+  },
+  {
+    "id": "7bb015ab7a684b9a",
+    "type": "function",
+    "z": "349776f462c04333",
+    "name": "\ud83d\udce2 Format Court Alert",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nconst r = msg.courtResult;\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\ud83d\udccb *Court Clerk Report*\\n\\n\ud83d\udcc5 Court Dates: ${r.courtDates}\\n\ud83d\udd34 Forfeitures: ${r.forfeitures}\\n\ud83d\udfe2 Discharges: ${r.discharges}\\n\\n_Total Processed: ${r.processed}_`\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1000,
+    "y": 160,
+    "wires": [
+      [
+        "317c837ca8f24c7c"
+      ]
+    ]
+  },
+  {
+    "id": "317c837ca8f24c7c",
+    "type": "http request",
+    "z": "349776f462c04333",
+    "name": "\ud83d\udce4 Slack Post",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1220,
+    "y": 160,
+    "wires": [
+      [
+        "6ea236429cc144e6"
+      ]
+    ]
+  },
+  {
+    "id": "6ea236429cc144e6",
+    "type": "debug",
+    "z": "349776f462c04333",
+    "name": "\ud83d\udd0d Court Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1420,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "3b50687c49b34aab",
+    "type": "tab",
+    "label": "The Closer",
+    "disabled": false,
+    "info": "Automated drip campaigns for abandoned intakes \u2014 SMS follow-up at 1h, 24h, 72h"
+  },
+  {
+    "id": "a17fea48d5a94999",
+    "type": "comment",
+    "z": "3b50687c49b34aab",
+    "name": "\ud83c\udfaf THE CLOSER",
+    "info": "Scans IntakeQueue every 30 min for abandoned applications.\nSends SMS drip campaigns: 1h, 24h, 72h follow-ups.\nGoal: Convert leads who dropped off.",
+    "x": 100,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "d0be10cc38f54609",
+    "type": "inject",
+    "z": "3b50687c49b34aab",
+    "name": "\u23f0 Every 30 Min",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "*/30 * * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 160,
+    "wires": [
+      [
+        "7294fd6720384250"
+      ]
+    ]
+  },
+  {
+    "id": "7294fd6720384250",
+    "type": "function",
+    "z": "3b50687c49b34aab",
+    "name": "\ud83d\udd0d Prep Closer Scan",
+    "func": "msg.payload = { action: 'runTheCloser' };\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"blue\", shape:\"ring\", text:\"Scanning abandoned intakes...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 160,
+    "wires": [
+      [
+        "34acc7bee38d471e"
+      ]
+    ]
+  },
+  {
+    "id": "34acc7bee38d471e",
+    "type": "http request",
+    "z": "3b50687c49b34aab",
+    "name": "\ud83c\udfaf GAS: Run The Closer",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=runTheCloser",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 560,
+    "y": 160,
+    "wires": [
+      [
+        "23ff3fb32f384276"
+      ]
+    ]
+  },
+  {
+    "id": "23ff3fb32f384276",
+    "type": "function",
+    "z": "3b50687c49b34aab",
+    "name": "\ud83d\udcca Parse Results",
+    "func": "const result = msg.payload || {};\nconst sent = result.followUpsSent || 0;\nconst scanned = result.totalScanned || 0;\nconst skipped = result.skipped || 0;\n\nmsg.closerResult = { sent, scanned, skipped };\n\nif (sent === 0) {\n    node.status({fill:\"grey\", shape:\"ring\", text: scanned + \" scanned, 0 sent\"});\n    return null; // No follow-ups needed\n}\n\nnode.status({fill:\"green\", shape:\"dot\", text: sent + \" follow-ups sent\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 160,
+    "wires": [
+      [
+        "8aa1c67f617f472b"
+      ]
+    ]
+  },
+  {
+    "id": "8aa1c67f617f472b",
+    "type": "function",
+    "z": "3b50687c49b34aab",
+    "name": "\ud83d\udce2 Slack Summary",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nconst r = msg.closerResult;\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\ud83c\udfaf *The Closer Report*\\n\\n\ud83d\udcca Intakes Scanned: ${r.scanned}\\n\ud83d\udce4 Follow-Ups Sent: ${r.sent}\\n\u23ed\ufe0f Skipped: ${r.skipped}\\n\\n_Drip tiers: 1h \u2192 24h \u2192 72h_`\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1000,
+    "y": 160,
+    "wires": [
+      [
+        "5cc389cae09a4787"
+      ]
+    ]
+  },
+  {
+    "id": "5cc389cae09a4787",
+    "type": "http request",
+    "z": "3b50687c49b34aab",
+    "name": "\ud83d\udce4 Slack Post",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1220,
+    "y": 160,
+    "wires": [
+      [
+        "779e2792ccd446f5"
+      ]
+    ]
+  },
+  {
+    "id": "779e2792ccd446f5",
+    "type": "debug",
+    "z": "3b50687c49b34aab",
+    "name": "\ud83d\udd0d Closer Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1420,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "62372935a6134827",
+    "type": "tab",
+    "label": "Morning Briefing",
+    "disabled": false,
+    "info": "Daily 7AM ops report + system health check to Telegram & Slack"
+  },
+  {
+    "id": "53f6ca44fbe84468",
+    "type": "comment",
+    "z": "62372935a6134827",
+    "name": "\ud83c\udf05 MORNING BRIEFING",
+    "info": "Daily at 7AM ET \u2014 generates ops report via GAS + Node-RED health check.\nDelivers combined briefing to Slack #alerts and Telegram staff channel.",
+    "x": 100,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "30b2e573c8394a06",
+    "type": "inject",
+    "z": "62372935a6134827",
+    "name": "\u23f0 7:00 AM ET Daily",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 7 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 160,
+    "wires": [
+      [
+        "50fad302b5bd4534",
+        "0c7112e935114ef7"
+      ]
+    ]
+  },
+  {
+    "id": "50fad302b5bd4534",
+    "type": "function",
+    "z": "62372935a6134827",
+    "name": "\ud83d\udcca Prep Ops Report",
+    "func": "msg.payload = { action: 'sendDailyOpsReport' };\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"blue\", shape:\"ring\", text:\"Generating ops report...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 120,
+    "wires": [
+      [
+        "1ec0a8b04bd84690"
+      ]
+    ]
+  },
+  {
+    "id": "1ec0a8b04bd84690",
+    "type": "http request",
+    "z": "62372935a6134827",
+    "name": "\ud83d\udccb GAS: Daily Ops",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=sendDailyOpsReport",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 580,
+    "y": 120,
+    "wires": [
+      [
+        "20056dc8a47c4f41"
+      ]
+    ]
+  },
+  {
+    "id": "0c7112e935114ef7",
+    "type": "function",
+    "z": "62372935a6134827",
+    "name": "\ud83d\udda5\ufe0f System Health Check",
+    "func": "// Node-RED system health check\nconst checks = [];\n\n// Check ngrok\ntry {\n    const ngrokUrl = global.get('NGROK_BASE_URL') || 'not set';\n    checks.push('\ud83d\udfe2 ngrok: ' + ngrokUrl);\n} catch(e) {\n    checks.push('\ud83d\udd34 ngrok: ERROR');\n}\n\n// Check GAS URLs\nconst gasUrl = global.get('GAS_URL');\nchecks.push(gasUrl ? '\ud83d\udfe2 GAS Main: configured' : '\ud83d\udd34 GAS Main: NOT SET');\n\n// Endpoints count\nconst endpoints = global.get('WEBHOOK_ENDPOINTS') || {};\nchecks.push('\ud83d\udce1 Webhook endpoints: ' + Object.keys(endpoints).length);\n\n// Uptime\nconst uptime = Math.floor(process.uptime() / 3600);\nchecks.push('\u23f1\ufe0f Node-RED uptime: ' + uptime + 'h');\n\nmsg.healthReport = checks.join('\\n');\nnode.status({fill:\"green\", shape:\"dot\", text:\"Health OK\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 220,
+    "wires": [
+      [
+        "20056dc8a47c4f41"
+      ]
+    ]
+  },
+  {
+    "id": "20056dc8a47c4f41",
+    "type": "function",
+    "z": "62372935a6134827",
+    "name": "\ud83d\udd17 Combine Briefing",
+    "func": "// Combine OPS report + health check\nconst opsResult = msg.payload || {};\nconst health = msg.healthReport || 'Health data unavailable';\n\nconst now = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });\n\nmsg.briefing = `\u2618\ufe0f *SHAMROCK DAILY BRIEFING*\\n${now} ET\\n${'\u2500'.repeat(30)}\\n\\n` +\n    `\ud83d\udcca *Operations Report*\\n` +\n    `${opsResult.report || opsResult.message || 'GAS report sent to Telegram'}\\n\\n` +\n    `\ud83d\udda5\ufe0f *System Health*\\n${health}\\n\\n` +\n    `_Auto-generated by Node-RED Morning Briefing_`;\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 160,
+    "wires": [
+      [
+        "830f484ac85540b7"
+      ]
+    ]
+  },
+  {
+    "id": "830f484ac85540b7",
+    "type": "function",
+    "z": "62372935a6134827",
+    "name": "\ud83d\udce2 Format Slack Briefing",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": msg.briefing\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1000,
+    "y": 160,
+    "wires": [
+      [
+        "cd2e25b3969749d7"
+      ]
+    ]
+  },
+  {
+    "id": "cd2e25b3969749d7",
+    "type": "http request",
+    "z": "62372935a6134827",
+    "name": "\ud83d\udce4 Slack Post",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1220,
+    "y": 160,
+    "wires": [
+      [
+        "ddc28f1b29cb439c"
+      ]
+    ]
+  },
+  {
+    "id": "ddc28f1b29cb439c",
+    "type": "debug",
+    "z": "62372935a6134827",
+    "name": "\ud83d\udd0d Briefing Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1420,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "da825df237884267",
+    "type": "tab",
+    "label": "The Bounty Hunter",
+    "disabled": false,
+    "info": "Scraper results \u2192 lead scoring \u2192 hot leads to Slack"
+  },
+  {
+    "id": "5871a10727974fa1",
+    "type": "comment",
+    "z": "da825df237884267",
+    "name": "\ud83c\udfaf THE BOUNTY HUNTER",
+    "info": "Polls for new arrests every hour.\nFilters bonds > $2,500 and scores leads.\nHot leads \u2192 #bounty-board Slack, Warm \u2192 #alerts.",
+    "x": 100,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "b44795adfbf84722",
+    "type": "inject",
+    "z": "da825df237884267",
+    "name": "\u23f0 Every Hour",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 * * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 160,
+    "wires": [
+      [
+        "85691f8e3d3b4c10"
+      ]
+    ]
+  },
+  {
+    "id": "85691f8e3d3b4c10",
+    "type": "function",
+    "z": "da825df237884267",
+    "name": "\ud83d\udd0d Prep Arrest Fetch",
+    "func": "msg.payload = { action: 'fetchLatestArrests' };\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:\"blue\", shape:\"ring\", text:\"Polling arrests...\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 340,
+    "y": 160,
+    "wires": [
+      [
+        "e270f3f784024c84"
+      ]
+    ]
+  },
+  {
+    "id": "e270f3f784024c84",
+    "type": "http request",
+    "z": "da825df237884267",
+    "name": "\ud83d\udcca GAS: Fetch Arrests",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=fetchLatestArrests",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 560,
+    "y": 160,
+    "wires": [
+      [
+        "b310f91a5baa440f"
+      ]
+    ]
+  },
+  {
+    "id": "b310f91a5baa440f",
+    "type": "function",
+    "z": "da825df237884267",
+    "name": "\ud83d\udcb0 Filter High-Value",
+    "func": "// Filter for high-value bonds (> $2,500)\nconst data = msg.payload || {};\nconst arrests = Array.isArray(data.arrests) ? data.arrests : (Array.isArray(data) ? data : []);\n\nconst highValue = arrests.filter(a => {\n    const bondStr = String(a.BondAmount || a.bondAmount || a.bond_amount || '0').replace(/[^0-9.]/g, '');\n    return parseFloat(bondStr) >= 2500;\n});\n\nif (highValue.length === 0) {\n    node.status({fill:\"grey\", shape:\"ring\", text: arrests.length + \" arrests, 0 high-value\"});\n    return null;\n}\n\nmsg.highValueLeads = highValue;\nmsg.totalArrests = arrests.length;\nnode.status({fill:\"yellow\", shape:\"dot\", text: highValue.length + \" high-value leads!\"});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 160,
+    "wires": [
+      [
+        "b8fa93b9daa4447e"
+      ]
+    ]
+  },
+  {
+    "id": "b8fa93b9daa4447e",
+    "type": "function",
+    "z": "da825df237884267",
+    "name": "\ud83d\udcc8 Lead Scoring",
+    "func": "// Simple lead scoring\nconst leads = msg.highValueLeads || [];\nconst scored = leads.map(lead => {\n    let score = 50; // Base score\n\n    const bond = parseFloat(String(lead.BondAmount || lead.bondAmount || '0').replace(/[^0-9.]/g, ''));\n    if (bond >= 50000) score += 30;\n    else if (bond >= 25000) score += 20;\n    else if (bond >= 10000) score += 15;\n    else if (bond >= 5000) score += 10;\n\n    // Bonus for certain charge types (likely to need bail fast)\n    const charges = String(lead.Charges || lead.charges || '').toLowerCase();\n    if (charges.includes('dui') || charges.includes('dwi')) score += 5;\n    if (charges.includes('domestic')) score += 5;\n    if (charges.includes('theft') || charges.includes('burglary')) score += 5;\n\n    return { ...lead, leadScore: Math.min(score, 100) };\n});\n\n// Sort by score descending\nscored.sort((a, b) => b.leadScore - a.leadScore);\n\n// Split into hot (>=70) and warm (40-69)\nmsg.hotLeads = scored.filter(l => l.leadScore >= 70);\nmsg.warmLeads = scored.filter(l => l.leadScore >= 40 && l.leadScore < 70);\nmsg.allScored = scored;\n\nnode.status({fill:\"green\", shape:\"dot\", text: `\ud83d\udd25${msg.hotLeads.length} hot, \ud83d\udfe1${msg.warmLeads.length} warm`});\n\n// Route to hot leads output (1) or warm leads output (2)\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 980,
+    "y": 160,
+    "wires": [
+      [
+        "472820dedb6b40d2",
+        "3bf7d3c4e7264e26"
+      ]
+    ]
+  },
+  {
+    "id": "472820dedb6b40d2",
+    "type": "function",
+    "z": "da825df237884267",
+    "name": "\ud83d\udd25 Format Hot Leads",
+    "func": "// Format hot leads for Slack\nif (!msg.hotLeads || msg.hotLeads.length === 0) return null;\n\nconst blocks = msg.hotLeads.slice(0, 5).map(l => {\n    const name = l.DefendantName || l.name || 'Unknown';\n    const bond = l.BondAmount || l.bondAmount || 'TBD';\n    const county = l.County || l.county || 'SWFL';\n    const charges = l.Charges || l.charges || 'Pending';\n    const score = l.leadScore;\n    return `\ud83d\udd25 *${name}* (Score: ${score})\\n> Bond: $${bond} | County: ${county}\\n> Charges: ${charges}`;\n}).join('\\n\\n');\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"C0ACWDRQWD9\",\n    \"text\": `\ud83c\udfaf *THE BOUNTY HUNTER \u2014 Hot Leads*\\n${msg.hotLeads.length} target(s) detected!\\n\\n${blocks}\\n\\n_Auto-scored by Node-RED_`\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1200,
+    "y": 120,
+    "wires": [
+      [
+        "205dc275fce1452e"
+      ]
+    ]
+  },
+  {
+    "id": "3bf7d3c4e7264e26",
+    "type": "function",
+    "z": "da825df237884267",
+    "name": "\ud83d\udfe1 Format Warm Leads",
+    "func": "// Format warm leads for logging\nif (!msg.warmLeads || msg.warmLeads.length === 0) return null;\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\ud83d\udfe1 *Bounty Hunter \u2014 ${msg.warmLeads.length} Warm Lead(s)*\\n_Scores 40-69. Monitor for follow-up._`\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1200,
+    "y": 220,
+    "wires": [
+      [
+        "9e6dc9af7af848ee"
+      ]
+    ]
+  },
+  {
+    "id": "205dc275fce1452e",
+    "type": "http request",
+    "z": "da825df237884267",
+    "name": "\ud83d\udce4 Slack: #bounty-board",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1440,
+    "y": 120,
+    "wires": [
+      [
+        "fe46817fd4f2483d"
+      ]
+    ]
+  },
+  {
+    "id": "9e6dc9af7af848ee",
+    "type": "http request",
+    "z": "da825df237884267",
+    "name": "\ud83d\udce4 Slack: #alerts",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1440,
+    "y": 220,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "fe46817fd4f2483d",
+    "type": "debug",
+    "z": "da825df237884267",
+    "name": "\ud83d\udd0d Bounty Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1640,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "9ade1856b4a143be",
+    "type": "tab",
+    "label": "Watchdog",
+    "disabled": false,
+    "info": "System health monitor \u2014 pings all services every 5 min, alerts on failures"
+  },
+  {
+    "id": "a97702e42f414946",
+    "type": "comment",
+    "z": "9ade1856b4a143be",
+    "name": "\ud83d\udc15 WATCHDOG",
+    "info": "Monitors all critical services every 5 minutes.\nPings ngrok, GAS, and Wix.\nAlerts to Slack #alerts only on failures.",
+    "x": 100,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "06ff5de3f05745f9",
+    "type": "inject",
+    "z": "9ade1856b4a143be",
+    "name": "\u23f0 Every 5 Min",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "*/5 * * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 160,
+    "wires": [
+      [
+        "2d026667704a4f93",
+        "0076e3db1a2a45fd",
+        "9411f27b2f0f4a76"
+      ]
+    ]
+  },
+  {
+    "id": "2d026667704a4f93",
+    "type": "function",
+    "z": "9ade1856b4a143be",
+    "name": "\ud83d\udd0d Check ngrok",
+    "func": "// Check ngrok tunnel status\nmsg.url = 'http://localhost:4040/api/tunnels';\nmsg.method = 'GET';\nmsg.checkName = 'ngrok';\nreturn msg;",
+    "outputs": 1,
+    "timeout": 5,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 100,
+    "wires": [
+      [
+        "13efcabb3a424eee"
+      ]
+    ]
+  },
+  {
+    "id": "0076e3db1a2a45fd",
+    "type": "function",
+    "z": "9ade1856b4a143be",
+    "name": "\ud83d\udd0d Check GAS",
+    "func": "// Check GAS health\nmsg.url = global.get('GAS_URL') + '?action=healthCheck';\nmsg.method = 'GET';\nmsg.checkName = 'GAS';\nreturn msg;",
+    "outputs": 1,
+    "timeout": 5,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 160,
+    "wires": [
+      [
+        "13efcabb3a424eee"
+      ]
+    ]
+  },
+  {
+    "id": "9411f27b2f0f4a76",
+    "type": "function",
+    "z": "9ade1856b4a143be",
+    "name": "\ud83d\udd0d Check Wix",
+    "func": "// Check Wix site\nmsg.url = 'https://www.shamrockbailbonds.biz';\nmsg.method = 'GET';\nmsg.checkName = 'Wix';\nreturn msg;",
+    "outputs": 1,
+    "timeout": 5,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 220,
+    "wires": [
+      [
+        "13efcabb3a424eee"
+      ]
+    ]
+  },
+  {
+    "id": "13efcabb3a424eee",
+    "type": "function",
+    "z": "9ade1856b4a143be",
+    "name": "\ud83d\udce5 Collect Results",
+    "func": "// Collect health check results (called after each HTTP response)\n// Initialize context storage if needed\nlet results = flow.get('healthResults') || {};\nlet expectedChecks = 3;\n\nconst checkName = msg.checkName || 'unknown';\nconst statusCode = msg.statusCode || 0;\nconst isOk = statusCode >= 200 && statusCode < 400;\n\nresults[checkName] = {\n    status: isOk ? '\ud83d\udfe2' : '\ud83d\udd34',\n    code: statusCode,\n    ok: isOk,\n    timestamp: new Date().toISOString()\n};\n\nflow.set('healthResults', results);\n\n// Wait for all checks\nif (Object.keys(results).length >= expectedChecks) {\n    msg.healthResults = results;\n    flow.set('healthResults', {}); // Reset for next cycle\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 600,
+    "y": 160,
+    "wires": [
+      [
+        "fa085d6b3a914501"
+      ]
+    ]
+  },
+  {
+    "id": "fa085d6b3a914501",
+    "type": "function",
+    "z": "9ade1856b4a143be",
+    "name": "\u2696\ufe0f Evaluate Health",
+    "func": "// Evaluate overall health and alert if issues found\nconst results = msg.healthResults || {};\nconst services = Object.keys(results);\nconst failures = services.filter(s => !results[s].ok);\n\nconst statusLines = services.map(s => {\n    const r = results[s];\n    return `${r.status} *${s}*: ${r.ok ? 'Healthy' : 'DOWN'} (${r.code})`;\n}).join('\\n');\n\nmsg.healthSummary = statusLines;\nmsg.hasFailures = failures.length > 0;\n\n// Update node status\nif (failures.length > 0) {\n    node.status({fill:\"red\", shape:\"ring\", text: failures.length + \" service(s) DOWN!\"});\n} else {\n    node.status({fill:\"green\", shape:\"dot\", text: services.length + \" services healthy\"});\n}\n\n// Only alert on failures (don't spam Slack with green checks)\nif (failures.length === 0) {\n    // Store last healthy time\n    global.set('LAST_HEALTHY_CHECK', new Date().toISOString());\n    return null;\n}\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 820,
+    "y": 160,
+    "wires": [
+      [
+        "55e231c72ed045fd"
+      ]
+    ]
+  },
+  {
+    "id": "55e231c72ed045fd",
+    "type": "function",
+    "z": "9ade1856b4a143be",
+    "name": "\ud83d\udea8 Format Alert",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\ud83d\udea8 *WATCHDOG ALERT \u2014 Service Down!*\\n\\n${msg.healthSummary}\\n\\n_Checked at ${new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'})} ET_`\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1040,
+    "y": 160,
+    "wires": [
+      [
+        "bbeb704f5c0c4929"
+      ]
+    ]
+  },
+  {
+    "id": "bbeb704f5c0c4929",
+    "type": "http request",
+    "z": "9ade1856b4a143be",
+    "name": "\ud83d\udce4 Slack: #alerts",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1260,
+    "y": 160,
+    "wires": [
+      [
+        "c1e150e019514af0"
+      ]
+    ]
+  },
+  {
+    "id": "c1e150e019514af0",
+    "type": "debug",
+    "z": "9ade1856b4a143be",
+    "name": "\ud83d\udd0d Watchdog Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1460,
+    "y": 160,
+    "wires": []
+  }
+]
