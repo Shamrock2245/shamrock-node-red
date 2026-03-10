@@ -1,0 +1,245 @@
+[
+    {
+        "id": "node-irb-form",
+        "type": "ui_form",
+        "z": "tab-shamrock",
+        "group": "3bf373650c1a4962",
+        "name": "IRB Deep Search",
+        "order": 3,
+        "width": 6,
+        "height": 4,
+        "label": "IRB Relative Search",
+        "format": "[\n    {\"type\":\"text\",\"id\":\"firstName\",\"label\":\"First Name\",\"width\":\"6\",\"required\":true},\n    {\"type\":\"text\",\"id\":\"lastName\",\"label\":\"Last Name\",\"width\":\"6\",\"required\":true},\n    {\"type\":\"text\",\"id\":\"address\",\"label\":\"Last Known Address\",\"width\":\"12\",\"required\":false}\n]",
+        "submit": "Search IRB",
+        "cancel": "Cancel",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 170,
+        "y": 1800,
+        "wires": [
+            [
+                "node-irb-format-req"
+            ]
+        ]
+    },
+    {
+        "id": "node-irb-format-req",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Prepare IRB Sandbox Request",
+        "func": "// Placeholder: Format request for IRB API\n// Ensure SOC2 compliance by using process.env or configured credentials\n\nmsg.url = \"https://api.irbsearch.com/v1/search\"; // PLACEHOLDER\nmsg.method = \"POST\";\nmsg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"Authorization\": \"Bearer \" + (env.get(\"IRB_API_KEY\") || \"YOUR_API_KEY\")\n};\n\nmsg.payload = {\n    firstName: msg.payload.firstName,\n    lastName: msg.payload.lastName,\n    address: msg.payload.address,\n    includeRelatives: true\n};\n\n// FOR DEMO/BUILDING: Short-circuiting directly to parser since API isn't live yet\nmsg.demo_mode = true;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 1800,
+        "wires": [
+            [
+                "node-irb-api"
+            ]
+        ]
+    },
+    {
+        "id": "node-irb-api",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "IRB API Call (Placeholder)",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 670,
+        "y": 1800,
+        "wires": [
+            [
+                "node-irb-parse"
+            ]
+        ]
+    },
+    {
+        "id": "node-irb-parse",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Parse Relatives & Residents",
+        "func": "let relatives = [];\n\nif (msg.demo_mode) {\n    // Sandbox output for UI testing\n    relatives = [\n        { name: \"Jane Doe\", phone: \"+15551234567\", relation: \"Spouse\" },\n        { name: \"John Doe Sr.\", phone: \"+15559876543\", relation: \"Father\" }\n    ];\n} else {\n    // Real parsing logic here\n    // relatives = msg.payload.results.relatives.map(...)\n}\n\nmsg.payload = {\n    defendant: msg.payload.firstName + \" \" + msg.payload.lastName,\n    relatives: relatives\n};\n\n// Save to global/flow context if needed for the button trigger\nflow.set('last_irb_relatives', msg.payload);\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 920,
+        "y": 1800,
+        "wires": [
+            [
+                "node-irb-display"
+            ]
+        ]
+    },
+    {
+        "id": "node-irb-display",
+        "type": "ui_template",
+        "z": "tab-shamrock",
+        "group": "3bf373650c1a4962",
+        "name": "Display IRB Results",
+        "order": 4,
+        "width": 6,
+        "height": 4,
+        "format": "<template>\n  <div style=\"padding:8px\">\n    <h3 style=\"color:#f59e0b;margin:0 0 8px\">IRB MATCHES 🔍</h3>\n    <div v-if=\"msg?.payload?.relatives?.length\">\n      <div v-for=\"(person, i) in msg.payload.relatives\" :key=\"i\" style=\"padding:6px 0;border-bottom:1px solid #333; font-size:14px;\">\n        <strong>{{person.name}}</strong> ({{person.relation}})<br>\n        <span style=\"color:#10b981\">{{person.phone}}</span>\n      </div>\n    </div>\n    <div v-else style=\"color:#888\">No subjects found</div>\n  </div>\n</template>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 1150,
+        "y": 1800,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "node-irb-trigger",
+        "type": "ui_button",
+        "z": "tab-shamrock",
+        "group": "3bf373650c1a4962",
+        "name": "Trigger IRB Outreach",
+        "label": "🚀 INITIATE OUTREACH (SMS + CALL)",
+        "order": 5,
+        "width": 6,
+        "height": 1,
+        "passthru": false,
+        "tooltip": "Texts and Calls the relatives from the last IRB Search",
+        "color": "#fff",
+        "bgcolor": "#1e40af",
+        "icon": "phone",
+        "payload": "",
+        "payloadType": "date",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "x": 180,
+        "y": 1880,
+        "wires": [
+            [
+                "node-irb-load-context"
+            ]
+        ]
+    },
+    {
+        "id": "node-irb-load-context",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Load Relatives Data",
+        "func": "const data = flow.get('last_irb_relatives');\nif (!data || !data.relatives || data.relatives.length === 0) {\n    return null; // Nothing to do\n}\n\nreturn data.relatives.map(person => ({\n    payload: {\n        defendant: data.defendant,\n        target_name: person.name,\n        target_phone: person.phone,\n        target_relation: person.relation\n    }\n}));",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 1880,
+        "wires": [
+            [
+                "node-irb-twilio-prep",
+                "node-irb-11labs-prep"
+            ]
+        ]
+    },
+    {
+        "id": "node-irb-twilio-prep",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Prepare Twilio SMS",
+        "func": "const def = msg.payload.defendant;\nconst name = msg.payload.target_name;\n\n// The message template\nconst smsBody = `Hi ${name}, this is Shamrock Bail Bonds regarding ${def}. We are looking to see if you would like to assist with their bond and get them released. Please call or text us back immediately at 555-0199.`;\n\nmsg.url = `https://api.twilio.com/2010-04-01/Accounts/${env.get(\"TWILIO_ACCOUNT_SID\")}/Messages.json`;\nmsg.method = \"POST\";\n\n// Basic Auth for Twilio\nconst auth = Buffer.from(env.get(\"TWILIO_ACCOUNT_SID\") + ':' + env.get(\"TWILIO_AUTH_TOKEN\")).toString('base64');\n\nmsg.headers = {\n    \"Authorization\": \"Basic \" + auth,\n    \"Content-Type\": \"application/x-www-form-urlencoded\"\n};\n\nmsg.payload = {\n    \"To\": msg.payload.target_phone,\n    \"From\": env.get(\"TWILIO_PHONE_NUMBER\"),\n    \"Body\": smsBody\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 650,
+        "y": 1860,
+        "wires": [
+            [
+                "node-irb-twilio-api"
+            ]
+        ]
+    },
+    {
+        "id": "node-irb-twilio-api",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "REST: Send Twilio SMS",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 890,
+        "y": 1860,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "node-irb-11labs-prep",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Prepare ElevenLabs Call (Shannon)",
+        "func": "const def = msg.payload.defendant;\nconst name = msg.payload.target_name;\n\n// The prompt script for Shannon\nconst prompt = `You are Shannon, an agent for Shamrock Bail Bonds. You are calling ${name} regarding ${def}. Politely ask if they are available to assist with ${def}'s bond and provide information.`;\n\nmsg.url = `https://api.elevenlabs.io/v1/convai/calls`;\nmsg.method = \"POST\";\nmsg.headers = {\n    \"xi-api-key\": env.get(\"ELEVENLABS_API_KEY\"),\n    \"Content-Type\": \"application/json\"\n};\n\n// Note: This API format is an approximation. Actual ElevenLabs Outbound Dial API structure required here:\nmsg.payload = {\n    phone_number: msg.payload.target_phone,\n    agent_id: env.get(\"ELEVENLABS_SHANNON_AGENT_ID\") || \"YOUR_AGENT_ID\",\n    prompt_override: prompt\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 680,
+        "y": 1920,
+        "wires": [
+            [
+                "node-irb-11labs-api"
+            ]
+        ]
+    },
+    {
+        "id": "node-irb-11labs-api",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "REST: Dial 11Labs Voice",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 930,
+        "y": 1920,
+        "wires": [
+            []
+        ]
+    }
+]

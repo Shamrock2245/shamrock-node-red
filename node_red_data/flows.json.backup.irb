@@ -1,0 +1,2755 @@
+[
+    {
+        "id": "tab-shamrock",
+        "type": "tab",
+        "label": "Shamrock Automations",
+        "disabled": false,
+        "info": "This is the primary flow for receiving Wix webhooks and routing data to Twilio, Slack, or Google Apps Script."
+    },
+    {
+        "id": "node-wix-webhook",
+        "type": "http in",
+        "z": "tab-shamrock",
+        "name": "Wix Intake Webhook",
+        "url": "/wix-intake",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 130,
+        "y": 140,
+        "wires": [
+            [
+                "node-wix-response",
+                "node-format-slack",
+                "node-debug-payload"
+            ]
+        ]
+    },
+    {
+        "id": "node-wix-response",
+        "type": "http response",
+        "z": "tab-shamrock",
+        "name": "Send 200 OK",
+        "statusCode": "200",
+        "headers": {},
+        "x": 370,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "node-debug-payload",
+        "type": "debug",
+        "z": "tab-shamrock",
+        "name": "Debug Wix Payload",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 390,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "node-format-slack",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Format Slack Block Kit message",
+        "func": "const payload = msg.payload || {};\nconst name = payload.name || \"Unknown Client\";\nconst phone = payload.phone || \"No phone provided\";\nconst county = payload.county || \"Unknown County\";\nconst charges = payload.charges || \"Not specified\";\nconst bondAmount = payload.bondAmount ? `$${payload.bondAmount}` : \"TBD\";\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\") ,\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\n\nmsg.payload = {\n    \"channel\": \"C09MP494D1T\",\n    \"blocks\": [\n        {\n            \"type\": \"header\",\n            \"text\": {\n                \"type\": \"plain_text\",\n                \"text\": \"🚨 New Intake Lead - \" + county,\n                \"emoji\": true\n            }\n        },\n        {\n            \"type\": \"divider\"\n        },\n        {\n            \"type\": \"section\",\n            \"fields\": [\n                {\n                    \"type\": \"mrkdwn\",\n                    \"text\": \"*Client Name:*\\n\" + name\n                },\n                {\n                    \"type\": \"mrkdwn\",\n                    \"text\": \"*Phone:*\\n\" + phone\n                }\n            ]\n        },\n        {\n            \"type\": \"section\",\n            \"fields\": [\n                {\n                    \"type\": \"mrkdwn\",\n                    \"text\": \"*Charges:*\\n\" + charges\n                },\n                {\n                    \"type\": \"mrkdwn\",\n                    \"text\": \"*Bond Amount:*\\n\" + bondAmount\n                }\n            ]\n        },\n        {\n            \"type\": \"divider\"\n        },\n        {\n            \"type\": \"context\",\n            \"elements\": [\n                {\n                    \"type\": \"mrkdwn\",\n                    \"text\": \"_Triggered by Wix Webhook Node-RED Flow_\"\n                }\n            ]\n        }\n    ]\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 140,
+        "wires": [
+            [
+                "node-slack-post"
+            ]
+        ]
+    },
+    {
+        "id": "node-slack-post",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "POST to Slack API",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://slack.com/api/chat.postMessage",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 710,
+        "y": 140,
+        "wires": [
+            [
+                "node-slack-response"
+            ]
+        ]
+    },
+    {
+        "id": "node-slack-response",
+        "type": "debug",
+        "z": "tab-shamrock",
+        "name": "Debug Slack Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 940,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "tab-advanced",
+        "type": "tab",
+        "label": "The Digital Workforce (Advanced)",
+        "disabled": false,
+        "info": "Shamrock Bail Bonds AI Workforce & Automations"
+    },
+    {
+        "id": "a9943d9b",
+        "type": "http in",
+        "z": "tab-advanced",
+        "name": "Wix Intake Started",
+        "url": "/intake-start",
+        "method": "post",
+        "x": 130,
+        "y": 180,
+        "wires": [
+            [
+                "ef6f8f73"
+            ]
+        ]
+    },
+    {
+        "id": "f3454d6e",
+        "type": "http in",
+        "z": "tab-advanced",
+        "name": "Wix Intake Completed",
+        "url": "/intake-complete",
+        "method": "post",
+        "x": 140,
+        "y": 240,
+        "wires": [
+            [
+                "bf3f6258"
+            ]
+        ]
+    },
+    {
+        "id": "ef6f8f73",
+        "type": "function",
+        "z": "tab-advanced",
+        "name": "Mark Pending",
+        "func": "const phone = msg.payload.phone;\nif(phone) {\n    global.set('intake_' + phone, 'pending');\n    msg.phone = phone;\n    return msg;\n}",
+        "outputs": 1,
+        "x": 380,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "bf3f6258",
+        "type": "function",
+        "z": "tab-advanced",
+        "name": "Mark Complete",
+        "func": "const phone = msg.payload.phone;\nif(phone) {\n    global.set('intake_' + phone, 'complete');\n}\nreturn msg;",
+        "outputs": 1,
+        "x": 380,
+        "y": 240,
+        "wires": [
+            [
+                "prep_signnow_payload"
+            ]
+        ]
+    },
+    {
+        "id": "3ba0bff6",
+        "type": "http in",
+        "z": "tab-advanced",
+        "name": "SignNow Webhook",
+        "url": "/signnow-event",
+        "method": "post",
+        "x": 130,
+        "y": 440,
+        "wires": [
+            [
+                "6b0f0efe",
+                "2f242403"
+            ]
+        ]
+    },
+    {
+        "id": "6b0f0efe",
+        "type": "http response",
+        "z": "tab-advanced",
+        "name": "200 OK",
+        "statusCode": "200",
+        "x": 340,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "2f242403",
+        "type": "function",
+        "z": "tab-advanced",
+        "name": "Format \"Signed\" Alert",
+        "func": "const event = msg.payload.meta || {};\nif(event.event === 'document.update' || true) { // Always trigger for demo\n    msg.payload = {\n        \"channel\": \"C09MSHM72D8\", // #bonds-live\n        \"text\": \"🎉 *Document Signed!* 🎉\\n> The indemnitor has completed the packet! Ready to post.\"\n    };\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\") ,\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    return msg;\n}\nreturn null;",
+        "outputs": 1,
+        "x": 380,
+        "y": 480,
+        "wires": [
+            [
+                "9673428d"
+            ]
+        ]
+    },
+    {
+        "id": "9673428d",
+        "type": "http request",
+        "z": "tab-advanced",
+        "name": "POST to #bonds-live",
+        "method": "POST",
+        "ret": "obj",
+        "url": "https://slack.com/api/chat.postMessage",
+        "x": 620,
+        "y": 480,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8d1bb1c09de24bf7",
+        "type": "ui-base",
+        "name": "Shamrock Dashboard",
+        "path": "/dashboard",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control"
+        ]
+    },
+    {
+        "id": "87c093119a9e46fb",
+        "type": "ui-theme",
+        "name": "Midnight Gold",
+        "colors": {
+            "surface": "#121212",
+            "primary": "#d4af37",
+            "bgPage": "#000000",
+            "groupBg": "#1e1e1e",
+            "groupOutline": "#333333"
+        },
+        "themeState": {
+            "base-color": {
+                "default": "#d4af37",
+                "value": "#d4af37",
+                "edited": true
+            },
+            "page-backgroundColor": {
+                "default": "#121212",
+                "value": "#000000",
+                "edited": true
+            },
+            "page-sidebar-backgroundColor": {
+                "default": "#ffffff",
+                "value": "#121212",
+                "edited": true
+            },
+            "group-backgroundColor": {
+                "default": "#ffffff",
+                "value": "#1e1e1e",
+                "edited": true
+            },
+            "group-borderColor": {
+                "default": "#e2e8f0",
+                "value": "#333333",
+                "edited": true
+            }
+        }
+    },
+    {
+        "id": "72fcf7b2d4cc4b0d",
+        "type": "ui-page",
+        "name": "Operations Radar",
+        "ui": "8d1bb1c09de24bf7",
+        "path": "/radar",
+        "icon": "radar",
+        "layout": "grid",
+        "theme": "87c093119a9e46fb",
+        "order": 1,
+        "className": ""
+    },
+    {
+        "id": "1c0be978acad40dc",
+        "type": "ui-group",
+        "name": "The Booking Radar",
+        "page": "72fcf7b2d4cc4b0d",
+        "width": "12",
+        "height": "1",
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "7e4c8d8898c94932",
+        "type": "ui-text",
+        "z": "tab-shamrock",
+        "group": "1c0be978acad40dc",
+        "name": "Live Inmate Ticker",
+        "label": "LATEST BOOKINGS",
+        "format": "{{msg.payload}}",
+        "order": 1,
+        "width": 6,
+        "height": 4,
+        "layout": "col-center",
+        "x": 550,
+        "y": 100
+    },
+    {
+        "id": "c9845c66f9284d5f",
+        "type": "ui-table",
+        "z": "tab-shamrock",
+        "group": "1c0be978acad40dc",
+        "name": "Scraper Health Matrix",
+        "width": 6,
+        "height": 4,
+        "order": 2,
+        "maxrows": 10,
+        "columns": [
+            {
+                "field": "county",
+                "title": "County",
+                "width": "",
+                "align": "left",
+                "formatter": "plaintext"
+            },
+            {
+                "field": "status",
+                "title": "Status",
+                "width": "",
+                "align": "left",
+                "formatter": "plaintext"
+            },
+            {
+                "field": "last_run",
+                "title": "Last Run",
+                "width": "",
+                "align": "left",
+                "formatter": "plaintext"
+            }
+        ],
+        "x": 300,
+        "y": 160
+    },
+    {
+        "id": "431d9284cdd9439c",
+        "type": "ui-button",
+        "z": "tab-shamrock",
+        "group": "1c0be978acad40dc",
+        "name": "Trigger Scrape",
+        "label": "LAUNCH SCRAPER (ALL)",
+        "order": 3,
+        "width": 12,
+        "height": 1,
+        "passthru": false,
+        "tooltip": "Force all scrapers to scan targets now",
+        "color": "",
+        "bgcolor": "#d4af37",
+        "icon": "rocket",
+        "x": 300,
+        "y": 220,
+        "wires": [
+            [
+                "bf1c096ea7754c98"
+            ]
+        ]
+    },
+    {
+        "id": "52439144939d4d84",
+        "type": "ui-text-input",
+        "z": "tab-shamrock",
+        "group": "1c0be978acad40dc",
+        "name": "Target Alert Input",
+        "label": "ADD HIGH-RISK TARGET (Name/Charge)",
+        "order": 4,
+        "width": 6,
+        "height": 1,
+        "passthru": true,
+        "mode": "text",
+        "delay": 300,
+        "topic": "topic",
+        "sendOnDelay": false,
+        "className": "",
+        "x": 300,
+        "y": 280
+    },
+    {
+        "id": "07507efca8d84f32",
+        "type": "ui-template",
+        "z": "tab-shamrock",
+        "group": "1c0be978acad40dc",
+        "name": "Shamrock's Leads",
+        "order": 5,
+        "width": 6,
+        "height": 4,
+        "format": "<template>\n  <div style=\"padding:12px; height:100%; overflow-y:auto; background:#1e1e1e; border-radius:8px;\">\n    <h3 style=\"color:#d4af37; margin:0 0 12px; font-weight:bold; border-bottom:1px solid #333; padding-bottom:8px;\">☘️ SHAMROCK'S LEADS</h3>\n    <div v-if=\"msg?.payload && msg.payload.length > 0\">\n      <div v-for=\"(item, i) in msg.payload\" :key=\"i\" style=\"padding:10px; margin-bottom:8px; background:#2a2a2a; border-left:4px solid; border-radius:4px;\" :style=\"{'border-left-color': item.isReturning ? '#10b981' : '#ef4444'}\">\n        <strong style=\"color:#fff; font-size:1.1em;\">{{item.name}}</strong>\n        <span v-if=\"item.isReturning\" style=\"margin-left:8px; background:#10b981; color:#fff; padding:2px 6px; border-radius:12px; font-size:0.75em; font-weight:bold;\">RETURNING CLIENT</span>\n        <span style=\"float:right; color:#ef4444; font-weight:bold;\">${{item.bond.toLocaleString()}}</span>\n        <div style=\"color:#aaa; font-size:0.9em; margin-top:4px;\">{{item.county}} | {{item.charges}}</div>\n      </div>\n    </div>\n    <div v-else style=\"color:#888; text-align:center; padding:20px;\">Scanning for targets...</div>\n  </div>\n</template>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 300,
+        "y": 340
+    },
+    {
+        "id": "113f59d7559448a9",
+        "type": "ui-page",
+        "name": "The Concierge (Ops)",
+        "ui": "8d1bb1c09de24bf7",
+        "path": "/concierge",
+        "icon": "comment-dots",
+        "layout": "grid",
+        "theme": "87c093119a9e46fb",
+        "order": 2,
+        "className": ""
+    },
+    {
+        "id": "58ad934f1fea45a5",
+        "type": "ui-group",
+        "name": "Omni-Inbox (Telegram Chat)",
+        "page": "113f59d7559448a9",
+        "width": "6",
+        "height": "1",
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "fd278c7b7379473c",
+        "type": "ui-group",
+        "name": "AI Ops & Controls",
+        "page": "113f59d7559448a9",
+        "width": "6",
+        "height": "1",
+        "order": 2,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "27f1f6ed9005447e",
+        "type": "ui-template",
+        "z": "tab-shamrock",
+        "group": "58ad934f1fea45a5",
+        "name": "Live Chat Feed",
+        "order": 1,
+        "width": 6,
+        "height": 5,
+        "format": "<div style='height:100%; overflow-y:scroll; padding:10px;' class='custom-inbox'>\n  <ul v-for=\"msg in msg.payload\" :key=\"msg.id\" style='list-style:none; padding:0;'>\n    <li style='margin-bottom:8px; display:flex; flex-direction:column;' :style='msg.isBot ? \"align-items:flex-start;\" : \"align-items:flex-end;\"'>\n      <div style='max-width:80%; padding:8px 12px; border-radius:12px;' :style='msg.isBot ? \"background:#333; color:#EEE;\" : \"background:#D4AF37; color:#121212;\"'>\n        <strong>{{msg.sender}}:</strong> {{msg.text}}\n      </div>\n    </li>\n  </ul>\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 300,
+        "y": 420
+    },
+    {
+        "id": "d4c75dd395074f43",
+        "type": "ui-switch",
+        "z": "tab-shamrock",
+        "group": "fd278c7b7379473c",
+        "name": "AI Auto-Pilot",
+        "label": "AI Auto-Pilot (Global Context)",
+        "tooltip": "Disable to take over chats manually",
+        "order": 1,
+        "width": 6,
+        "height": 1,
+        "passthru": true,
+        "topic": "topic",
+        "topicType": "msg",
+        "style": "",
+        "onvalue": "true",
+        "onvalueType": "bool",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "false",
+        "offvalueType": "bool",
+        "officon": "",
+        "offcolor": "",
+        "className": "",
+        "x": 300,
+        "y": 480
+    },
+    {
+        "id": "17ff0cc15ed0410e",
+        "type": "ui-button",
+        "z": "tab-shamrock",
+        "group": "fd278c7b7379473c",
+        "name": "Drop a Pin (Location Request)",
+        "label": "📍 SEND CHECK-IN REQUEST",
+        "order": 2,
+        "width": 6,
+        "height": 1,
+        "passthru": false,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "#1e40af",
+        "icon": "map-marker-alt",
+        "className": "",
+        "x": 300,
+        "y": 540
+    },
+    {
+        "id": "fe09f0f455794e15",
+        "type": "ui-form",
+        "z": "tab-shamrock",
+        "group": "fd278c7b7379473c",
+        "name": "Court Reminder Override",
+        "order": 3,
+        "width": 6,
+        "height": 4,
+        "label": "New Court Date",
+        "format": "[\n    {\"type\":\"text\",\"id\":\"clientPhone\",\"label\":\"Client Phone\",\"width\":\"12\",\"required\":true},\n    {\"type\":\"date\",\"id\":\"newDate\",\"label\":\"New Court Date\",\"width\":\"12\",\"required\":true},\n    {\"type\":\"time\",\"id\":\"newTime\",\"label\":\"Time\",\"width\":\"12\",\"required\":true}\n]",
+        "submit": "Update & Text Client",
+        "cancel": "Cancel",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 300,
+        "y": 600
+    },
+    {
+        "id": "d72170fe92de4336",
+        "type": "ui-gauge",
+        "z": "tab-shamrock",
+        "group": "fd278c7b7379473c",
+        "name": "FAQ Containment Rate",
+        "groupPoint": "5",
+        "order": 4,
+        "width": 6,
+        "height": 3,
+        "min": 0,
+        "max": 100,
+        "colors": [
+            "#ef4444",
+            "#eab308",
+            "#22c55e"
+        ],
+        "segments": [
+            30,
+            70
+        ],
+        "title": "FAQ Containment Rate (%)",
+        "label": "AI Handled",
+        "format": "{{value}}%",
+        "className": "",
+        "x": 300,
+        "y": 660
+    },
+    {
+        "id": "e44fd2fb76f54fad",
+        "type": "ui-page",
+        "name": "The Analyst (Risk Ops)",
+        "ui": "8d1bb1c09de24bf7",
+        "path": "/analyst",
+        "icon": "user-secret",
+        "layout": "grid",
+        "theme": "87c093119a9e46fb",
+        "order": 3,
+        "className": ""
+    },
+    {
+        "id": "3bf373650c1a4962",
+        "type": "ui-group",
+        "name": "Background Investigations",
+        "page": "e44fd2fb76f54fad",
+        "width": "6",
+        "height": "1",
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "6cd0f78a7dd24883",
+        "type": "ui-group",
+        "name": "Underwriting & Risk Analysis",
+        "page": "e44fd2fb76f54fad",
+        "width": "6",
+        "height": "1",
+        "order": 2,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "15fed4f50db24de0",
+        "type": "ui-form",
+        "z": "tab-shamrock",
+        "group": "3bf373650c1a4962",
+        "name": "Run Background Check",
+        "order": 1,
+        "width": 6,
+        "height": 4,
+        "label": "TLO / CLEAR Lookups",
+        "format": "[\n    {\"type\":\"text\",\"id\":\"firstName\",\"label\":\"First Name\",\"width\":\"6\",\"required\":true},\n    {\"type\":\"text\",\"id\":\"lastName\",\"label\":\"Last Name\",\"width\":\"6\",\"required\":true},\n    {\"type\":\"date\",\"id\":\"dob\",\"label\":\"DOB\",\"width\":\"12\",\"required\":false}\n]",
+        "submit": "RUN INVESTIGATION",
+        "cancel": "Cancel",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 300,
+        "y": 720,
+        "wires": [
+            [
+                "a4225df29a8b4a47"
+            ]
+        ]
+    },
+    {
+        "id": "9c1dfeb9557445bb",
+        "type": "ui-template",
+        "z": "tab-shamrock",
+        "group": "3bf373650c1a4962",
+        "name": "Red Flag Ledger",
+        "order": 2,
+        "width": 6,
+        "height": 4,
+        "format": "<template>\n  <div style=\"padding:8px\">\n    <h3 style=\"color:#ef4444;margin:0 0 8px\">ACTIVE RED FLAGS 🚩</h3>\n    <div v-if=\"msg?.payload\">\n      <div v-for=\"(item, i) in (Array.isArray(msg.payload) ? msg.payload : [])\" :key=\"i\" style=\"padding:6px 0;border-bottom:1px solid #333;color:#fca5a5\">\n        {{ typeof item === 'object' ? (item.title || item.name || JSON.stringify(item)) : item }}\n      </div>\n    </div>\n    <div v-else style=\"color:#888\">No red flags detected</div>\n  </div>\n</template>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 300,
+        "y": 780
+    },
+    {
+        "id": "50fff344901b4fe4",
+        "type": "ui-form",
+        "z": "tab-shamrock",
+        "group": "6cd0f78a7dd24883",
+        "name": "Indemnitor Scoring Matrix",
+        "order": 1,
+        "width": 6,
+        "height": 5,
+        "label": "Risk Calculator",
+        "format": "[\n    {\"type\":\"number\",\"id\":\"creditScore\",\"label\":\"Est Credit Score\",\"width\":\"12\",\"required\":true},\n    {\"type\":\"number\",\"id\":\"yearsEmployed\",\"label\":\"Years at Current Job\",\"width\":\"12\",\"required\":true},\n    {\"type\":\"checkbox\",\"id\":\"homeowner\",\"label\":\"Homeowner?\",\"width\":\"12\",\"required\":false}\n]",
+        "submit": "Calculate Flight Risk",
+        "cancel": "Clear",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 300,
+        "y": 840,
+        "wires": [
+            [
+                "4f46bfeb4fac472a"
+            ]
+        ]
+    },
+    {
+        "id": "5f818ce8b6554439",
+        "type": "ui-text",
+        "z": "tab-shamrock",
+        "group": "6cd0f78a7dd24883",
+        "name": "Global Forfeiture Alarm",
+        "label": "🚨 FORFEITURE ALARM",
+        "format": "<div style='color: #ef4444; font-weight: bold; font-size: 1.25rem; text-align: center;'>{{msg.payload || \"No Active Forfeitures\"}}</div>",
+        "order": 2,
+        "width": 6,
+        "height": 2,
+        "layout": "col-center",
+        "className": "",
+        "x": 300,
+        "y": 900
+    },
+    {
+        "id": "17aadedf6c5346f1",
+        "type": "ui-page",
+        "name": "Revenue & Closing Ops",
+        "ui": "8d1bb1c09de24bf7",
+        "path": "/revenue",
+        "icon": "cash-register",
+        "layout": "grid",
+        "theme": "87c093119a9e46fb",
+        "order": 4,
+        "className": ""
+    },
+    {
+        "id": "c7ac5190076d40d3",
+        "type": "ui-group",
+        "name": "Sales Funnel & Metrics",
+        "page": "17aadedf6c5346f1",
+        "width": "6",
+        "height": "1",
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "eff86b3e88354b0c",
+        "type": "ui-group",
+        "name": "Packet Tracking & Servicing",
+        "page": "17aadedf6c5346f1",
+        "width": "6",
+        "height": "1",
+        "order": 2,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "da6e1d99dc624b35",
+        "type": "ui-form",
+        "z": "tab-shamrock",
+        "group": "eff86b3e88354b0c",
+        "name": "Magic Link Generator",
+        "order": 1,
+        "width": 6,
+        "height": 4,
+        "label": "Generate Intake Link",
+        "format": "[\n    {\"type\":\"text\",\"id\":\"clientPhone\",\"label\":\"Client Phone\",\"width\":\"12\",\"required\":true},\n    {\"type\":\"text\",\"id\":\"caseNumber\",\"label\":\"Target Case/Defendant\",\"width\":\"12\",\"required\":false}\n]",
+        "submit": "Generate Link",
+        "cancel": "Cancel",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 300,
+        "y": 1000,
+        "wires": [
+            [
+                "ca2d28d6b17745b8"
+            ]
+        ]
+    },
+    {
+        "id": "52fd9116d9de40d6",
+        "type": "ui-chart",
+        "z": "tab-shamrock",
+        "group": "c7ac5190076d40d3",
+        "name": "Live Funnel Drops",
+        "chartType": "bar",
+        "order": 1,
+        "width": 6,
+        "height": 4,
+        "xAxisType": "category",
+        "colors": [
+            "#10b981",
+            "#3b82f6",
+            "#f59e0b",
+            "#ef4444"
+        ],
+        "className": "",
+        "x": 300,
+        "y": 1060
+    },
+    {
+        "id": "cd7d39a7f65841d9",
+        "type": "ui-template",
+        "z": "tab-shamrock",
+        "group": "eff86b3e88354b0c",
+        "name": "SignNow Packet Tracker",
+        "order": 2,
+        "width": 6,
+        "height": 4,
+        "format": "<template>\n  <div style=\"padding:8px\">\n    <h3 style=\"color:#3b82f6;margin:0 0 8px\">📄 PENDING SIGNATURES</h3>\n    <div v-if=\"msg?.payload\">\n      <div v-for=\"(item, i) in (Array.isArray(msg.payload) ? msg.payload : [])\" :key=\"i\" style=\"padding:6px 0;border-bottom:1px solid #333\">\n        {{ typeof item === 'object' ? (item.title || item.name || JSON.stringify(item)) : item }}\n      </div>\n    </div>\n    <div v-else style=\"color:#888\">No pending signatures</div>\n  </div>\n</template>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 300,
+        "y": 1120
+    },
+    {
+        "id": "9c9dbea9fbd7403a",
+        "type": "ui-chart",
+        "z": "tab-shamrock",
+        "group": "c7ac5190076d40d3",
+        "name": "SwipeSimple Revenue",
+        "chartType": "line",
+        "order": 2,
+        "width": 6,
+        "height": 4,
+        "xAxisType": "time",
+        "colors": [
+            "#10b981",
+            "#1e40af",
+            "#ef4444"
+        ],
+        "className": "",
+        "x": 300,
+        "y": 1180
+    },
+    {
+        "id": "2336b87870844c5f",
+        "type": "ui-button",
+        "z": "tab-shamrock",
+        "group": "eff86b3e88354b0c",
+        "name": "Send to Collections",
+        "label": "SEND TO COLLECTIONS",
+        "order": 3,
+        "width": 6,
+        "height": 1,
+        "passthru": false,
+        "tooltip": "Initiates collection sequence",
+        "color": "#ffffff",
+        "bgcolor": "#ef4444",
+        "icon": "exclamation-triangle",
+        "className": "",
+        "x": 300,
+        "y": 1240
+    },
+    {
+        "id": "357e27342de3466a",
+        "type": "ui-page",
+        "name": "DevOps & Infrastructure",
+        "ui": "8d1bb1c09de24bf7",
+        "path": "/infrastructure",
+        "icon": "server",
+        "layout": "grid",
+        "theme": "87c093119a9e46fb",
+        "order": 5,
+        "className": ""
+    },
+    {
+        "id": "0dabc49bed804fee",
+        "type": "ui-group",
+        "name": "System Health & Logs",
+        "page": "357e27342de3466a",
+        "width": "6",
+        "height": "1",
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "f2fbe1e95d7146c4",
+        "type": "ui-group",
+        "name": "DevOps Command Center",
+        "page": "357e27342de3466a",
+        "width": "6",
+        "height": "1",
+        "order": 2,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "2619cda454734001",
+        "type": "ui-gauge",
+        "z": "tab-shamrock",
+        "group": "0dabc49bed804fee",
+        "name": "OpenAI API Quota",
+        "groupPoint": "5",
+        "order": 1,
+        "width": 6,
+        "height": 3,
+        "min": 0,
+        "max": 100,
+        "colors": [
+            "#10b981",
+            "#eab308",
+            "#ef4444"
+        ],
+        "segments": [
+            50,
+            80
+        ],
+        "title": "OpenAI Spends (%)",
+        "label": "Quota Used",
+        "format": "{{value}}%",
+        "className": "",
+        "x": 300,
+        "y": 1300
+    },
+    {
+        "id": "9336792f737e4dd3",
+        "type": "ui-switch",
+        "z": "tab-shamrock",
+        "group": "f2fbe1e95d7146c4",
+        "name": "PANIC BUTTON",
+        "label": "SYSTEM EMERGENCY SHUTDOWN",
+        "tooltip": "Kills all AI and auto-posting jobs instantly",
+        "order": 1,
+        "width": 6,
+        "height": 1,
+        "passthru": true,
+        "topic": "topic",
+        "topicType": "msg",
+        "style": "",
+        "onvalue": "shut_down",
+        "onvalueType": "str",
+        "onicon": "exclamation-circle",
+        "oncolor": "#ef4444",
+        "offvalue": "running",
+        "offvalueType": "str",
+        "officon": "check-circle",
+        "offcolor": "#10b981",
+        "className": "",
+        "x": 300,
+        "y": 1360,
+        "wires": [
+            [
+                "84baa60c49364c11"
+            ]
+        ]
+    },
+    {
+        "id": "24b07f6d87c741f4",
+        "type": "ui-text",
+        "z": "tab-shamrock",
+        "group": "0dabc49bed804fee",
+        "name": "GAS Bridge Status",
+        "label": "GAS Bridge connection",
+        "format": "<span style='color:#10b981; font-weight:bold;'>🟢 ONLINE ({{msg.payload || '22ms'}})</span>",
+        "order": 2,
+        "width": 6,
+        "height": 1,
+        "layout": "row-spread",
+        "className": "",
+        "x": 300,
+        "y": 1420
+    },
+    {
+        "id": "34287454d7e94372",
+        "type": "ui-template",
+        "z": "tab-shamrock",
+        "group": "0dabc49bed804fee",
+        "name": "Hydration Logs Feed",
+        "order": 3,
+        "width": 6,
+        "height": 4,
+        "format": "<div style='height:100%; overflow-y:scroll; background:#111; color:#0f0; padding:10px; font-family:monospace; font-size:12px;' class='custom-logs'>\n  <div v-for=\"log in msg.payload\">[{{log.time}}] {{log.text}}</div>\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 300,
+        "y": 1480
+    },
+    {
+        "id": "365676a644024a32",
+        "type": "ui-form",
+        "z": "tab-shamrock",
+        "group": "f2fbe1e95d7146c4",
+        "name": "ElevenLabs Dialer",
+        "order": 2,
+        "width": 6,
+        "height": 3,
+        "label": "Initiate AI Voice Call",
+        "format": "[\n    {\"type\":\"text\",\"id\":\"phone\",\"label\":\"Destination Phone\",\"width\":\"12\",\"required\":true},\n    {\"type\":\"text\",\"id\":\"prompt_override\",\"label\":\"Prompt Override (Optional)\",\"width\":\"12\",\"required\":false}\n]",
+        "submit": "Dail number",
+        "cancel": "Cancel",
+        "topic": "topic",
+        "topicType": "msg",
+        "splitLayout": "",
+        "className": "",
+        "x": 300,
+        "y": 1540
+    },
+    {
+        "id": "5ae5b8a2743846eb",
+        "type": "ui-text-input",
+        "z": "tab-shamrock",
+        "group": "f2fbe1e95d7146c4",
+        "name": "Slack Terminal",
+        "label": "Slack Command / Exec",
+        "order": 3,
+        "width": 6,
+        "height": 1,
+        "passthru": true,
+        "mode": "text",
+        "delay": 300,
+        "topic": "topic",
+        "sendOnDelay": false,
+        "className": "slack-terminal",
+        "x": 300,
+        "y": 1600,
+        "wires": [
+            [
+                "1770a9db8dc8478c"
+            ]
+        ]
+    },
+    {
+        "id": "23e425207ea444ac",
+        "type": "http in",
+        "z": "tab-shamrock",
+        "name": "Webhook: Scraper Update",
+        "url": "/api/scraper/webhook",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 100,
+        "wires": [
+            [
+                "dc78cf0acb474907"
+            ]
+        ]
+    },
+    {
+        "id": "dc78cf0acb474907",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Format Scrape Alert",
+        "func": "if(!msg.payload.length) return null;\nconst inmate = msg.payload[0];\nmsg.payload = `🚨 NEW ARREST: ${inmate.name} - ${inmate.charge} (${inmate.bond})`;\nreturn msg;",
+        "outputs": 1,
+        "x": 350,
+        "y": 100,
+        "wires": [
+            [
+                "7e4c8d8898c94932"
+            ]
+        ]
+    },
+    {
+        "id": "bf1c096ea7754c98",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "Trigger GAS Scraper",
+        "method": "POST",
+        "ret": "json",
+        "paytoqs": "ignore",
+        "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=scrape",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 550,
+        "y": 220,
+        "wires": [
+            [
+                "9498c8758b964060"
+            ]
+        ]
+    },
+    {
+        "id": "9498c8758b964060",
+        "type": "debug",
+        "z": "tab-shamrock",
+        "name": "Scraper Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 750,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "a4225df29a8b4a47",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Format JSON",
+        "func": "msg.payload = {\n    action: 'investigate',\n    firstName: msg.payload.firstName,\n    lastName: msg.payload.lastName,\n    dob: msg.payload.dob\n};\nreturn msg;",
+        "outputs": 1,
+        "x": 550,
+        "y": 720,
+        "wires": [
+            [
+                "e7e9c596d2404c02"
+            ]
+        ]
+    },
+    {
+        "id": "e7e9c596d2404c02",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "GAS Investigator",
+        "method": "POST",
+        "ret": "json",
+        "paytoqs": "ignore",
+        "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 750,
+        "y": 720,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1770a9db8dc8478c",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Format Alerts",
+        "func": "msg.payload = {\n    action: 'sendSlackAlert',\n    text: `🖥️ **TERMINAL EXEC:** ${msg.payload}`,\n    channel: '#alerts'\n};\nreturn msg;",
+        "outputs": 1,
+        "x": 550,
+        "y": 1600,
+        "wires": [
+            [
+                "949fe1245bb746e5"
+            ]
+        ]
+    },
+    {
+        "id": "949fe1245bb746e5",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "GAS Notify",
+        "method": "POST",
+        "ret": "json",
+        "paytoqs": "ignore",
+        "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 750,
+        "y": 1600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "84baa60c49364c11",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "GAS Shutdown API",
+        "method": "POST",
+        "ret": "json",
+        "paytoqs": "ignore",
+        "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=shutdown",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 550,
+        "y": 1360,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ca2d28d6b17745b8",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Format JSON",
+        "func": "msg.payload = {\n    action: 'generate_magic_link',\n    phone: msg.payload.clientPhone,\n    caseNumber: msg.payload.caseNumber\n};\nreturn msg;",
+        "outputs": 1,
+        "x": 550,
+        "y": 1000,
+        "wires": [
+            [
+                "190b4cb6317c4b4b"
+            ]
+        ]
+    },
+    {
+        "id": "190b4cb6317c4b4b",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "GAS Link Generator",
+        "method": "POST",
+        "ret": "json",
+        "paytoqs": "ignore",
+        "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 750,
+        "y": 1000,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4f46bfeb4fac472a",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Calculate Flight Risk",
+        "func": "let score = 50;\nlet credit = parseInt(msg.payload.creditScore) || 500;\nlet years = parseInt(msg.payload.yearsEmployed) || 0;\nlet home = msg.payload.homeowner === true;\n\nif (credit > 700) score -= 20;\nelse if (credit < 550) score += 20;\n\nif (years > 5) score -= 15;\nelse if (years < 1) score += 10;\n\nif (home) score -= 15;\nelse score += 10;\n\nscore = Math.max(0, Math.min(100, score));\nmsg.payload = {\n    action: 'sendSlackAlert',\n    text: `📊 **Risk Analysis Complete**\\nFlight Risk Score: ${score}/100\\nCredit: ${credit}\\nEmployed: ${years} yrs\\nHomeowner: ${home}`,\n    channel: '#alerts'\n};\nreturn msg;",
+        "outputs": 1,
+        "x": 550,
+        "y": 840,
+        "wires": [
+            [
+                "fef84041e4f3456f"
+            ]
+        ]
+    },
+    {
+        "id": "fef84041e4f3456f",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "Slack Alert",
+        "method": "POST",
+        "ret": "json",
+        "paytoqs": "ignore",
+        "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 750,
+        "y": 840,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "clerical_group_2",
+        "type": "ui-group",
+        "name": "Clerical Operations (Manual Overrides)",
+        "page": "72fcf7b2d4cc4b0d",
+        "width": "6",
+        "objects": "all",
+        "order": 99,
+        "disp": true,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "94b98db845e54761",
+        "type": "ui-button",
+        "name": "Force Scrape Lee County",
+        "group": "clerical_group_2",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Force Scrape (Lee County)",
+        "tooltip": "Triggers the Lee County Background Scraper",
+        "color": "",
+        "bgcolor": "#1d4ed8",
+        "className": "",
+        "icon": "refresh",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "wires": [
+            [
+                "d87dbdc4e66341c7"
+            ]
+        ]
+    },
+    {
+        "id": "d87dbdc4e66341c7",
+        "type": "function",
+        "name": "Prepare Scrape Payload",
+        "func": "msg.payload = { action: 'scrapeLee' };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "wires": [
+            [
+                "133a94d4477c4480"
+            ]
+        ]
+    },
+    {
+        "id": "133a94d4477c4480",
+        "type": "http request",
+        "name": "POST GAS Webhook (Scrape)",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "wires": [
+            [
+                "678369f714ab460f"
+            ]
+        ]
+    },
+    {
+        "id": "678369f714ab460f",
+        "type": "debug",
+        "name": "Scrape Result",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "wires": []
+    },
+    {
+        "id": "3f4f595180754dd6",
+        "type": "ui-button",
+        "name": "Process Court Emails",
+        "group": "clerical_group_2",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "label": "Process Court Emails",
+        "tooltip": "Force scan inbox for court date/forfeiture/discharge emails.",
+        "color": "",
+        "bgcolor": "#047857",
+        "className": "",
+        "icon": "email",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "wires": [
+            [
+                "4228ba673f794e0d"
+            ]
+        ]
+    },
+    {
+        "id": "4228ba673f794e0d",
+        "type": "function",
+        "name": "Prepare Email payload",
+        "func": "msg.payload = { action: 'processCourtEmails' };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "wires": [
+            [
+                "49baa36551874138"
+            ]
+        ]
+    },
+    {
+        "id": "49baa36551874138",
+        "type": "http request",
+        "name": "POST GAS Webhook (Emails)",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "wires": [
+            [
+                "6521dd03f30b4a07"
+            ]
+        ]
+    },
+    {
+        "id": "6521dd03f30b4a07",
+        "type": "debug",
+        "name": "Emails Result",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "wires": []
+    },
+    {
+        "id": "ab4cdc09",
+        "type": "ui-page",
+        "name": "Agency Management",
+        "ui": "8d1bb1c09de24bf7",
+        "path": "/management",
+        "icon": "briefcase",
+        "layout": "grid",
+        "theme": "87c093119a9e46fb",
+        "order": 6,
+        "className": ""
+    },
+    {
+        "id": "51952434",
+        "type": "ui-group",
+        "name": "Automated Reporting",
+        "page": "ab4cdc09",
+        "width": "6",
+        "height": "1",
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "4fb322cc",
+        "type": "ui-group",
+        "name": "Client & Payment Operations",
+        "page": "ab4cdc09",
+        "width": "6",
+        "height": "1",
+        "order": 2,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "638c5fe9",
+        "type": "ui-button",
+        "z": "tab-shamrock",
+        "group": "51952434",
+        "name": "Liability Report",
+        "label": "Generate Liability Report",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "tooltip": "Generates weekly liability report",
+        "color": "",
+        "bgcolor": "#1e40af",
+        "icon": "file-invoice-dollar",
+        "className": "",
+        "x": 200,
+        "y": 1800,
+        "wires": [
+            [
+                "8d377193"
+            ]
+        ]
+    },
+    {
+        "id": "8d377193",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Set Liability Report Payload",
+        "func": "msg.payload = {\"action\": \"generateReport\", \"reportType\": \"weekly_liability\"};\nreturn msg;",
+        "outputs": 1,
+        "x": 450,
+        "y": 1800,
+        "wires": [
+            [
+                "bfd97f7b"
+            ]
+        ]
+    },
+    {
+        "id": "bfd97f7b",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "Trigger Liability Report",
+        "method": "POST",
+        "ret": "txt",
+        "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+        "x": 700,
+        "y": 1800,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a4ebf0a9",
+        "type": "ui-button",
+        "z": "tab-shamrock",
+        "group": "51952434",
+        "name": "Commission Report",
+        "label": "Generate Commissions (1099)",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "tooltip": "Generates agent commission statements",
+        "color": "",
+        "bgcolor": "#10b981",
+        "icon": "money-bill-wave",
+        "className": "",
+        "x": 200,
+        "y": 1860,
+        "wires": [
+            [
+                "3b90daf5"
+            ]
+        ]
+    },
+    {
+        "id": "3b90daf5",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Set Commission Report Payload",
+        "func": "msg.payload = {\"action\": \"generateReport\", \"reportType\": \"agent_commission\"};\nreturn msg;",
+        "outputs": 1,
+        "x": 450,
+        "y": 1860,
+        "wires": [
+            [
+                "3aa63d78"
+            ]
+        ]
+    },
+    {
+        "id": "3aa63d78",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "Trigger Commission Report",
+        "method": "POST",
+        "ret": "txt",
+        "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+        "x": 700,
+        "y": 1860,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9a946f62",
+        "type": "ui-button",
+        "z": "tab-shamrock",
+        "group": "51952434",
+        "name": "Void/Discharge Recon",
+        "label": "Void/Discharge Recon",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "tooltip": "Reconciles voids & discharges",
+        "color": "",
+        "bgcolor": "#8b5cf6",
+        "icon": "check-double",
+        "className": "",
+        "x": 200,
+        "y": 1920,
+        "wires": [
+            [
+                "48f7f9ea"
+            ]
+        ]
+    },
+    {
+        "id": "48f7f9ea",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Set Void/Discharge Recon Payload",
+        "func": "msg.payload = {\"action\": \"generateReport\", \"reportType\": \"void_reconciliation\"};\nreturn msg;",
+        "outputs": 1,
+        "x": 450,
+        "y": 1920,
+        "wires": [
+            [
+                "f02dd45e"
+            ]
+        ]
+    },
+    {
+        "id": "f02dd45e",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "Trigger Void/Discharge Recon",
+        "method": "POST",
+        "ret": "txt",
+        "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+        "x": 700,
+        "y": 1920,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "fa597b15",
+        "type": "ui-button",
+        "z": "tab-shamrock",
+        "group": "4fb322cc",
+        "name": "Install Court Reminders",
+        "label": "Install Court Reminders (Cron)",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "tooltip": "Installs the daily GAS trigger",
+        "color": "",
+        "bgcolor": "#475569",
+        "icon": "tools",
+        "className": "",
+        "x": 200,
+        "y": 2000,
+        "wires": [
+            [
+                "83e4993a"
+            ]
+        ]
+    },
+    {
+        "id": "83e4993a",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Set Install Court Reminders Payload",
+        "func": "msg.payload = {\"action\": \"installCourtReminders\"};\nreturn msg;",
+        "outputs": 1,
+        "x": 450,
+        "y": 2000,
+        "wires": [
+            [
+                "a1a3ed36"
+            ]
+        ]
+    },
+    {
+        "id": "a1a3ed36",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "Trigger Install Court Reminders",
+        "method": "POST",
+        "ret": "txt",
+        "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+        "x": 700,
+        "y": 2000,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4400792a",
+        "type": "ui-button",
+        "z": "tab-shamrock",
+        "group": "4fb322cc",
+        "name": "Run Court Reminders",
+        "label": "Run Court Reminders Now",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "tooltip": "Executes the court reminder sequence immediately",
+        "color": "",
+        "bgcolor": "#3b82f6",
+        "icon": "play",
+        "className": "",
+        "x": 200,
+        "y": 2060,
+        "wires": [
+            [
+                "6aa21003"
+            ]
+        ]
+    },
+    {
+        "id": "6aa21003",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Set Run Court Reminders Payload",
+        "func": "msg.payload = {\"action\": \"runCourtReminders\"};\nreturn msg;",
+        "outputs": 1,
+        "x": 450,
+        "y": 2060,
+        "wires": [
+            [
+                "b68dafd2"
+            ]
+        ]
+    },
+    {
+        "id": "b68dafd2",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "Trigger Run Court Reminders",
+        "method": "POST",
+        "ret": "txt",
+        "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+        "x": 700,
+        "y": 2060,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "737678fb",
+        "type": "ui-button",
+        "z": "tab-shamrock",
+        "group": "4fb322cc",
+        "name": "Install Check-Ins",
+        "label": "Install Check-Ins (Cron)",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "tooltip": "Installs the weekly GAS trigger",
+        "color": "",
+        "bgcolor": "#475569",
+        "icon": "tools",
+        "className": "",
+        "x": 200,
+        "y": 2120,
+        "wires": [
+            [
+                "46c08d48"
+            ]
+        ]
+    },
+    {
+        "id": "46c08d48",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Set Install Check-Ins Payload",
+        "func": "msg.payload = {\"action\": \"installClientCheckIns\"};\nreturn msg;",
+        "outputs": 1,
+        "x": 450,
+        "y": 2120,
+        "wires": [
+            [
+                "6280c6e7"
+            ]
+        ]
+    },
+    {
+        "id": "6280c6e7",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "Trigger Install Check-Ins",
+        "method": "POST",
+        "ret": "txt",
+        "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+        "x": 700,
+        "y": 2120,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "611c8b46",
+        "type": "ui-button",
+        "z": "tab-shamrock",
+        "group": "4fb322cc",
+        "name": "Run Check-Ins",
+        "label": "Run Check-Ins Now",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "tooltip": "Executes the client check-in sequence immediately",
+        "color": "",
+        "bgcolor": "#3b82f6",
+        "icon": "play",
+        "className": "",
+        "x": 200,
+        "y": 2180,
+        "wires": [
+            [
+                "05e4ce3c"
+            ]
+        ]
+    },
+    {
+        "id": "05e4ce3c",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Set Run Check-Ins Payload",
+        "func": "msg.payload = {\"action\": \"runClientCheckIns\"};\nreturn msg;",
+        "outputs": 1,
+        "x": 450,
+        "y": 2180,
+        "wires": [
+            [
+                "e1bd9650"
+            ]
+        ]
+    },
+    {
+        "id": "e1bd9650",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "Trigger Run Check-Ins",
+        "method": "POST",
+        "ret": "txt",
+        "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+        "x": 700,
+        "y": 2180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e239e3cb",
+        "type": "ui-button",
+        "z": "tab-shamrock",
+        "group": "4fb322cc",
+        "name": "Install Payment Recon",
+        "label": "Install Payment Recon (Cron)",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "tooltip": "Installs the weekly payment check trigger",
+        "color": "",
+        "bgcolor": "#475569",
+        "icon": "tools",
+        "className": "",
+        "x": 200,
+        "y": 2240,
+        "wires": [
+            [
+                "0f5f1219"
+            ]
+        ]
+    },
+    {
+        "id": "0f5f1219",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Set Install Payment Recon Payload",
+        "func": "msg.payload = {\"action\": \"installPaymentPlanRecon\"};\nreturn msg;",
+        "outputs": 1,
+        "x": 450,
+        "y": 2240,
+        "wires": [
+            [
+                "dfd26bb2"
+            ]
+        ]
+    },
+    {
+        "id": "dfd26bb2",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "Trigger Install Payment Recon",
+        "method": "POST",
+        "ret": "txt",
+        "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+        "x": 700,
+        "y": 2240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "dd4e66f4",
+        "type": "ui-button",
+        "z": "tab-shamrock",
+        "group": "4fb322cc",
+        "name": "Run Payment Recon",
+        "label": "Run Payment Recon Now",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "passthru": false,
+        "tooltip": "Executes the payment reconciliation immediately",
+        "color": "",
+        "bgcolor": "#f59e0b",
+        "icon": "play",
+        "className": "",
+        "x": 200,
+        "y": 2300,
+        "wires": [
+            [
+                "30b9279c"
+            ]
+        ]
+    },
+    {
+        "id": "30b9279c",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Set Run Payment Recon Payload",
+        "func": "msg.payload = {\"action\": \"runPaymentPlanRecon\"};\nreturn msg;",
+        "outputs": 1,
+        "x": 450,
+        "y": 2300,
+        "wires": [
+            [
+                "559e6dc1"
+            ]
+        ]
+    },
+    {
+        "id": "559e6dc1",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "Trigger Run Payment Recon",
+        "method": "POST",
+        "ret": "txt",
+        "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+        "x": 700,
+        "y": 2300,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a73f65e3",
+        "type": "ui-group",
+        "name": "Upcoming Court Dates",
+        "page": "ab4cdc09",
+        "width": "12",
+        "height": "1",
+        "order": 3,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "1b54db70",
+        "type": "inject",
+        "z": "tab-shamrock",
+        "name": "Refresh Calendar (2hr)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "7200",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"action\":\"getUpcomingCourtDates\"}",
+        "payloadType": "json",
+        "x": 200,
+        "y": 2000,
+        "wires": [
+            [
+                "ff8c3a01"
+            ]
+        ]
+    },
+    {
+        "id": "02e14938",
+        "type": "ui-button",
+        "z": "tab-shamrock",
+        "group": "a73f65e3",
+        "name": "Manual Refresh",
+        "label": "Refresh Calendar",
+        "order": 1,
+        "width": 3,
+        "height": 1,
+        "passthru": false,
+        "tooltip": "Refresh upcoming court dates",
+        "color": "",
+        "bgcolor": "",
+        "icon": "refresh",
+        "payload": "{\"action\":\"getUpcomingCourtDates\"}",
+        "payloadType": "json",
+        "className": "",
+        "x": 200,
+        "y": 2060,
+        "wires": [
+            [
+                "ff8c3a01"
+            ]
+        ]
+    },
+    {
+        "id": "ff8c3a01",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "Fetch Court Dates",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 450,
+        "y": 2000,
+        "wires": [
+            [
+                "dac824f9"
+            ]
+        ]
+    },
+    {
+        "id": "dac824f9",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Extract Events",
+        "func": "if (msg.payload && msg.payload.success) {\n    msg.payload = msg.payload.events;\n    return msg;\n}\nreturn null;",
+        "outputs": 1,
+        "x": 650,
+        "y": 2000,
+        "wires": [
+            [
+                "1c069a7f"
+            ]
+        ]
+    },
+    {
+        "id": "1c069a7f",
+        "type": "ui-template",
+        "z": "tab-shamrock",
+        "group": "a73f65e3",
+        "name": "Court Events Table",
+        "order": 2,
+        "width": 12,
+        "height": 7,
+        "format": "<div style=\"height:350px; overflow-y:scroll; padding:10px; background:#1e1e1e; border-radius:8px; border:1px solid #333;\">\n  <div v-if=\"!msg.payload || msg.payload.length === 0\" style=\"color:#888; text-align:center; margin-top:50px;\">\n    No upcoming court dates found. Click Refresh to check.\n  </div>\n  <table v-else style=\"width:100%; border-collapse:collapse; color:#fff; font-size:14px;\">\n    <thead>\n      <tr style=\"background:#333; text-align:left;\">\n        <th style=\"padding:10px; border-bottom:2px solid #555;\">Date & Time</th>\n        <th style=\"padding:10px; border-bottom:2px solid #555;\">Details</th>\n        <th style=\"padding:10px; border-bottom:2px solid #555;\">Location</th>\n      </tr>\n    </thead>\n    <tbody>\n      <tr v-for=\"event in msg.payload\" :key=\"event.title\" style=\"border-bottom:1px solid #333;\">\n        <td style=\"padding:10px; white-space:nowrap;\">\n          <strong style=\"color:#3b82f6;\">{{ new Date(event.startTime).toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'}) }}</strong><br>\n          <span style=\"color:#aaa; font-size:12px;\">{{ new Date(event.startTime).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}) }}</span>\n        </td>\n        <td style=\"padding:10px;\">\n          <strong style=\"font-size:15px;\">{{ event.title }}</strong>\n        </td>\n        <td style=\"padding:10px; color:#10b981;\">\n          <i class=\"fa fa-map-marker\"></i> {{ event.location || 'See Notice' }}\n        </td>\n      </tr>\n    </tbody>\n  </table>\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 850,
+        "y": 2000,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ui-tab-operations",
+        "type": "ui-page",
+        "name": "Operations",
+        "icon": "dashboard",
+        "order": 2,
+        "ui": "8d1bb1c09de24bf7",
+        "path": "/operations",
+        "layout": "grid",
+        "theme": "87c093119a9e46fb",
+        "className": ""
+    },
+    {
+        "id": "ui-group-court-filings",
+        "type": "ui-group",
+        "name": "Court Filings Generator",
+        "order": 3,
+        "width": "6",
+        "collapse": false,
+        "page": "ui-tab-operations",
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "ui_form_court_doc",
+        "type": "ui-form",
+        "z": "phase5_tab",
+        "name": "Generate Court Document",
+        "group": "ui-group-court-filings",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "payload": "",
+        "submit": "Generate Document",
+        "cancel": "Cancel",
+        "topic": "generate_doc",
+        "x": 200,
+        "y": 1200,
+        "wires": [
+            [
+                "fn_prepare_doc_req"
+            ]
+        ],
+        "label": "Generate Court Document",
+        "format": "[{\"type\": \"text\", \"id\": \"docType\", \"label\": \"Document Type\", \"width\": \"12\", \"required\": true}, {\"type\": \"text\", \"id\": \"defendantName\", \"label\": \"Defendant Name\", \"width\": \"12\", \"required\": true}, {\"type\": \"text\", \"id\": \"county\", \"label\": \"County\", \"width\": \"12\", \"required\": true}, {\"type\": \"text\", \"id\": \"caseNumber\", \"label\": \"Case Number\", \"width\": \"12\", \"required\": true}, {\"type\": \"text\", \"id\": \"bondAmount\", \"label\": \"Bond Amount\", \"width\": \"12\", \"required\": false}, {\"type\": \"text\", \"id\": \"estreatureDate\", \"label\": \"Estreature Date\", \"width\": \"12\", \"required\": false}]",
+        "topicType": "msg",
+        "className": ""
+    },
+    {
+        "id": "fn_prepare_doc_req",
+        "type": "function",
+        "z": "phase5_tab",
+        "name": "Format Doc Request",
+        "func": "msg.payload = {\n    'action': 'generateCourtDocument',\n    'docType': msg.payload.docType.toLowerCase(),\n    'caseData': {\n        'defendantName': msg.payload.defendantName,\n        'county': msg.payload.county,\n        'courtName': 'CIRCUIT',\n        'caseNumber': msg.payload.caseNumber,\n        'bondAmount': msg.payload.bondAmount,\n        'estreatureDate': msg.payload.estreatureDate\n    }\n};\nmsg.headers = {\n    'Content-Type': 'application/json',\n    'x-api-key': global.get('gas_api_key') || ''\n};\nreturn msg;",
+        "outputs": 1,
+        "x": 450,
+        "y": 1200,
+        "wires": [
+            [
+                "http_req_doc"
+            ]
+        ]
+    },
+    {
+        "id": "http_req_doc",
+        "type": "http request",
+        "z": "phase5_tab",
+        "name": "Call GAS Webhook",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://script.google.com/macros/s/AKfycbyCIDPzA_EA1B1SGsfhYiXRGKM8z61EgACZdDPILT_MjjXee0wSDEI0RRYthE0CvP-Z/exec",
+        "x": 650,
+        "y": 1200,
+        "wires": [
+            [
+                "ui_toast_doc_result"
+            ]
+        ]
+    },
+    {
+        "id": "ui_toast_doc_result",
+        "type": "debug",
+        "z": "phase5_tab",
+        "position": "top right",
+        "displayTime": "3",
+        "highlight": "",
+        "sendall": true,
+        "outputs": 0,
+        "ok": "OK",
+        "cancel": "",
+        "raw": false,
+        "name": "Show Result",
+        "x": 850,
+        "y": 1200,
+        "wires": [],
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto"
+    },
+    {
+        "id": "ui-group-automated-alerts",
+        "type": "ui-group",
+        "name": "AI Automation Control",
+        "order": 4,
+        "width": "6",
+        "collapse": false,
+        "page": "ui-tab-operations",
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "ui_form_walkout",
+        "type": "ui-form",
+        "z": "phase5_tab",
+        "name": "Add to Walk-Out Watch",
+        "group": "ui-group-automated-alerts",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "payload": "",
+        "submit": "Watch For Release",
+        "cancel": "Cancel",
+        "topic": "walkout",
+        "x": 200,
+        "y": 1400,
+        "wires": [
+            [
+                "fn_add_walkout"
+            ]
+        ],
+        "label": "Add to Walk-Out Watch",
+        "format": "[{\"type\": \"text\", \"id\": \"bookingNum\", \"label\": \"Booking Number\", \"width\": \"12\", \"required\": true}, {\"type\": \"text\", \"id\": \"phone\", \"label\": \"Indemnitor Phone\", \"width\": \"12\", \"required\": true}]",
+        "topicType": "msg",
+        "className": ""
+    },
+    {
+        "id": "fn_add_walkout",
+        "type": "function",
+        "z": "phase5_tab",
+        "name": "Save to Watch List",
+        "func": "let watchList = global.get('walkout_watch_list') || {};\nwatchList[msg.payload.bookingNum] = {\n    phone: msg.payload.phone,\n    status: 'WATCHING',\n    added: new Date().toISOString()\n};\nglobal.set('walkout_watch_list', watchList);\nmsg.payload = `Now watching ${msg.payload.bookingNum} for release.`;\nreturn msg;",
+        "outputs": 1,
+        "x": 450,
+        "y": 1400,
+        "wires": [
+            [
+                "ui_toast_wo"
+            ]
+        ]
+    },
+    {
+        "id": "ui_toast_wo",
+        "type": "debug",
+        "z": "phase5_tab",
+        "position": "top right",
+        "displayTime": "3",
+        "highlight": "",
+        "sendall": true,
+        "outputs": 0,
+        "ok": "OK",
+        "cancel": "",
+        "raw": false,
+        "name": "Show Result",
+        "x": 650,
+        "y": 1400,
+        "wires": [],
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto"
+    },
+    {
+        "id": "inject_wo_poll",
+        "type": "inject",
+        "z": "phase5_tab",
+        "name": "Jail Poll (10m)",
+        "props": [],
+        "repeat": "600",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 200,
+        "y": 1460,
+        "wires": [
+            [
+                "fn_poll_wo"
+            ]
+        ]
+    },
+    {
+        "id": "fn_poll_wo",
+        "type": "function",
+        "z": "phase5_tab",
+        "name": "Check Scraper API",
+        "func": "let watchList = global.get('walkout_watch_list') || {};\nlet msgs = [];\nfor (let bookingNum in watchList) {\n    if (watchList[bookingNum].status === 'WATCHING') {\n        // In a real prod setup, this triggers the HTTP node to our Lee County Scraper Endpoint.\n        // If scraper returns {\"status\": \"RELEASED\"}, we route to Twilio SMS and flip status to 'RELEASED_NOTIFIED'.\n        msgs.push({ \n            payload: { bookingNum: bookingNum, phone: watchList[bookingNum].phone, action: 'check_status' } \n        });\n    }\n}\nreturn [msgs];",
+        "outputs": 1,
+        "x": 450,
+        "y": 1460,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ui_form_probation",
+        "type": "ui-form",
+        "z": "phase5_tab",
+        "name": "Enroll Auto Check-In",
+        "group": "ui-group-automated-alerts",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "payload": "",
+        "submit": "Enroll Defendant",
+        "cancel": "Cancel",
+        "topic": "probation",
+        "x": 200,
+        "y": 1560,
+        "wires": [
+            [
+                "fn_add_probation"
+            ]
+        ],
+        "label": "Enroll Auto Check-In",
+        "format": "[{\"type\": \"text\", \"id\": \"defName\", \"label\": \"Defendant Name\", \"width\": \"12\", \"required\": true}, {\"type\": \"text\", \"id\": \"phone\", \"label\": \"Phone Number\", \"width\": \"12\", \"required\": true}, {\"type\": \"text\", \"id\": \"freq\", \"label\": \"Frequency (Daily/Weekly)\", \"width\": \"12\", \"required\": true}]",
+        "topicType": "msg",
+        "className": ""
+    },
+    {
+        "id": "fn_add_probation",
+        "type": "function",
+        "z": "phase5_tab",
+        "name": "Save to CRM Array",
+        "func": "let probList = global.get('probation_list') || {};\nprobList[msg.payload.defName] = {\n    phone: msg.payload.phone,\n    frequency: msg.payload.freq,\n    last_checkin: null\n};\nglobal.set('probation_list', probList);\nmsg.payload = `Enrolled ${msg.payload.defName} for ${msg.payload.freq} check-ins.`;\nreturn msg;",
+        "outputs": 1,
+        "x": 450,
+        "y": 1560,
+        "wires": [
+            [
+                "ui_toast_prob"
+            ]
+        ]
+    },
+    {
+        "id": "ui_toast_prob",
+        "type": "debug",
+        "z": "phase5_tab",
+        "position": "top right",
+        "displayTime": "3",
+        "highlight": "",
+        "sendall": true,
+        "outputs": 0,
+        "ok": "OK",
+        "cancel": "",
+        "raw": false,
+        "name": "Show Result",
+        "x": 650,
+        "y": 1560,
+        "wires": [],
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto"
+    },
+    {
+        "id": "inject_prob_cron",
+        "type": "inject",
+        "z": "phase5_tab",
+        "name": "Daily Cron (9 AM)",
+        "props": [],
+        "repeat": "",
+        "crontab": "00 09 * * *",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 200,
+        "y": 1620,
+        "wires": [
+            [
+                "fn_run_prob"
+            ]
+        ]
+    },
+    {
+        "id": "fn_run_prob",
+        "type": "function",
+        "z": "phase5_tab",
+        "name": "Dispatch Daily Texts",
+        "func": "let probList = global.get('probation_list') || {};\nlet msgs = [];\nfor (let def in probList) {\n    let text = `Shamrock Bail Bonds Auto Check-in: Hello ${def}, please reply with 'HERE' to legally verify your location and check-in for the ${probList[def].frequency} requirement.`;\n    \n    // In prod, this routes to the Twilio SMS outbound node\n    msgs.push({ \n        payload: { to: probList[def].phone, text: text, _shamrock_ai_route: 'checkin_dispatch' } \n    });\n}\nreturn [msgs];",
+        "outputs": 1,
+        "x": 450,
+        "y": 1620,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "3bfca68e",
+        "type": "ui-template",
+        "z": "tab-shamrock",
+        "group": "1c0be978acad40dc",
+        "name": "Bounty Board",
+        "order": 5,
+        "width": 6,
+        "height": 6,
+        "format": "<template>\n  <div style=\"padding:12px; height:100%; overflow-y:auto; background:#1e1e1e; border-radius:8px;\">\n    <h3 style=\"color:#d4af37; margin:0 0 12px; font-weight:bold; border-bottom:1px solid #333; padding-bottom:8px;\">💰 BOUNTY BOARD (Top Unposted)</h3>\n    <div v-if=\"msg?.payload && msg.payload.length > 0\">\n      <div v-for=\"(item, i) in msg.payload\" :key=\"i\" style=\"padding:10px; margin-bottom:8px; background:#2a2a2a; border-left:4px solid #ef4444; border-radius:4px;\">\n        <strong style=\"color:#fff; font-size:1.1em;\">{{item.name}}</strong>\n        <span style=\"float:right; color:#ef4444; font-weight:bold;\">${{item.bond.toLocaleString()}}</span>\n        <div style=\"color:#aaa; font-size:0.9em; margin-top:4px;\">{{item.county}} | {{item.charges}}</div>\n      </div>\n    </div>\n    <div v-else style=\"color:#888; text-align:center; padding:20px;\">Scanning for targets...</div>\n  </div>\n</template>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "x": 750,
+        "y": 340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "203b2b65",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Filter High Value & Returning (Shamrock's Leads)",
+        "func": "try {\n    const rawData = typeof msg.payload === 'string' ? JSON.parse(msg.payload) : msg.payload;\n    const records = Array.isArray(rawData) ? rawData : (rawData.data || [rawData]);\n    let leads = [];\n    \n    // Get historical clients from global context (it's updated daily/hourly)\n    const historicalText = global.get(\"historical_clients_csv\") || \"\";\n    const isHistorical = (fullName) => {\n        if(!historicalText) return false;\n        // Normalize name to check: removing spaces/punctuation\n        let normIncoming = fullName.toLowerCase().replace(/[^a-z]/g, \"\");\n        if(normIncoming.length < 3) return false;\n        \n        // This is a rough check, realistically you'd split First/Last. \n        // For speed, let's see if we can find a match in the CSV string.\n        // We can parse the CSV text quickly:\n        const rows = historicalText.split('\\n');\n        for(let i=1; i<rows.length; i++){\n            let cols = rows[i].split(',');\n            if(cols.length >= 2){\n                let fName = cols[0].replace(/[^a-zA-Z]/g, '').toLowerCase();\n                let lName = cols[1].replace(/[^a-zA-Z]/g, '').toLowerCase();\n                if(fName && lName) {\n                    // Check if incoming name has both First and Last name\n                    if(normIncoming.includes(fName) && normIncoming.includes(lName)) {\n                        return true;\n                    }\n                }\n            }\n        }\n        return false;\n    };\n    \n    for (let record of records) {\n        const statusText = (record.bond_status || \"\").toLowerCase();\n        // Only target unposted\n        if (statusText.includes(\"unposted\") || statusText === \"\" || !statusText.includes(\"posted\")) {\n            \n            let bondValStr = (record.total_bond_amount || \"0\").toString().replace(/[^0-9.]/g, \"\");\n            let bondValue = parseFloat(bondValStr);\n            if (isNaN(bondValue)) bondValue = 0;\n            \n            const fullName = record.full_name || \"Unknown\";\n            const isReturning = isHistorical(fullName);\n            \n            // Criteria: Over $2500 OR Returning Client\n            if (bondValue > 2500 || isReturning) {\n                leads.push({\n                    name: fullName,\n                    bond: bondValue,\n                    county: record.county || \"Unknown\",\n                    charges: record.charges || \"Not Listed\",\n                    isReturning: isReturning\n                });\n            }\n        }\n    }\n    \n    // Sort: Returning clients first, then highest bond\n    leads.sort((a,b) => {\n        if(a.isReturning === b.isReturning) {\n            return b.bond - a.bond;\n        }\n        return a.isReturning ? -1 : 1;\n    });\n    \n    msg.payload = leads.slice(0, 20); // Show top 20\n    return msg;\n} catch (e) {\n    node.error(\"Error parsing scraper data for Shamrock Leads\", e);\n    return null;\n}",
+        "outputs": 1,
+        "x": 500,
+        "y": 340,
+        "wires": [
+            [
+                "3bfca68e"
+            ]
+        ]
+    },
+    {
+        "id": "0fb8c363",
+        "type": "inject",
+        "z": "tab-shamrock",
+        "name": "Every 4 Hours (Cache History)",
+        "repeat": "14400",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 620,
+        "wires": [
+            [
+                "c5509eac"
+            ]
+        ]
+    },
+    {
+        "id": "c5509eac",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "Fetch Historical Clients",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://docs.google.com/spreadsheets/d/121z5R6Hpqur54GNPC8L26ccfDPLHTJc3_LU6G7IV_0E/export?format=csv&gid=2053045859",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 420,
+        "y": 620,
+        "wires": [
+            [
+                "ba4c02e1"
+            ]
+        ]
+    },
+    {
+        "id": "ba4c02e1",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Cache to Global",
+        "func": "global.set('historical_clients_csv', msg.payload);\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 620,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "be294373",
+        "type": "http in",
+        "z": "tab-advanced",
+        "name": "Twilio WhatsApp Webhook",
+        "url": "/whatsapp",
+        "method": "post",
+        "upload": false,
+        "x": 150,
+        "y": 80,
+        "wires": [
+            [
+                "4a0a3b8e",
+                "node-trigger-gas-twilio"
+            ]
+        ]
+    },
+    {
+        "id": "4a0a3b8e",
+        "type": "http response",
+        "z": "tab-advanced",
+        "name": "200 OK",
+        "statusCode": "200",
+        "x": 380,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "node-trigger-gas-twilio",
+        "type": "http request",
+        "z": "tab-advanced",
+        "name": "Trigger GAS (Twilio)",
+        "method": "POST",
+        "ret": "obj",
+        "url": "{{{global.GAS_URL}}}/twilio-process?apiKey={{{global.PROXY_API_KEY}}}",
+        "x": 420,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "node-telegram-in",
+        "type": "http in",
+        "z": "tab-advanced",
+        "name": "Telegram Webhook",
+        "url": "/telegram",
+        "method": "post",
+        "upload": false,
+        "x": 150,
+        "y": 140,
+        "wires": [
+            [
+                "node-telegram-resp",
+                "node-trigger-gas-telegram"
+            ]
+        ]
+    },
+    {
+        "id": "node-telegram-resp",
+        "type": "http response",
+        "z": "tab-advanced",
+        "name": "200 OK",
+        "statusCode": "200",
+        "x": 380,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "node-trigger-gas-telegram",
+        "type": "http request",
+        "z": "tab-advanced",
+        "name": "Trigger GAS (Telegram)",
+        "method": "POST",
+        "ret": "obj",
+        "url": "{{{global.GAS_URL}}}/telegram-process?apiKey={{{global.PROXY_API_KEY}}}",
+        "x": 420,
+        "y": 160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "catch-19cd52abe46",
+        "type": "catch",
+        "z": "tab-shamrock",
+        "name": "Global Error Catcher",
+        "scope": null,
+        "uncaught": false,
+        "x": 150,
+        "y": 2600,
+        "wires": [
+            [
+                "fmt-19cd52abe46"
+            ]
+        ]
+    },
+    {
+        "id": "fmt-19cd52abe46",
+        "type": "function",
+        "z": "tab-shamrock",
+        "name": "Format Error Alert",
+        "func": "const err = msg.error || {};\nconst source = err.source ? (err.source.name || err.source.type || err.source.id) : \"Unknown Node\";\nconst text = `🚨 *Node-RED CRITICAL ERROR* 🚨\\n\\n*Source Node:* ${source}\\n*Error Message:* ${err.message || \"Unknown Error\"}\\n\\n```${JSON.stringify(msg, null, 2).substring(0, 500)}````;\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\n\nmsg.payload = {\n    \"channel\": \"#alerts\", // Use existing alerts channel\n    \"text\": text\n};\n\nreturn msg;",
+        "outputs": 1,
+        "x": 350,
+        "y": 2600,
+        "wires": [
+            [
+                "http-19cd52abe46",
+                "dbg-19cd52abe46"
+            ]
+        ]
+    },
+    {
+        "id": "http-19cd52abe46",
+        "type": "http request",
+        "z": "tab-shamrock",
+        "name": "POST Error to Slack",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://slack.com/api/chat.postMessage",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 580,
+        "y": 2600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "dbg-19cd52abe46",
+        "type": "debug",
+        "z": "tab-shamrock",
+        "name": "Debug Errors",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 570,
+        "y": 2660,
+        "wires": []
+    },
+    {
+        "id": "prep_signnow_payload",
+        "type": "function",
+        "z": "tab-advanced",
+        "name": "Prep SignNow Payload",
+        "func": "msg.payload = {\\n  action: 'sendForSignature',\\n  method: 'sms',\\n  bookingData: msg.payload\\n};\\nmsg.headers = { ...msg.headers, 'Content-Type': 'application/json', 'x-api-key': global.get('gas_api_key') || '' };\\nreturn msg;",
+        "outputs": 1,
+        "x": 600,
+        "y": 240,
+        "wires": [
+            [
+                "gas_signnow_call"
+            ]
+        ]
+    },
+    {
+        "id": "gas_signnow_call",
+        "type": "http request",
+        "z": "tab-advanced",
+        "name": "GAS SignNow Webhook",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://script.google.com/macros/s/AKfycbyCIDPzA_EA1B1SGsfhYiXRGKM8z61EgACZdDPILT_MjjXee0wSDEI0RRYthE0CvP-Z/exec",
+        "x": 800,
+        "y": 240,
+        "wires": [
+            [
+                "log_signnow"
+            ]
+        ]
+    },
+    {
+        "id": "log_signnow",
+        "type": "debug",
+        "z": "tab-advanced",
+        "name": "SignNow Log",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 1000,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "scout_webhook_in",
+        "type": "http in",
+        "z": "tab-advanced",
+        "name": "Scout / Arrest Webhook",
+        "url": "/webhook/scout",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 340,
+        "wires": [
+            [
+                "scout_http_res",
+                "scout_filter_bounty"
+            ]
+        ]
+    },
+    {
+        "id": "scout_http_res",
+        "type": "http response",
+        "z": "tab-advanced",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {},
+        "x": 340,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "scout_filter_bounty",
+        "type": "function",
+        "z": "tab-advanced",
+        "name": "Filter Bounty > $2,500",
+        "func": "const payload = msg.payload || {};\\nconst arrests = Array.isArray(payload.arrests) ? payload.arrests : [payload];\\n\\nlet massiveBonds = arrests.filter(a => {\\n    const bondStr = String(a.BondAmount || a.bondAmount || '0').replace(/[^0-9.]/g, '');\\n    return parseFloat(bondStr) >= 2500;\\n});\\n\\nif (massiveBonds.length === 0) return null; // Drop if no large bonds\\n\\nconst blocks = massiveBonds.map(a => {\\n    return {\\n        \"type\": \"section\",\\n        \"text\": {\\n            \"type\": \"mrkdwn\",\\n            \"text\": `*Name:* ${a.DefendantName || a.name || 'Unknown'}\\n*County:* ${a.County || a.county || 'SWFL'}\\n*Bond:* $${a.BondAmount || a.bondAmount}\\n*Charges:* ${a.Charges || a.charges || 'Pending'}`\\n        }\\n    };\\n});\\n\\nmsg.payload = {\\n    \"channel\": \"C0ACWDRQWD9\",  // #new-cases\\n    \"text\": \"🚨 *High Value Arrest(s) Detected!* 🚨\",\\n    \"blocks\": [\\n        {\\n            \"type\": \"header\",\\n            \"text\": {\\n                \"type\": \"plain_text\",\\n                \"text\": \"🚨 The Scout: High Value Targets\",\\n                \"emoji\": true\\n            }\\n        },\\n        ...blocks\\n    ]\\n};\\n\\nmsg.headers = {\\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\\n    \"Content-Type\": \"application/json; charset=utf-8\"\\n};\\n\\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "x": 420,
+        "y": 360,
+        "wires": [
+            [
+                "node-slack-post"
+            ]
+        ]
+    },
+    {
+        "id": "scout_morning_cron",
+        "type": "inject",
+        "z": "tab-advanced",
+        "name": "6 AM Daily Scrape",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "00 06 * * *",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 150,
+        "y": 420,
+        "wires": [
+            [
+                "scout_exec_run_all"
+            ]
+        ]
+    },
+    {
+        "id": "scout_exec_run_all",
+        "type": "exec",
+        "z": "tab-advanced",
+        "command": "cd /Users/brendan/Desktop/shamrock-active-software/swfl-arrest-scrapers && /usr/local/bin/node run_all_counties.js || node run_all_counties.js",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "Run All Scrapers",
+        "x": 360,
+        "y": 420,
+        "wires": [
+            [],
+            [],
+            []
+        ]
+    }
+]

@@ -1,0 +1,25 @@
+/**
+ * settings.js.example
+ * 
+ * Copy this file to settings.js and fill in your real credentials.
+ * settings.js is gitignored and will NOT be committed.
+ * 
+ *   cp settings.js.example settings.js
+ */
+
+module.exports = {
+    // --- Credentials go in functionGlobalContext ---
+    functionGlobalContext: {
+        SLACK_TOKEN: "YOUR_SLACK_BOT_TOKEN_HERE"   // xoxb-... from Slack App
+    },
+
+    // --- Environment Variables ---
+    // These can also be set via process.env or a .env file:
+    //   TWILIO_ACCOUNT_SID=ACxxxxxx
+    //   TWILIO_AUTH_TOKEN=xxxxxx
+    //   TELEGRAM_BOT_TOKEN=xxxxxx
+    //   NGROK_BASE_URL=https://your-domain.ngrok-free.dev
+
+    // See the full default settings.js shipped with Node-RED for all options:
+    // https://nodered.org/docs/user-guide/runtime/settings-file
+};

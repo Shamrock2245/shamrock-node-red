@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Node-RED runtime files
+node_red_data/node_modules/
+node_red_data/.config.nodes.json
+node_red_data/.config.nodes.json.backup
+node_red_data/.config.runtime.json
+node_red_data/.sessions.json
+
+# Secrets — NEVER commit these
+node_red_data/settings.js
+node_red_data/flows_cred.json
+node_red_data/context/
+
+# OS files
+.DS_Store
+**/.DS_Store
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Temp files
+/tmp/
+
+# Lock files (large)
+package-lock.json
+node_red_data/package-lock.json
