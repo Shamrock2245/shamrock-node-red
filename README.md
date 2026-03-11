@@ -47,6 +47,7 @@ ngrok http 1880
 
 | Document | Purpose |
 |---|---|
+| [OVERVIEW.md](OVERVIEW.md) | 🗺 **Visual map** — ecosystem diagram, intake pipeline, 24-hour cycle |
 | [SYSTEM.md](SYSTEM.md) | Architecture, tech stack, directory layout, flow tab map |
 | [AGENTS.md](AGENTS.md) | Digital workforce — 9 AI agents with roles, data flows, KPIs |
 | [INTEGRATIONS.md](INTEGRATIONS.md) | External services — GAS, Twilio, Slack, Telegram, SignNow, ElevenLabs |
