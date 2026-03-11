@@ -1,0 +1,615 @@
+{
+  "stubs": [],
+  "dead_ends": [
+    {
+      "id": "e7e9c596d2404c02",
+      "name": "GAS Investigator",
+      "type": "http request",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "949fe1245bb746e5",
+      "name": "GAS Notify",
+      "type": "http request",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "84baa60c49364c11",
+      "name": "GAS Shutdown API",
+      "type": "http request",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "190b4cb6317c4b4b",
+      "name": "GAS Link Generator",
+      "type": "http request",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "fef84041e4f3456f",
+      "name": "Slack Alert",
+      "type": "http request",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "bfd97f7b",
+      "name": "Trigger Liability Report",
+      "type": "http request",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "3aa63d78",
+      "name": "Trigger Commission Report",
+      "type": "http request",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "f02dd45e",
+      "name": "Trigger Void/Discharge Recon",
+      "type": "http request",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "a1a3ed36",
+      "name": "Trigger Install Court Reminders",
+      "type": "http request",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "b68dafd2",
+      "name": "Trigger Run Court Reminders",
+      "type": "http request",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "6280c6e7",
+      "name": "Trigger Install Check-Ins",
+      "type": "http request",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "e1bd9650",
+      "name": "Trigger Run Check-Ins",
+      "type": "http request",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "dfd26bb2",
+      "name": "Trigger Install Payment Recon",
+      "type": "http request",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "559e6dc1",
+      "name": "Trigger Run Payment Recon",
+      "type": "http request",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "fn_poll_wo",
+      "name": "Check Scraper API",
+      "type": "function",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "fn_run_prob",
+      "name": "Dispatch Daily Texts",
+      "type": "function",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "ba4c02e1",
+      "name": "Cache to Global",
+      "type": "function",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "http-19cd52abe46",
+      "name": "POST Error to Slack",
+      "type": "http request",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "ef6f8f73",
+      "name": "Mark Pending",
+      "type": "function",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "9673428d",
+      "name": "POST to #bonds-live",
+      "type": "http request",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "node-trigger-gas-twilio",
+      "name": "Trigger GAS (Twilio)",
+      "type": "http request",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "node-trigger-gas-telegram",
+      "name": "Trigger GAS (Telegram)",
+      "type": "http request",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "scout_filter_bounty",
+      "name": "Filter Bounty > $2,500",
+      "type": "function",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "tg-bot-gas-forward",
+      "name": "Forward to GAS (Bot)",
+      "type": "http request",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "tg-convo-gas",
+      "name": "GAS Conversation Handler",
+      "type": "http request",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "11labs-gas-log",
+      "name": "Log to GAS",
+      "type": "http request",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "11labs-slack-post",
+      "name": "POST to Slack",
+      "type": "http request",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "tg-miniapp-gas",
+      "name": "GAS MiniApp Handler",
+      "type": "http request",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "scraper-log-gas",
+      "name": "Log to GAS",
+      "type": "http request",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "9e6dc9af7af848ee",
+      "name": "\ud83d\udce4 Slack: #alerts",
+      "type": "http request",
+      "tab": "The Bounty Hunter"
+    },
+    {
+      "id": "8ffb18537a304c21",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "8fdcfb0faab644ec",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "12dd9fbc8460485b",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "a772f117f98c4181",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "88a169c0761c4bd7",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "242181ebcd5d4ace",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "dc223a5d573f4db6",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "f8b93305ba944d9d",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "57f690aefd754cd4",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "2e4a7a8fb5464ec4",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "0f20abbd3cc34b66",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "759e94059721477b",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "1f6d0207ca6a4a9e",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "e244b91238c94a57",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "26b3dc0c6ec94339",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "ae194c6a03fc455d",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "type": "http request",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "d63c8e9142fc4afb",
+      "name": "\ud83d\udce4 Slack",
+      "type": "http request",
+      "tab": "Intake Pipeline"
+    }
+  ],
+  "orphan_widgets": [
+    {
+      "id": "c9845c66f9284d5f",
+      "name": "Scraper Health Matrix",
+      "type": "ui-table",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "07507efca8d84f32",
+      "name": "Shamrock's Leads",
+      "type": "ui-template",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "27f1f6ed9005447e",
+      "name": "Live Chat Feed",
+      "type": "ui-template",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "d72170fe92de4336",
+      "name": "FAQ Containment Rate",
+      "type": "ui-gauge",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "9c1dfeb9557445bb",
+      "name": "Red Flag Ledger",
+      "type": "ui-template",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "5f818ce8b6554439",
+      "name": "Global Forfeiture Alarm",
+      "type": "ui-text",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "52fd9116d9de40d6",
+      "name": "Live Funnel Drops",
+      "type": "ui-chart",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "cd7d39a7f65841d9",
+      "name": "SignNow Packet Tracker",
+      "type": "ui-template",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "9c9dbea9fbd7403a",
+      "name": "SwipeSimple Revenue",
+      "type": "ui-chart",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "2619cda454734001",
+      "name": "OpenAI API Quota",
+      "type": "ui-gauge",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "24b07f6d87c741f4",
+      "name": "GAS Bridge Status",
+      "type": "ui-text",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "34287454d7e94372",
+      "name": "Hydration Logs Feed",
+      "type": "ui-template",
+      "tab": "Shamrock Automations"
+    }
+  ],
+  "http_ff": [
+    {
+      "id": "e7e9c596d2404c02",
+      "name": "GAS Investigator",
+      "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "949fe1245bb746e5",
+      "name": "GAS Notify",
+      "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "84baa60c49364c11",
+      "name": "GAS Shutdown API",
+      "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=shutdown",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "190b4cb6317c4b4b",
+      "name": "GAS Link Generator",
+      "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "fef84041e4f3456f",
+      "name": "Slack Alert",
+      "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "bfd97f7b",
+      "name": "Trigger Liability Report",
+      "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "3aa63d78",
+      "name": "Trigger Commission Report",
+      "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "f02dd45e",
+      "name": "Trigger Void/Discharge Recon",
+      "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "a1a3ed36",
+      "name": "Trigger Install Court Reminders",
+      "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "b68dafd2",
+      "name": "Trigger Run Court Reminders",
+      "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "6280c6e7",
+      "name": "Trigger Install Check-Ins",
+      "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "e1bd9650",
+      "name": "Trigger Run Check-Ins",
+      "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "dfd26bb2",
+      "name": "Trigger Install Payment Recon",
+      "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "559e6dc1",
+      "name": "Trigger Run Payment Recon",
+      "url": "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "http-19cd52abe46",
+      "name": "POST Error to Slack",
+      "url": "https://slack.com/api/chat.postMessage",
+      "tab": "Shamrock Automations"
+    },
+    {
+      "id": "9673428d",
+      "name": "POST to #bonds-live",
+      "url": "https://slack.com/api/chat.postMessage",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "node-trigger-gas-twilio",
+      "name": "Trigger GAS (Twilio)",
+      "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=twilioProcess",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "node-trigger-gas-telegram",
+      "name": "Trigger GAS (Telegram)",
+      "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=telegramProcess",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "tg-bot-gas-forward",
+      "name": "Forward to GAS (Bot)",
+      "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=telegramBotUpdate",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "tg-convo-gas",
+      "name": "GAS Conversation Handler",
+      "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=processConversation",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "11labs-gas-log",
+      "name": "Log to GAS",
+      "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=logVoiceCallEvent",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "11labs-slack-post",
+      "name": "POST to Slack",
+      "url": "https://slack.com/api/chat.postMessage",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "tg-miniapp-gas",
+      "name": "GAS MiniApp Handler",
+      "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=processMiniAppSubmission",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "scraper-log-gas",
+      "name": "Log to GAS",
+      "url": "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=logScraperResults",
+      "tab": "The Digital Workforce (Advanced)"
+    },
+    {
+      "id": "9e6dc9af7af848ee",
+      "name": "\ud83d\udce4 Slack: #alerts",
+      "url": "https://slack.com/api/chat.postMessage",
+      "tab": "The Bounty Hunter"
+    },
+    {
+      "id": "8ffb18537a304c21",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "8fdcfb0faab644ec",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "12dd9fbc8460485b",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "a772f117f98c4181",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "88a169c0761c4bd7",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "242181ebcd5d4ace",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "dc223a5d573f4db6",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "f8b93305ba944d9d",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "57f690aefd754cd4",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "2e4a7a8fb5464ec4",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "0f20abbd3cc34b66",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "759e94059721477b",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "1f6d0207ca6a4a9e",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "e244b91238c94a57",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "26b3dc0c6ec94339",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "ae194c6a03fc455d",
+      "name": "\u26a0\ufe0f Slack Alert (on error)",
+      "url": "",
+      "tab": "GAS Scheduler"
+    },
+    {
+      "id": "d63c8e9142fc4afb",
+      "name": "\ud83d\udce4 Slack",
+      "url": "https://slack.com/api/chat.postMessage",
+      "tab": "Intake Pipeline"
+    }
+  ]
+}
