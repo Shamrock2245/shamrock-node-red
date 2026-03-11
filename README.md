@@ -14,20 +14,20 @@ This is the **Node-RED instance** for Shamrock Bail Bonds. It acts as the centra
 
 - 🔗 **Routes** data between Wix, Google Apps Script, Twilio, Slack, Telegram, SignNow, and ElevenLabs
 - 🤖 **Powers** 9 AI agents (The Concierge, Clerk, Analyst, Investigator, Closer, Court Clerk, Bounty Hunter, Watchdog, Scout)
-- 📊 **Serves** a 7-page Operations Dashboard for real-time business intelligence
-- ⏰ **Runs** 39 scheduled automations (scrapers, reminders, reports, health checks)
+- 📊 **Serves** an 8-page Operations Dashboard with premium dark glassmorphism styling
+- ⏰ **Runs** 51 scheduled automations (scrapers, reminders, reports, health checks)
 - 📡 **Handles** 14 inbound webhook endpoints
+- 📞 **Orchestrates** 5-channel outreach (SMS, WhatsApp, Telegram, Email, ElevenLabs Voice)
 
 ---
 
 ## Quick Start
 
 ```bash
-# Navigate to the data directory
-cd node_red_data
+cd /path/to/shamrock-node-red
 
 # Start Node-RED
-npx node-red -u .
+npx node-red --userDir ./node_red_data
 
 # Access the editor
 open http://localhost:1880
@@ -52,7 +52,7 @@ ngrok http 1880
 | [AGENTS.md](AGENTS.md) | Digital workforce — 9 AI agents with roles, data flows, KPIs |
 | [INTEGRATIONS.md](INTEGRATIONS.md) | External services — GAS, Twilio, Slack, Telegram, SignNow, ElevenLabs |
 | [APIS.md](APIS.md) | HTTP endpoints, webhooks, rate limits, security |
-| [CAPABILITIES.md](CAPABILITIES.md) | Feature inventory — 30+ capabilities by business function |
+| [CAPABILITIES.md](CAPABILITIES.md) | Feature inventory — 40+ capabilities by business function |
 | [FLOWS.md](FLOWS.md) | Detailed reference for every flow tab and what it does |
 | [TASKS.md](TASKS.md) | Prioritized backlog with effort estimates |
 | [TODO.md](TODO.md) | Immediate action items checklist |
@@ -77,8 +77,8 @@ ngrok http 1880
                                ┌────────▼────────┐
                                │    NODE-RED      │
                                │  19 Flow Tabs    │
-                               │  452 Nodes       │
-                               │  39 Scheduled    │
+                               │  643 Nodes       │
+                               │  51 Scheduled    │
                                │  14 Webhooks     │
                                └───┬─────────┬────┘
                                    │         │
@@ -86,8 +86,8 @@ ngrok http 1880
        │                                                            │
   ┌────▼────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────▼──┐
   │ Google  │  │  Slack   │  │ Eleven   │  │  Swipe   │  │ Dashboard │
-  │  Apps   │  │  Ops     │  │  Labs    │  │ Simple   │  │  7 Pages  │
-  │ Script  │  │  Hub     │  │  Voice   │  │ Payments │  │  16 Groups│
+  │  Apps   │  │  Ops     │  │  Labs    │  │ Simple   │  │  8 Pages  │
+  │ Script  │  │  Hub     │  │  Voice   │  │ Payments │  │  20 Groups│
   └─────────┘  └──────────┘  └──────────┘  └──────────┘  └───────────┘
 ```
 
@@ -97,25 +97,25 @@ ngrok http 1880
 
 | Tab | Status | Nodes | Key Function |
 |---|---|---|---|
-| Shamrock Automations | 🟡 85% | 90+ | Main ops dashboard, forms, scrapers |
-| The Digital Workforce | 🟡 80% | 40+ | Webhook router for all inbound events |
-| Social Auto-Pilot | ✅ 100% | — | 3x daily social posts |
-| The Court Clerk | ✅ 100% | — | Court date monitoring |
-| The Closer | ✅ 100% | 8 | Lead follow-up automation |
-| Morning Briefing | ✅ 100% | 9 | Daily Slack ops summary |
-| The Bounty Hunter | ✅ 100% | 11 | High-value bond tracking |
-| Watchdog | ✅ 100% | 10 | System health (5-min check) |
-| GAS Scheduler | 🟡 90% | 84 | Master scheduler for 15 GAS tasks |
-| WhatsApp Campaigns | ✅ 100% | 11 | Outbound drip campaigns |
-| SignNow Tracker | ✅ 100% | 13 | Document signing status |
-| Review Harvester | ✅ 100% | 10 | Google review solicitation |
-| Payment Reminders | ✅ 100% | 10 | Payment collection |
-| No-Show Escalation | ✅ 100% | 9 | FTA detection & warrants |
-| Intake Pipeline | 🟡 85% | 13 | New intake processing |
-| Revenue Snapshot | ✅ 100% | 8 | Daily revenue summary |
-| The Scout | ✅ 100% | 8 | New arrest detection |
-| Staff Performance | ✅ 100% | 8 | Weekly performance reports |
-| Weather Posting | ✅ 100% | 9 | Weather-based social content |
+| Shamrock Automations | ✅ 100% | 209 | Main ops dashboard, forms, scrapers, reporting |
+| The Digital Workforce | ✅ 100% | 77 | Webhook router for all inbound events |
+| GAS Scheduler | ✅ 100% | 103 | Master scheduler for 16 GAS tasks |
+| Social Auto-Pilot | ✅ 100% | 13 | 3x daily social posts |
+| The Court Clerk | ✅ 100% | 11 | Court date monitoring |
+| The Closer | ✅ 100% | 11 | Lead follow-up automation |
+| Morning Briefing | ✅ 100% | 12 | Daily Slack ops summary |
+| The Bounty Hunter | ✅ 100% | 15 | High-value bond tracking |
+| Watchdog | ✅ 100% | 13 | System health (5-min check) |
+| WhatsApp Campaigns | ⏸ Disabled | 14 | Outbound drip campaigns (awaiting 10DLC) |
+| SignNow Tracker | ✅ 100% | 16 | Document signing status |
+| Review Harvester | ✅ 100% | 13 | Google review solicitation |
+| Payment Reminders | ✅ 100% | 13 | Payment collection + reminders |
+| No-Show Escalation | ✅ 100% | 12 | FTA detection & warrants |
+| Intake Pipeline | ✅ 100% | 17 | New intake processing |
+| Revenue Snapshot | ✅ 100% | 11 | Daily revenue summary |
+| The Scout | ✅ 100% | 11 | New county arrest detection |
+| Staff Performance | ✅ 100% | 11 | Weekly performance reports |
+| Weather Posting | ✅ 100% | 12 | Weather-based social content |
 
 ---
 
@@ -126,6 +126,20 @@ ngrok http 1880
 3. **Every HTTP request needs error handling** — check `msg.statusCode`
 4. **Dashboard forms MUST have `options`** — empty options = invalid node
 5. **Test cron timing against the schedule** — see [SCHEDULING.md](SCHEDULING.md) for collision risks
+6. **Shutdown awareness** — every prep function checks `global.get('SYSTEM_SHUTDOWN')` before firing
+
+---
+
+## Summary Stats
+- **Total flow tabs**: 19 (1 disabled pending 10DLC)
+- **Total nodes**: 643
+- **Function nodes**: 208 (153.7 KB of production code)
+- **HTTP request nodes**: 115
+- **Inject timers**: 51
+- **Dashboard pages**: 8
+- **Dashboard groups**: 20
+- **UI templates**: 13 (all with premium dark glassmorphism)
+- **Stub functions**: 0
 
 ---
 
