@@ -77,23 +77,47 @@
 
 ## 🟢 Priority 3 — Nice to Have
 
-### T-007: Bond Renewal Reminder Pipeline
-Automated 30/60/90-day renewal alerts for expiring bonds. New tab with cron + GAS integration.
+### T-007: ✅ COMPLETED — Bond Renewal Reminder Pipeline
+> **Resolved 2026-03-15.**
+> New `Bond Renewal Reminders` tab in Node-RED with:
+> Daily 8AM cron + manual trigger → GAS `getBondRenewals` → Filter by urgency (30/60/90 days) → SMS to urgent indemnitors + Slack summary to `#court-dates`.
+> GAS handler scans Cases sheet for bonds expiring within configurable window.
 
-### T-008: Quick-Bond Calculator Widget
-Dashboard widget: input bond amount → show premium, fee breakdown, payment schedule.
+**Effort**: Completed
 
-### T-009: Error aggregation dashboard
-Centralized error dashboard page showing all failures across all tabs with retry buttons.
+### T-008: ✅ COMPLETED — Quick-Bond Calculator Widget
+> **Resolved 2026-03-15.**
+> Dashboard form on Revenue & Closing Ops page.
+> Input: bond amount + optional premium rate. Output: premium, BUF fee, surety split (40%), agency net, payment plan options (50%/30% down).
+> Premium glass-morphism styling.
 
-### T-010: Agent Activity Scoreboard
-Dashboard showing which AI agents are active, last run time, and success rate.
+**Effort**: Completed
+
+### T-009: ✅ COMPLETED — Error Aggregation Dashboard
+> **Resolved 2026-03-15.**
+> New "Error Dashboard" page at `/errors` with error log display (last 30 entries).
+> Catch-all error handler now also stores errors in `global.error_log` (100-entry circular buffer).
+> Shows severity, source node, message, timestamp with color coding.
+
+**Effort**: Completed
+
+### T-010: ✅ COMPLETED — Agent Activity Scoreboard
+> **Resolved 2026-03-15.**
+> Dashboard widget on DevOps & Infrastructure page. Shows all 9 AI agents:
+> The Concierge, Shannon, The Clerk, The Analyst, The Investigator, The Closer, Manus Brain, The Watchdog, Bounty Hunter.
+> Each shows status (🟢/🟡/🔴), role, last run, success rate, total runs.
+> Reads from `global.agent_{key}` context — updated by GAS calls or internal flows.
+
+**Effort**: Completed
 
 ### T-011: Geographic expansion for The Scout
-Add 5+ new county jails to the scraper rotation. Each new county = new revenue source.
+> Deferred — belongs in `swfl-arrest-scrapers` repo, not Node-RED.
 
-### T-012: Subflow refactoring
-Create reusable subflows for common patterns:
-- "POST to GAS with error handling"
-- "Send Slack alert with Block Kit"
-- "Twilio SMS with delivery confirmation"
+### T-012: ✅ COMPLETED — Subflow refactoring
+> **Resolved 2026-03-15.**
+> Created reusable "POST to GAS (with error handling)" subflow:
+> Input → HTTP POST to GAS → Response validation → Success output OR error Slack alert.
+> Configurable env vars: `GAS_URL`, `SLACK_CHANNEL`.
+> Available in "Shamrock" palette category for all flows.
+
+**Effort**: Completed
