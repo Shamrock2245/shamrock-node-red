@@ -12644,7 +12644,8 @@
     "wires": [
       [
         "slack_error_alert_node",
-        "debug_error_log_node"
+        "debug_error_log_node",
+        "t009-error-store"
       ]
     ]
   },
@@ -12718,5 +12719,544 @@
     "x": 700,
     "y": 2120,
     "wires": []
+  },
+  {
+    "id": "tab-bond-renewal",
+    "type": "tab",
+    "label": "Bond Renewal Reminders",
+    "disabled": false,
+    "info": "T-007: Automated 30/60/90-day renewal alerts for expiring bonds"
+  },
+  {
+    "id": "t007-cron-daily",
+    "type": "inject",
+    "z": "tab-bond-renewal",
+    "name": "\u23f1 Daily 8AM \u2014 Check Bond Renewals",
+    "repeat": "",
+    "crontab": "00 08 * * *",
+    "once": false,
+    "onceDelay": "5",
+    "payload": "",
+    "payloadType": "date",
+    "x": 250,
+    "y": 100,
+    "wires": [
+      [
+        "t007-build-payload"
+      ]
+    ]
+  },
+  {
+    "id": "t007-manual-trigger",
+    "type": "inject",
+    "z": "tab-bond-renewal",
+    "name": "\u25b6 Manual Check",
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "payload": "",
+    "payloadType": "date",
+    "x": 150,
+    "y": 180,
+    "wires": [
+      [
+        "t007-build-payload"
+      ]
+    ]
+  },
+  {
+    "id": "t007-build-payload",
+    "type": "function",
+    "z": "tab-bond-renewal",
+    "name": "Build Renewal Check Payload",
+    "func": "// Check for bonds expiring in 30, 60, 90 days\nconst ts = new Date().toISOString();\nmsg.payload = {\n    action: 'getBondRenewals',\n    requestedAt: ts,\n    source: 'node-red-dashboard',\n    params: {\n        daysAhead: [30, 60, 90],\n        includeExpired: false,\n        groupBy: 'urgency'\n    }\n};\nmsg.headers = { 'Content-Type': 'application/json' };\nnode.status({fill:'blue',shape:'dot',text:'Checking renewals...'});\nreturn msg;",
+    "outputs": 1,
+    "x": 500,
+    "y": 140,
+    "wires": [
+      [
+        "t007-gas-call"
+      ]
+    ]
+  },
+  {
+    "id": "t007-gas-call",
+    "type": "http request",
+    "z": "tab-bond-renewal",
+    "name": "\ud83c\udf10 GAS: Bond Renewals",
+    "method": "POST",
+    "url": "https://script.google.com/macros/s/AKfycbw5_1C0c47zYHNKEMNUBJ9tpz3Lx3q-oae2hIX7LRPXgmAF7LrfsYy_-w7coTlm6Kzq/exec",
+    "ret": "obj",
+    "x": 740,
+    "y": 140,
+    "wires": [
+      [
+        "t007-process-response"
+      ]
+    ],
+    "headers": [
+      {
+        "keyType": "other",
+        "keyValue": "Content-Type",
+        "valueType": "other",
+        "valueValue": "application/json"
+      }
+    ]
+  },
+  {
+    "id": "t007-process-response",
+    "type": "function",
+    "z": "tab-bond-renewal",
+    "name": "Process Renewal Response",
+    "func": "const data = msg.payload;\nif (!data || !data.success) {\n    node.status({fill:'red',shape:'ring',text:'Error: ' + (data?.error || 'unknown')});\n    node.error('Bond renewal check failed', msg);\n    return null;\n}\n\nconst renewals = data.renewals || [];\nif (renewals.length === 0) {\n    node.status({fill:'green',shape:'dot',text:'No pending renewals'});\n    return null;\n}\n\n// Store for dashboard display\nglobal.set('bond_renewals', renewals);\nglobal.set('bond_renewals_updated', new Date().toISOString());\n\n// Split by urgency: [30-day, 60-day, 90-day]\nconst urgent = renewals.filter(r => r.daysRemaining <= 30);\nconst soon = renewals.filter(r => r.daysRemaining > 30 && r.daysRemaining <= 60);\nconst upcoming = renewals.filter(r => r.daysRemaining > 60);\n\nnode.status({fill:'yellow',shape:'dot',text:renewals.length + ' renewals found'});\n\n// Output 1: Urgent (30-day) for SMS\n// Output 2: All renewals for Slack summary\nlet msg1 = urgent.length > 0 ? {payload: urgent} : null;\nlet msg2 = {payload: {\n    text: ':rotating_light: *Bond Renewal Alert*\\n' +\n        ':red_circle: ' + urgent.length + ' due in 30 days\\n' +\n        ':large_orange_circle: ' + soon.length + ' due in 60 days\\n' +\n        ':large_green_circle: ' + upcoming.length + ' due in 90 days',\n    channel: '#court-dates'\n}};\nreturn [msg1, msg2];",
+    "outputs": 2,
+    "outputLabels": [
+      "Urgent (SMS)",
+      "Slack Summary"
+    ],
+    "x": 980,
+    "y": 140,
+    "wires": [
+      [
+        "t007-sms-loop"
+      ],
+      [
+        "t007-slack-post"
+      ]
+    ]
+  },
+  {
+    "id": "t007-sms-loop",
+    "type": "split",
+    "z": "tab-bond-renewal",
+    "name": "Split Urgent Renewals",
+    "splt": "\\n",
+    "x": 1030,
+    "y": 80,
+    "wires": [
+      [
+        "t007-format-sms"
+      ]
+    ]
+  },
+  {
+    "id": "t007-format-sms",
+    "type": "function",
+    "z": "tab-bond-renewal",
+    "name": "Format Renewal SMS",
+    "func": "const r = msg.payload;\nconst body = '\ud83c\udf40 Shamrock Bail Bonds \u2014 Bond Renewal Notice\\n\\n' +\n    'Defendant: ' + (r.defendantName || 'N/A') + '\\n' +\n    'Bond #: ' + (r.bondNumber || 'N/A') + '\\n' +\n    'Expires: ' + (r.expirationDate || 'N/A') + '\\n' +\n    'Days Remaining: ' + (r.daysRemaining || '?') + '\\n\\n' +\n    'Please contact us at (239) 332-2245 to arrange renewal.';\n\nmsg.payload = {\n    action: 'sendSms',\n    phone: r.indemnitorPhone || r.phone || '',\n    body: body,\n    source: 'bond-renewal-reminder'\n};\nmsg.headers = { 'Content-Type': 'application/json' };\nreturn msg;",
+    "outputs": 1,
+    "x": 1230,
+    "y": 80,
+    "wires": [
+      [
+        "t007-gas-sms"
+      ]
+    ]
+  },
+  {
+    "id": "t007-gas-sms",
+    "type": "http request",
+    "z": "tab-bond-renewal",
+    "name": "\ud83d\udce4 GAS: Send SMS",
+    "method": "POST",
+    "url": "https://script.google.com/macros/s/AKfycbw5_1C0c47zYHNKEMNUBJ9tpz3Lx3q-oae2hIX7LRPXgmAF7LrfsYy_-w7coTlm6Kzq/exec",
+    "ret": "txt",
+    "x": 1430,
+    "y": 80,
+    "wires": [
+      [
+        "t007-debug"
+      ]
+    ]
+  },
+  {
+    "id": "t007-slack-post",
+    "type": "http request",
+    "z": "tab-bond-renewal",
+    "name": "\ud83d\udce4 Slack: Renewal Alert",
+    "method": "POST",
+    "url": "https://slack.com/api/chat.postMessage",
+    "ret": "txt",
+    "x": 1230,
+    "y": 200,
+    "wires": [
+      [
+        "t007-debug"
+      ]
+    ],
+    "headers": [
+      {
+        "keyType": "other",
+        "keyValue": "Content-Type",
+        "valueType": "other",
+        "valueValue": "application/json"
+      },
+      {
+        "keyType": "other",
+        "keyValue": "Authorization",
+        "valueType": "other",
+        "valueValue": "Bearer {{global.SLACK_BOT_TOKEN}}"
+      }
+    ]
+  },
+  {
+    "id": "t007-debug",
+    "type": "debug",
+    "z": "tab-bond-renewal",
+    "name": "Renewal Log",
+    "active": true,
+    "tosidebar": true,
+    "x": 1430,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "group-bond-calc",
+    "type": "ui-group",
+    "name": "Quick-Bond Calculator",
+    "page": "17aadedf6c5346f1",
+    "width": 6,
+    "order": 10
+  },
+  {
+    "id": "t008-form",
+    "type": "ui-form",
+    "z": "tab-shamrock",
+    "name": "Bond Calculator",
+    "group": "group-bond-calc",
+    "label": "Quick Bond Calculator",
+    "order": 1,
+    "width": 6,
+    "height": 3,
+    "submit": "Calculate",
+    "cancel": "Clear",
+    "topic": "topic",
+    "topicType": "msg",
+    "splitLayout": false,
+    "className": "",
+    "x": 300,
+    "y": 1700,
+    "wires": [
+      [
+        "t008-calculate"
+      ]
+    ],
+    "options": [
+      {
+        "label": "Bond Amount ($)",
+        "key": "bond_amount",
+        "type": "number",
+        "required": true,
+        "rows": null
+      },
+      {
+        "label": "Premium Rate (%)",
+        "key": "premium_rate",
+        "type": "number",
+        "required": false,
+        "rows": null
+      }
+    ]
+  },
+  {
+    "id": "t008-calculate",
+    "type": "function",
+    "z": "tab-shamrock",
+    "name": "Calculate Bond Fees",
+    "func": "const bondAmount = parseFloat(msg.payload.bond_amount) || 0;\nconst premiumRate = parseFloat(msg.payload.premium_rate) || 10; // Default 10%\n\nif (bondAmount <= 0) {\n    msg.payload = '<div style=\"color:#ef4444;padding:12px\">Please enter a valid bond amount</div>';\n    return msg;\n}\n\nconst premium = bondAmount * (premiumRate / 100);\nconst bufFee = 10; // Bureau Underwriting Fee\nconst suretyRate = 0.40; // 40% to surety\nconst agencyKeep = premium * (1 - suretyRate) - bufFee;\nconst suretyPortion = premium * suretyRate;\n\n// Payment plan options\nconst downPayment50 = premium * 0.5;\nconst monthly3 = (premium - downPayment50) / 3;\nconst downPayment30 = premium * 0.3;\nconst monthly6 = (premium - downPayment30) / 6;\n\nconst fmt = (n) => '$' + n.toFixed(2).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');\n\nmsg.payload = `<div style=\"font-family:'Inter',sans-serif;padding:16px;background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:12px;border:1px solid rgba(34,197,94,0.3)\">\n  <h3 style=\"color:#22c55e;margin:0 0 12px;font-size:16px\">\ud83d\udcb0 Bond Calculation</h3>\n  <table style=\"width:100%;color:#e2e8f0;font-size:13px;border-collapse:collapse\">\n    <tr style=\"border-bottom:1px solid #334155\"><td style=\"padding:6px\">Bond Amount</td><td style=\"text-align:right;font-weight:700;color:#f1f5f9\">${fmt(bondAmount)}</td></tr>\n    <tr style=\"border-bottom:1px solid #334155\"><td style=\"padding:6px\">Premium (${premiumRate}%)</td><td style=\"text-align:right;font-weight:700;color:#22c55e\">${fmt(premium)}</td></tr>\n    <tr style=\"border-bottom:1px solid #334155\"><td style=\"padding:6px\">BUF Fee</td><td style=\"text-align:right;color:#94a3b8\">${fmt(bufFee)}</td></tr>\n    <tr style=\"border-bottom:1px solid #334155\"><td style=\"padding:6px\">\u2192 Surety (${(suretyRate*100)}%)</td><td style=\"text-align:right;color:#f59e0b\">${fmt(suretyPortion)}</td></tr>\n    <tr style=\"border-bottom:2px solid #22c55e\"><td style=\"padding:6px\">\u2192 Agency Keeps</td><td style=\"text-align:right;font-weight:700;color:#22c55e\">${fmt(agencyKeep)}</td></tr>\n  </table>\n  <div style=\"margin-top:12px;padding:10px;background:rgba(99,102,241,0.1);border-radius:8px;border:1px solid rgba(99,102,241,0.2)\">\n    <div style=\"color:#a5b4fc;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px\">Payment Plan Options</div>\n    <div style=\"color:#e2e8f0;font-size:12px\">\ud83d\udccb 50% Down: ${fmt(downPayment50)} + 3\u00d7${fmt(monthly3)}/mo</div>\n    <div style=\"color:#e2e8f0;font-size:12px\">\ud83d\udccb 30% Down: ${fmt(downPayment30)} + 6\u00d7${fmt(monthly6)}/mo</div>\n  </div>\n</div>`;\nreturn msg;",
+    "outputs": 1,
+    "x": 550,
+    "y": 1700,
+    "wires": [
+      [
+        "t008-display"
+      ]
+    ]
+  },
+  {
+    "id": "t008-display",
+    "type": "ui-template",
+    "z": "tab-shamrock",
+    "group": "group-bond-calc",
+    "name": "Calculator Result",
+    "order": 2,
+    "width": 6,
+    "height": 5,
+    "page": "",
+    "format": "<div v-html=\"msg.payload\"></div>",
+    "storeOutMessages": true,
+    "passthru": false,
+    "resendOnRefresh": true,
+    "className": "",
+    "x": 780,
+    "y": 1700,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "page-error-dashboard",
+    "type": "ui-page",
+    "name": "Error Dashboard",
+    "ui": "8d1bb1c09de24bf7",
+    "path": "/errors",
+    "icon": "alert-circle-outline",
+    "layout": "grid",
+    "theme": "",
+    "order": 9
+  },
+  {
+    "id": "group-error-log",
+    "type": "ui-group",
+    "name": "Error Log",
+    "page": "page-error-dashboard",
+    "width": 12,
+    "order": 1
+  },
+  {
+    "id": "t009-inject",
+    "type": "inject",
+    "z": "tab-shamrock",
+    "name": "\u23f1 Feed Error Dashboard (30s)",
+    "repeat": "30",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "5",
+    "payload": "",
+    "payloadType": "date",
+    "x": 250,
+    "y": 1800,
+    "wires": [
+      [
+        "t009-build"
+      ]
+    ]
+  },
+  {
+    "id": "t009-build",
+    "type": "function",
+    "z": "tab-shamrock",
+    "name": "Build Error Dashboard Data",
+    "func": "const errors = global.get('error_log') || [];\nif (errors.length === 0) {\n    msg.payload = '<div style=\"padding:24px;text-align:center;color:#22c55e;font-size:16px\">\u2705 No errors recorded \u2014 all systems operational</div>';\n} else {\n    const rows = errors.slice(0, 30).map((e, i) => {\n        const ts = e.timestamp ? new Date(e.timestamp).toLocaleString() : '?';\n        const source = e.source || 'unknown';\n        const message = (e.message || '').substring(0, 100);\n        const severity = e.severity || 'warning';\n        const color = severity === 'error' ? '#ef4444' : severity === 'warning' ? '#f59e0b' : '#94a3b8';\n        return `<tr style=\"border-bottom:1px solid #1e293b\">\n            <td style=\"padding:6px;color:${color};font-size:12px\">${severity.toUpperCase()}</td>\n            <td style=\"padding:6px;color:#e2e8f0;font-size:12px\">${source}</td>\n            <td style=\"padding:6px;color:#94a3b8;font-size:11px\">${message}</td>\n            <td style=\"padding:6px;color:#64748b;font-size:10px\">${ts}</td>\n        </tr>`;\n    }).join('');\n    msg.payload = `<div style=\"font-family:'Inter',sans-serif;padding:16px;background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:12px;border:1px solid rgba(239,68,68,0.2)\">\n        <div style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:12px\">\n            <h3 style=\"margin:0;color:#ef4444;font-size:14px\">\ud83d\udea8 ERROR LOG (${errors.length} total)</h3>\n            <span style=\"color:#64748b;font-size:10px\">Last 30 entries</span>\n        </div>\n        <div style=\"max-height:400px;overflow-y:auto\">\n        <table style=\"width:100%;border-collapse:collapse\">\n            <thead><tr style=\"color:#94a3b8;font-size:10px;text-transform:uppercase\">\n                <th style=\"padding:4px;text-align:left\">Level</th>\n                <th style=\"text-align:left\">Source</th>\n                <th style=\"text-align:left\">Message</th>\n                <th style=\"text-align:left\">Time</th>\n            </tr></thead>\n            <tbody>${rows}</tbody>\n        </table></div>\n    </div>`;\n}\nreturn msg;",
+    "outputs": 1,
+    "x": 500,
+    "y": 1800,
+    "wires": [
+      [
+        "t009-display"
+      ]
+    ]
+  },
+  {
+    "id": "t009-display",
+    "type": "ui-template",
+    "z": "tab-shamrock",
+    "group": "group-error-log",
+    "name": "Error Log Display",
+    "order": 1,
+    "width": 12,
+    "height": 8,
+    "format": "<div v-html=\"msg.payload\"></div>",
+    "storeOutMessages": true,
+    "passthru": false,
+    "resendOnRefresh": true,
+    "className": "",
+    "x": 740,
+    "y": 1800,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "t009-error-store",
+    "type": "function",
+    "z": "tab-shamrock",
+    "name": "Store Error in Global Log",
+    "func": "// Store errors from catch-all into global context for dashboard\nconst errMsg = msg.error?.message || msg.error || 'Unknown error';\nconst srcNode = msg.error?.source?.name || msg.error?.source?.type || 'unknown';\nconst ts = new Date().toISOString();\n\nlet errors = global.get('error_log') || [];\nerrors.unshift({\n    timestamp: ts,\n    source: srcNode,\n    message: errMsg,\n    severity: 'error'\n});\n// Keep only last 100 errors\nif (errors.length > 100) errors = errors.slice(0, 100);\nglobal.set('error_log', errors);\n\nreturn msg;",
+    "outputs": 1,
+    "x": 500,
+    "y": 2060,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "group-agent-scoreboard",
+    "type": "ui-group",
+    "name": "Agent Activity Scoreboard",
+    "page": "357e27342de3466a",
+    "width": 12,
+    "order": 10
+  },
+  {
+    "id": "t010-inject",
+    "type": "inject",
+    "z": "tab-shamrock",
+    "name": "\u23f1 Feed Agent Scoreboard (60s)",
+    "repeat": "60",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "5",
+    "payload": "",
+    "payloadType": "date",
+    "x": 250,
+    "y": 1900,
+    "wires": [
+      [
+        "t010-build"
+      ]
+    ]
+  },
+  {
+    "id": "t010-build",
+    "type": "function",
+    "z": "tab-shamrock",
+    "name": "Build Agent Scoreboard Data",
+    "func": "const agents = [\n    { name: 'The Concierge', role: 'Client Support & Intake', key: 'concierge' },\n    { name: 'Shannon', role: 'Voice AI Intake', key: 'shannon' },\n    { name: 'The Clerk', role: 'Booking Parser & OCR', key: 'clerk' },\n    { name: 'The Analyst', role: 'Risk Assessment', key: 'analyst' },\n    { name: 'The Investigator', role: 'Background Checks', key: 'investigator' },\n    { name: 'The Closer', role: 'Lead Recovery & Drip', key: 'closer' },\n    { name: 'Manus Brain', role: 'Telegram AI Handler', key: 'manus' },\n    { name: 'The Watchdog', role: 'System Health Monitor', key: 'watchdog' },\n    { name: 'Bounty Hunter', role: 'High-Value Lead Surfacing', key: 'bounty_hunter' }\n];\n\nconst rows = agents.map(a => {\n    const stats = global.get('agent_' + a.key) || { status: 'idle', lastRun: null, successRate: null, totalRuns: 0 };\n    const status = stats.status || 'idle';\n    const lastRun = stats.lastRun ? new Date(stats.lastRun).toLocaleString() : 'Never';\n    const rate = stats.successRate !== null ? stats.successRate + '%' : 'N/A';\n    const runs = stats.totalRuns || 0;\n    const statusColor = status === 'active' ? '#22c55e' : status === 'error' ? '#ef4444' : '#f59e0b';\n    const statusIcon = status === 'active' ? '\ud83d\udfe2' : status === 'error' ? '\ud83d\udd34' : '\ud83d\udfe1';\n    return `<tr style=\"border-bottom:1px solid #1e293b\">\n        <td style=\"padding:8px;font-weight:600;color:#f1f5f9;font-size:13px\">${statusIcon} ${a.name}</td>\n        <td style=\"padding:8px;color:#94a3b8;font-size:11px\">${a.role}</td>\n        <td style=\"padding:8px;color:${statusColor};font-size:12px;font-weight:600\">${status.toUpperCase()}</td>\n        <td style=\"padding:8px;color:#64748b;font-size:11px\">${lastRun}</td>\n        <td style=\"padding:8px;color:#e2e8f0;font-size:12px;text-align:center\">${rate}</td>\n        <td style=\"padding:8px;color:#64748b;font-size:11px;text-align:center\">${runs}</td>\n    </tr>`;\n}).join('');\n\nmsg.payload = `<div style=\"font-family:'Inter',sans-serif;padding:16px;background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:12px;border:1px solid rgba(99,102,241,0.2);box-shadow:0 4px 24px rgba(0,0,0,0.4)\">\n    <div style=\"display:flex;align-items:center;gap:8px;margin-bottom:12px\">\n        <span style=\"font-size:20px\">\ud83e\udd16</span>\n        <h3 style=\"margin:0;color:#a5b4fc;font-size:14px;text-transform:uppercase;letter-spacing:0.5px\">DIGITAL WORKFORCE SCOREBOARD</h3>\n        <span style=\"margin-left:auto;font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid #334155;color:#94a3b8\">${agents.length} AGENTS</span>\n    </div>\n    <table style=\"width:100%;border-collapse:collapse\">\n        <thead><tr style=\"color:#64748b;font-size:10px;text-transform:uppercase;border-bottom:2px solid #334155\">\n            <th style=\"padding:6px;text-align:left\">Agent</th>\n            <th style=\"text-align:left\">Role</th>\n            <th style=\"text-align:left\">Status</th>\n            <th style=\"text-align:left\">Last Run</th>\n            <th style=\"text-align:center\">Success</th>\n            <th style=\"text-align:center\">Runs</th>\n        </tr></thead>\n        <tbody>${rows}</tbody>\n    </table>\n</div>`;\nreturn msg;",
+    "outputs": 1,
+    "x": 550,
+    "y": 1900,
+    "wires": [
+      [
+        "t010-display"
+      ]
+    ]
+  },
+  {
+    "id": "t010-display",
+    "type": "ui-template",
+    "z": "tab-shamrock",
+    "group": "group-agent-scoreboard",
+    "name": "Agent Scoreboard Display",
+    "order": 1,
+    "width": 12,
+    "height": 8,
+    "format": "<div v-html=\"msg.payload\"></div>",
+    "storeOutMessages": true,
+    "passthru": false,
+    "resendOnRefresh": true,
+    "className": "",
+    "x": 800,
+    "y": 1900,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "subflow-gas-post",
+    "type": "subflow",
+    "name": "POST to GAS (with error handling)",
+    "info": "Reusable subflow: sends payload to GAS Web App, validates response, sends Slack alert on error.",
+    "category": "Shamrock",
+    "in": [
+      {
+        "x": 50,
+        "y": 80,
+        "wires": [
+          {
+            "id": "sf-http-req"
+          }
+        ]
+      }
+    ],
+    "out": [
+      {
+        "x": 850,
+        "y": 60,
+        "wires": [
+          {
+            "id": "sf-check-resp",
+            "port": 0
+          }
+        ]
+      }
+    ],
+    "env": [
+      {
+        "name": "GAS_URL",
+        "type": "str",
+        "value": "https://script.google.com/macros/s/AKfycbw5_1C0c47zYHNKEMNUBJ9tpz3Lx3q-oae2hIX7LRPXgmAF7LrfsYy_-w7coTlm6Kzq/exec"
+      },
+      {
+        "name": "SLACK_CHANNEL",
+        "type": "str",
+        "value": "#alerts"
+      }
+    ],
+    "color": "#2E8B57",
+    "icon": "node-red-contrib-google/google.svg"
+  },
+  {
+    "id": "sf-http-req",
+    "type": "http request",
+    "z": "subflow-gas-post",
+    "name": "\ud83c\udf10 GAS Call",
+    "method": "POST",
+    "url": "${GAS_URL}",
+    "ret": "obj",
+    "x": 250,
+    "y": 80,
+    "wires": [
+      [
+        "sf-check-resp"
+      ]
+    ],
+    "headers": [
+      {
+        "keyType": "other",
+        "keyValue": "Content-Type",
+        "valueType": "other",
+        "valueValue": "application/json"
+      }
+    ]
+  },
+  {
+    "id": "sf-check-resp",
+    "type": "function",
+    "z": "subflow-gas-post",
+    "name": "Validate Response",
+    "func": "const status = msg.statusCode || 200;\nconst body = msg.payload || {};\n\nif (status >= 200 && status < 300 && body.success !== false) {\n    node.status({fill:'green',shape:'dot',text:'OK (' + status + ')'});\n    return [msg, null];\n} else {\n    const errMsg = body.error || body.message || 'HTTP ' + status;\n    node.status({fill:'red',shape:'ring',text:errMsg.substring(0, 40)});\n    node.error('GAS error: ' + errMsg, msg);\n    \n    // Format Slack alert\n    msg.payload = {\n        channel: env.get('SLACK_CHANNEL'),\n        text: ':rotating_light: *GAS Call Failed*\\n*Status:* ' + status + '\\n*Error:* ' + errMsg\n    };\n    return [null, msg];\n}",
+    "outputs": 2,
+    "outputLabels": [
+      "Success",
+      "Error \u2192 Slack"
+    ],
+    "x": 500,
+    "y": 80,
+    "wires": [
+      [],
+      [
+        "sf-slack-err"
+      ]
+    ]
+  },
+  {
+    "id": "sf-slack-err",
+    "type": "http request",
+    "z": "subflow-gas-post",
+    "name": "\u26a0\ufe0f Slack Alert",
+    "method": "POST",
+    "url": "https://slack.com/api/chat.postMessage",
+    "ret": "txt",
+    "x": 720,
+    "y": 140,
+    "wires": [
+      []
+    ],
+    "headers": [
+      {
+        "keyType": "other",
+        "keyValue": "Content-Type",
+        "valueType": "other",
+        "valueValue": "application/json"
+      },
+      {
+        "keyType": "other",
+        "keyValue": "Authorization",
+        "valueType": "other",
+        "valueValue": "Bearer {{global.SLACK_BOT_TOKEN}}"
+      }
+    ]
   }
 ]
