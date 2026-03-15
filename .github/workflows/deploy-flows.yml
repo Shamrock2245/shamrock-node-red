@@ -1,0 +1,162 @@
+# ═══════════════════════════════════════════════════════
+# 🍀 Shamrock Node-RED — CI/CD Deploy Workflow
+# ═══════════════════════════════════════════════════════
+#
+# Deploys flows.json to a remote Node-RED instance via Admin API.
+# Triggers on push to main branch when flows.json changes.
+#
+# Required GitHub Secrets:
+#   NODE_RED_URL      — e.g. https://your-nodered.example.com
+#   NODE_RED_TOKEN    — Admin API token
+# ═══════════════════════════════════════════════════════
+
+name: Deploy Node-RED Flows
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'node_red_data/flows.json'
+      - 'node_red_data/settings.js'
+      - 'node_red_data/package.json'
+
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Manual deploy reason'
+        required: false
+        default: 'Manual deploy'
+
+jobs:
+  validate:
+    name: Validate Flows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Validate flows.json
+        run: |
+          echo "🔍 Validating flows.json..."
+          
+          # Check JSON is valid
+          node -e "
+            const flows = require('./node_red_data/flows.json');
+            const tabs = flows.filter(n => n.type === 'tab');
+            const funcs = flows.filter(n => n.type === 'function');
+            const httpReqs = flows.filter(n => n.type === 'http request');
+            
+            console.log('✅ Valid JSON');
+            console.log('📊 Stats:');
+            console.log('   Total nodes: ' + flows.length);
+            console.log('   Flow tabs:   ' + tabs.length);
+            console.log('   Functions:   ' + funcs.length);
+            console.log('   HTTP reqs:   ' + httpReqs.length);
+            
+            // Check for empty function nodes (stubs)
+            const stubs = funcs.filter(f => !f.func || f.func.trim() === 'return msg;');
+            if (stubs.length > 0) {
+              console.log('⚠️  Stub functions: ' + stubs.length);
+              stubs.forEach(s => console.log('   - ' + s.name));
+            }
+            
+            // Check for disabled flows
+            const disabled = tabs.filter(t => t.disabled);
+            if (disabled.length > 0) {
+              console.log('⏸  Disabled tabs:  ' + disabled.length);
+              disabled.forEach(d => console.log('   - ' + d.label));
+            }
+          "
+
+      - name: Check for hardcoded secrets
+        run: |
+          echo "🔒 Checking for hardcoded secrets..."
+          
+          # Check function nodes for hardcoded API keys/tokens
+          node -e "
+            const flows = require('./node_red_data/flows.json');
+            const funcs = flows.filter(n => n.type === 'function' && n.func);
+            const patterns = [
+              /xoxb-[a-zA-Z0-9-]+/,           // Slack tokens
+              /sk-[a-zA-Z0-9]{20,}/,           // OpenAI keys
+              /AC[a-f0-9]{32}/,                // Twilio SID
+              /SG\.[a-zA-Z0-9_-]+/,           // SendGrid keys
+              /Bearer\s+[a-zA-Z0-9._-]{20,}/, // Bearer tokens
+            ];
+            
+            let found = false;
+            funcs.forEach(f => {
+              patterns.forEach(p => {
+                if (p.test(f.func)) {
+                  console.log('🚨 Potential secret in: ' + f.name);
+                  found = true;
+                }
+              });
+            });
+            
+            if (!found) console.log('✅ No hardcoded secrets detected');
+          "
+
+  deploy:
+    name: Deploy Flows
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Node-RED
+        env:
+          NODE_RED_URL: ${{ secrets.NODE_RED_URL }}
+          NODE_RED_TOKEN: ${{ secrets.NODE_RED_TOKEN }}
+        run: |
+          if [ -z "$NODE_RED_URL" ] || [ -z "$NODE_RED_TOKEN" ]; then
+            echo "⚠️  NODE_RED_URL or NODE_RED_TOKEN not set — skipping remote deploy"
+            echo "   Set these in GitHub Secrets to enable CI/CD deployment"
+            exit 0
+          fi
+          
+          echo "🚀 Deploying flows to ${NODE_RED_URL}..."
+          
+          # POST flows.json to Node-RED Admin API
+          HTTP_CODE=$(curl -s -o /tmp/deploy_response.txt -w "%{http_code}" \
+            -X POST "${NODE_RED_URL}/flows" \
+            -H "Authorization: Bearer ${NODE_RED_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -H "Node-RED-Deployment-Type: full" \
+            -d @node_red_data/flows.json)
+          
+          if [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Deploy successful (HTTP ${HTTP_CODE})"
+          else
+            echo "❌ Deploy failed (HTTP ${HTTP_CODE})"
+            cat /tmp/deploy_response.txt
+            exit 1
+          fi
+
+      - name: Notify Slack
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_OPS }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK" ]; then
+            echo "Slack webhook not configured — skip notification"
+            exit 0
+          fi
+          
+          STATUS="${{ job.status }}"
+          EMOJI="✅"
+          if [ "$STATUS" != "success" ]; then EMOJI="❌"; fi
+          
+          NODES=$(node -e "console.log(require('./node_red_data/flows.json').length)" 2>/dev/null || echo "?")
+          
+          curl -s -X POST "$SLACK_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"${EMOJI} Node-RED Deploy: ${STATUS}\\nNodes: ${NODES}\\nCommit: ${{ github.sha }}\\nBy: ${{ github.actor }}\"
+            }"

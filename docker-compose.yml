@@ -1,0 +1,72 @@
+################################################################################
+# 🍀 Shamrock Node-RED — Docker Compose
+################################################################################
+#
+# Usage:
+#   docker-compose up -d                # Start in background
+#   docker-compose logs -f shamrock-nr  # Watch logs
+#   docker-compose down                 # Stop
+#   docker-compose up -d --build        # Rebuild + restart
+#
+################################################################################
+
+version: "3.8"
+
+services:
+  shamrock-nr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shamrock-node-red
+    restart: unless-stopped
+    
+    environment:
+      - TZ=America/New_York
+      - NODE_RED_CREDENTIAL_SECRET=${NR_CREDENTIAL_SECRET:-shamrock-bail-2026}
+      - NR_ADMIN_HASH=${NR_ADMIN_HASH}
+      # GAS
+      - GAS_WEBHOOK_URL=${GAS_WEBHOOK_URL}
+      - GAS_API_KEY=${GAS_API_KEY}
+      # Slack
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_WEBHOOK_OPS=${SLACK_WEBHOOK_OPS}
+      - SLACK_WEBHOOK_ALERTS=${SLACK_WEBHOOK_ALERTS}
+      - SLACK_WEBHOOK_LEADS=${SLACK_WEBHOOK_LEADS}
+      # Twilio
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
+      # ElevenLabs
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - ELEVENLABS_AGENT_ID=${ELEVENLABS_AGENT_ID}
+      # SignNow
+      - SIGNNOW_API_KEY=${SIGNNOW_API_KEY}
+      # Security
+      - WEBHOOK_HMAC_SECRET=${WEBHOOK_HMAC_SECRET}
+    
+    ports:
+      - "1880:1880"
+    
+    networks:
+      - shamrock-net
+    
+    volumes:
+      # Persist all flow data, credentials, and context outside container
+      - ./node_red_data:/data
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1880/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  shamrock-net:
+    driver: bridge

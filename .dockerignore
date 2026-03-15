@@ -1,0 +1,35 @@
+# Docker ignore — keep build context small
+.git
+.github
+.gitignore
+.env
+.env.*
+!.env.example
+
+node_modules/
+node_red_data/node_modules/
+node_red_data/context/
+node_red_data/flows_cred.json
+node_red_data/.config.*
+node_red_data/.sessions.json
+node_red_data/.flows.json.backup
+node_red_data/flows.json.backup*
+
+# Build artifacts
+*.pyc
+__pycache__/
+*.log
+.DS_Store
+
+# Documentation (not needed in container)
+docs/
+*.md
+!README.md
+
+# Legacy scripts
+deploy_*.py
+inject_*.js
+fix_*.js
+modify_flows.js
+parse_flows.py
+patch_flows.py

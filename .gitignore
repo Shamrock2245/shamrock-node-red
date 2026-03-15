@@ -5,13 +5,17 @@ node_modules/
 node_red_data/node_modules/
 node_red_data/.config.nodes.json
 node_red_data/.config.nodes.json.backup
+node_red_data/.config.nodes.json*.backup
 node_red_data/.config.runtime.json
+node_red_data/.config.runtime.json.backup
+node_red_data/.config.users.json
+node_red_data/.config.users.json.backup
 node_red_data/.sessions.json
 
 # Secrets — NEVER commit these
-node_red_data/settings.js
 node_red_data/flows_cred.json
 node_red_data/context/
+.env
 
 # OS files
 .DS_Store
@@ -28,3 +32,12 @@ node_red_data/context/
 # Lock files (large)
 package-lock.json
 node_red_data/package-lock.json
+
+# Backup files (already in git history)
+node_red_data/.flows.json.backup
+node_red_data/flows.json.backup
+node_red_data/flows.json.backup.*
+
+# Legacy deploy scripts output
+*.pyc
+__pycache__/

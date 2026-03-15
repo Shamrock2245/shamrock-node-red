@@ -7,26 +7,15 @@
 
 ## 🔴 Priority 1 — Critical (Fix This Week)
 
-### T-001: Wire stub functions for Agency Management buttons
-**12 stub functions** in the Shamrock Automations tab contain only `return msg;`. These are
-connected to dashboard buttons that do nothing when clicked.
+### T-001: ✅ COMPLETED — Wire stub functions for Agency Management buttons
+> **Resolved 2026-03-15 (GAS v415).**
+> All 12 function nodes were already fully implemented in `flows.json` with proper payloads,
+> `SYSTEM_SHUTDOWN` guards, and `node.status()` indicators. The actual gap was in GAS
+> `Code.js handleAction()` — 8 action routes were missing. Added: `scrapeCounty`,
+> `generateLiabilityReport`, `generateCommissionReport`, `reconcileVoidDischarges`,
+> `installCheckIns`, `runCheckIns`, `installPaymentRecon`, `runPaymentRecon`.
 
-| Button | Stub Function | Needed Payload |
-|---|---|---|
-| Force Scrape Lee County | Prepare Scrape Payload | `{county: "lee", action: "scrape"}` |
-| Process Court Emails | Prepare Email payload | `{source: "court_emails", action: "parse"}` |
-| Liability Report | Set Liability Report Payload | `{report: "liability", dateRange: "monthly"}` |
-| Commission Report | Set Commission Report Payload | `{report: "commission", period: "current"}` |
-| Void/Discharge Recon | Set Void/Discharge Recon Payload | `{report: "void_discharge"}` |
-| Install Court Reminders | Set Install Court Reminders Payload | `{action: "install", type: "court_reminders"}` |
-| Run Court Reminders | Set Run Court Reminders Payload | `{action: "run", type: "court_reminders"}` |
-| Install Check-Ins | Set Install Check-Ins Payload | `{action: "install", type: "check_ins"}` |
-| Run Check-Ins | Set Run Check-Ins Payload | `{action: "run", type: "check_ins"}` |
-| Install Payment Recon | Set Install Payment Recon Payload | `{action: "install", type: "payment_recon"}` |
-| Run Payment Recon | Set Run Payment Recon Payload | `{action: "run", type: "payment_recon"}` |
-| Cache to Global | Cache to Global | `flow.set('historicalClients', msg.payload)` |
-
-**Effort**: ~2 hours (fill in payload formatting + GAS webhook URLs)
+**Effort**: Completed
 
 ---
 
