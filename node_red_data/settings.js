@@ -142,6 +142,32 @@ module.exports = {
     },
 
     // ═══════════════════════════════════════
+    // WEBHOOK AUTHENTICATION MIDDLEWARE (T-006)
+    // ═══════════════════════════════════════
+    // All http-in (webhook) endpoints pass through this.
+    // Set WEBHOOK_HMAC_SECRET env var to enforce auth.
+    // When no secret is set, all requests pass through (dev mode).
+    httpNodeMiddleware: function(req, res, next) {
+        const secret = process.env.WEBHOOK_HMAC_SECRET || "";
+        
+        // Skip auth if no secret configured (graceful degradation)
+        if (!secret) return next();
+        
+        const provided = req.headers['x-webhook-secret'] 
+            || req.headers['x-api-key'] 
+            || "";
+        
+        if (provided === secret) return next();
+        
+        // Auth failed
+        console.warn(`[AUTH] Webhook auth failed from ${req.ip} on ${req.method} ${req.url}`);
+        res.status(403).json({ 
+            error: "Unauthorized", 
+            message: "Invalid or missing webhook secret" 
+        });
+    },
+
+    // ═══════════════════════════════════════
     // API RATE LIMITING
     // ═══════════════════════════════════════
     apiMaxLength: '5mb',

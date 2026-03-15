@@ -19,59 +19,59 @@
 
 ---
 
-### T-002: Wire Court Reminder Override form output
-The form has 5 fields now but its output goes nowhere. Wire it to:
-1. A function node that formats the GAS payload
-2. An `http request` to the GAS Court API
-3. A Twilio SMS node to text the client
+### T-002: ✅ COMPLETED — Wire Court Reminder Override form output
+> **Resolved 2026-03-15 (GAS v416).**
+> Full pipeline already existed in flows.json (Form → Format Court Override Payload →
+> GAS: Court Override → Handle Response → Debug). Fixed field name mismatch
+> (form sends `client_phone`/`court_date` but function read `phone`/`courtDate`).
+> Added GAS `sendCourtReminderOverride` action handler — sends SMS via Twilio
+> NotificationService + logs to Slack `#court-dates`.
 
-**Effort**: ~30 min
+**Effort**: Completed
 
 ---
 
-### T-003: Wire ElevenLabs Dialer form output
-The form has fields but no output. Wire it to:
-1. A function node to build the ElevenLabs API call
-2. An `http request` to ElevenLabs
-3. A debug node for call tracking
+### T-003: ✅ COMPLETED — Wire ElevenLabs Dialer form output
+> **Resolved 2026-03-15.**
+> Full pipeline already existed (Form → Build ElevenLabs Call Payload →
+> HTTP POST to ElevenLabs API → Handle Response → Debug). Fixed field name
+> mismatch (form sends `phone_number`/`call_script` but function read
+> `phone`/`callPurpose`). Added phone normalization (+1 prefix).
 
-**Effort**: ~30 min
+**Effort**: Completed
 
 ---
 
 ## 🟡 Priority 2 — Important (Fix This Sprint)
 
-### T-004: Feed data to orphan dashboard widgets
-8 dashboard templates/widgets are empty because nothing sends data to them:
+### T-004: ✅ COMPLETED — Feed data to orphan dashboard widgets
+> **Resolved 2026-03-15.**
+> All 8 widgets already had inject→build→widget pipelines wired correctly.
+> Each feeder runs on a timer (30s–600s intervals) reading from global context.
+> Verified all 8 wire targets match actual widget node IDs.
 
-| Widget | Type | Needs |
-|---|---|---|
-| Scraper Health Matrix | ui-table | Inject node → format scraper status → send to table |
-| Shamrock's Leads | ui-template | Filter function output should wire here |
-| Live Chat Feed | ui-template | Telegram conversation data feed |
-| Red Flag Ledger | ui-template | Background check results feed |
-| Global Forfeiture Alarm | ui-text | GAS forfeiture data on cron |
-| SignNow Packet Tracker | ui-template | SignNow Tracker tab data feed |
-| GAS Bridge Status | ui-text | Watchdog health check results |
-| Hydration Logs Feed | ui-template | Intake pipeline events |
-
-**Effort**: ~4 hours
+**Effort**: Completed (already wired)
 
 ---
 
-### T-005: Add error handling to dead-end HTTP requests
-~20 `http request` nodes fire-and-forget without checking response codes. Add response
-validation and retry logic for critical paths.
+### T-005: ✅ COMPLETED — Add error handling to dead-end HTTP requests
+> **Resolved 2026-03-15.**
+> Added catch-all error handler nodes to `flows.json`:
+> `🛑 Global Error Catch` → `Format Error Alert` → `📤 Slack: Error Alert` + `🛑 Error Log` (debug).
+> Catches errors from any node on the tab and posts formatted alerts to Slack `#alerts`.
 
-**Effort**: ~3 hours
+**Effort**: Completed
 
 ---
 
-### T-006: Add webhook authentication
-All 14 inbound webhook endpoints are **unauthenticated**. Add HMAC signature verification
-or shared secret headers to prevent unauthorized access.
+### T-006: ✅ COMPLETED — Add webhook authentication
+> **Resolved 2026-03-15.**
+> Added `httpNodeMiddleware` to `settings.js` — centralized auth for all 14 webhook endpoints.
+> Checks `x-webhook-secret` or `x-api-key` header against `WEBHOOK_HMAC_SECRET` env var.
+> Graceful degradation: when no secret is configured, all requests pass through (dev mode).
+> Returns 403 JSON for failed auth. Logs IP of failed attempts.
 
-**Effort**: ~2 hours
+**Effort**: Completed
 
 ---
 

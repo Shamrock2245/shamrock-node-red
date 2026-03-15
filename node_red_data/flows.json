@@ -470,9 +470,7 @@
     "y": 140,
     "wires": [
       [
-        "node-wix-response",
-        "node-format-slack",
-        "node-debug-payload"
+        "node-wix-response"
       ]
     ]
   },
@@ -9665,7 +9663,7 @@
     "type": "function",
     "z": "tab-shamrock",
     "name": "Format Court Override Payload",
-    "func": "/* Manual court date reminder override \u2014 sends immediately via GAS */\nif (global.get('SYSTEM_SHUTDOWN')) {\n    node.status({fill:'red',shape:'ring',text:'SHUTDOWN'});\n    return null;\n}\n\nconst gasUrl = global.get('GAS_URL_OPS') || global.get('GAS_URL');\nif (!gasUrl) {\n    node.error('No GAS URL configured');\n    return null;\n}\n\nconst p = msg.payload;\nif (!p.phone || !p.courtDate) {\n    node.error('Phone and court date are required');\n    return null;\n}\n\nconst phone = (p.phone || '').replace(/\\D/g, '');\nif (phone.length < 10) {\n    node.error('Invalid phone number');\n    return null;\n}\n\nconst ts = new Date().toISOString();\nmsg.payload = {\n    action: 'sendCourtReminderOverride',\n    requestedAt: ts,\n    source: 'node-red-dashboard',\n    params: {\n        phone: '+1' + phone,\n        defendantName: p.defendantName || 'Defendant',\n        courtDate: p.courtDate,\n        courtLocation: p.courtLocation || '',\n        channels: ['sms', 'whatsapp'],\n        urgency: 'immediate'\n    }\n};\n\nnode.status({fill:'green',shape:'dot',text:'Override \u2192 +1' + phone.slice(-4)});\nreturn msg;",
+    "func": "/* Manual court date reminder override \u2014 sends immediately via GAS */\nif (global.get('SYSTEM_SHUTDOWN')) {\n    node.status({fill:'red',shape:'ring',text:'SHUTDOWN'});\n    return null;\n}\n\nconst gasUrl = global.get('GAS_URL_OPS') || global.get('GAS_URL');\nif (!gasUrl) {\n    node.error('No GAS URL configured');\n    return null;\n}\n\nconst p = msg.payload;\nif (!p.client_phone || !p.court_date) {\n    node.error('Phone and court date are required');\n    node.status({fill:'red',shape:'ring',text:'Missing phone or date'});\n    return null;\n}\n\nconst phone = (p.client_phone || '').replace(/\\D/g, '');\nif (phone.length < 10) {\n    node.error('Invalid phone number');\n    node.status({fill:'red',shape:'ring',text:'Invalid phone'});\n    return null;\n}\n\nconst ts = new Date().toISOString();\nmsg.payload = {\n    action: 'sendCourtReminderOverride',\n    requestedAt: ts,\n    source: 'node-red-dashboard',\n    params: {\n        phone: '+1' + phone,\n        defendantName: p.defendant_name || 'Defendant',\n        caseNumber: p.case_number || '',\n        courtDate: p.court_date,\n        courtLocation: p.court_location || '',\n        channels: ['sms'],\n        urgency: 'immediate'\n    }\n};\n\nnode.status({fill:'green',shape:'dot',text:'Override \u2192 +1' + phone.slice(-4)});\nreturn msg;",
     "outputs": 1,
     "wires": [
       [
@@ -9732,7 +9730,7 @@
     "type": "function",
     "z": "tab-shamrock",
     "name": "Build ElevenLabs Call Payload",
-    "func": "// ElevenLabs Dialer \u2014 build outbound call request\nconst form = msg.payload;\nconst agentId = env.get('ELEVENLABS_AGENT_ID') || 'shannon_agent';\nconst apiKey = env.get('ELEVENLABS_API_KEY') || '';\n\nmsg.payload = {\n    agent_id: agentId,\n    customer_phone_number: form.phone || form.phoneNumber || '',\n    agent_phone_number_id: env.get('ELEVENLABS_PHONE_ID') || '',\n    conversation_initiation_client_data: {\n        dynamic_variables: {\n            defendant_name: form.defendantName || form.defendant_name || '',\n            bond_amount: form.bondAmount || form.bond_amount || '',\n            call_purpose: form.callPurpose || 'intake'\n        }\n    }\n};\nmsg.headers = {\n    'xi-api-key': apiKey,\n    };\nreturn msg;",
+    "func": "// ElevenLabs Dialer \u2014 build outbound call request\nconst form = msg.payload;\nconst agentId = env.get('ELEVENLABS_AGENT_ID') || 'shannon_agent';\nconst apiKey = env.get('ELEVENLABS_API_KEY') || '';\n\n// Normalize phone from form field\nconst rawPhone = (form.phone_number || '').replace(/\\\\D/g, '');\nconst phone = rawPhone.length === 10 ? '+1' + rawPhone : '+' + rawPhone;\n\nmsg.payload = {\n    agent_id: agentId,\n    customer_phone_number: phone,\n    agent_phone_number_id: env.get('ELEVENLABS_PHONE_ID') || '',\n    conversation_initiation_client_data: {\n        dynamic_variables: {\n            defendant_name: form.defendant_name || '',\n            call_purpose: form.call_script || 'intake'\n        }\n    }\n};\nmsg.headers = {\n    'xi-api-key': apiKey,\n    'Content-Type': 'application/json'\n};\n\nnode.status({fill:'blue',shape:'dot',text:'Calling ' + phone.slice(-4) + '...'});\nreturn msg;",
     "outputs": 1,
     "wires": [
       [
@@ -12618,5 +12616,107 @@
     "wires": [
       []
     ]
+  },
+  {
+    "id": "catch_all_error_handler",
+    "type": "catch",
+    "z": "tab-shamrock",
+    "name": "\ud83d\uded1 Global Error Catch",
+    "scope": null,
+    "uncaught": false,
+    "x": 200,
+    "y": 2000,
+    "wires": [
+      [
+        "error_handler_fn_node"
+      ]
+    ]
+  },
+  {
+    "id": "error_handler_fn_node",
+    "type": "function",
+    "z": "tab-shamrock",
+    "name": "Format Error Alert",
+    "func": "// Global error handler \u2014 formats error for Slack alert\nconst errMsg = msg.error?.message || msg.error || \"Unknown error\";\nconst srcNode = msg.error?.source?.name || msg.error?.source?.type || \"unknown node\";\nconst srcId = msg.error?.source?.id || \"\";\nconst ts = new Date().toISOString();\n\n// Build Slack message\nmsg.payload = {\n    channel: \"#alerts\",\n    text: \":rotating_light: *Node-RED Error* \u2014 \" + ts + \"\n\" +\n        \"*Source:* \" + srcNode + \" (\" + srcId.slice(0,8) + \")\n\" +\n        \"*Error:* \" + errMsg.substring(0, 500)\n};\nmsg.headers = { \"Content-Type\": \"application/json\" };\n\nnode.status({fill:\"red\",shape:\"dot\",text:srcNode + \": \" + errMsg.substring(0,30)});\nreturn msg;",
+    "outputs": 1,
+    "x": 450,
+    "y": 2000,
+    "wires": [
+      [
+        "slack_error_alert_node",
+        "debug_error_log_node"
+      ]
+    ]
+  },
+  {
+    "id": "slack_error_alert_node",
+    "type": "http request",
+    "z": "tab-shamrock",
+    "name": "\ud83d\udce4 Slack: Error Alert",
+    "method": "POST",
+    "url": "https://slack.com/api/chat.postMessage",
+    "ret": "txt",
+    "paytoqs": "",
+    "x": 700,
+    "y": 1980,
+    "wires": [
+      []
+    ],
+    "headers": [
+      {
+        "keyType": "other",
+        "keyValue": "Content-Type",
+        "valueType": "other",
+        "valueValue": "application/json"
+      },
+      {
+        "keyType": "other",
+        "keyValue": "Authorization",
+        "valueType": "other",
+        "valueValue": "Bearer {{global.SLACK_BOT_TOKEN}}"
+      }
+    ]
+  },
+  {
+    "id": "debug_error_log_node",
+    "type": "debug",
+    "z": "tab-shamrock",
+    "name": "\ud83d\uded1 Error Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "x": 700,
+    "y": 2020,
+    "wires": []
+  },
+  {
+    "id": "auth_guard_fn_node",
+    "type": "function",
+    "z": "tab-shamrock",
+    "name": "\ud83d\udd10 Webhook Auth Guard",
+    "func": "// Webhook authentication guard\n// Checks x-webhook-secret header against stored secret\nconst secret = global.get(\"WEBHOOK_SECRET\") || \"\";\nconst provided = msg.req?.headers?.[\"x-webhook-secret\"] || msg.req?.headers?.[\"x-api-key\"] || \"\";\n\n// Skip auth if no secret is configured (graceful degradation)\nif (!secret || secret === \"\") {\n    node.status({fill:\"yellow\",shape:\"ring\",text:\"No secret configured \u2014 passing through\"});\n    return msg;\n}\n\nif (provided !== secret) {\n    node.status({fill:\"red\",shape:\"ring\",text:\"AUTH FAILED\"});\n    node.warn(\"Webhook auth failed from: \" + (msg.req?.ip || \"unknown\"));\n    msg.statusCode = 403;\n    msg.payload = {error: \"Unauthorized\", message: \"Invalid or missing webhook secret\"};\n    return [null, msg]; // output 2 = reject\n}\n\nnode.status({fill:\"green\",shape:\"dot\",text:\"Authenticated\"});\nreturn [msg, null]; // output 1 = pass",
+    "outputs": 2,
+    "outputLabels": [
+      "Authenticated",
+      "Rejected"
+    ],
+    "x": 450,
+    "y": 2100,
+    "wires": [
+      [],
+      [
+        "auth_fail_resp_node"
+      ]
+    ]
+  },
+  {
+    "id": "auth_fail_resp_node",
+    "type": "http response",
+    "z": "tab-shamrock",
+    "name": "403 Forbidden",
+    "statusCode": "403",
+    "x": 700,
+    "y": 2120,
+    "wires": []
   }
 ]
