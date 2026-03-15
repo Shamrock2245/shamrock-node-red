@@ -13258,5 +13258,1412 @@
         "valueValue": "Bearer {{global.SLACK_BOT_TOKEN}}"
       }
     ]
+  },
+  {
+    "id": "tab_scraper_ctrl_v2",
+    "type": "tab",
+    "label": "Scraper Control",
+    "disabled": false,
+    "info": "Manual triggers for all 15 county scrapers via GitHub Actions workflow_dispatch"
+  },
+  {
+    "id": "sc2_page",
+    "type": "ui-page",
+    "name": "Scraper Control",
+    "ui": "8d1bb1c09de24bf7",
+    "path": "/scraper-control",
+    "icon": "mdi-spider",
+    "layout": "grid",
+    "theme": "87c093119a9e46fb",
+    "order": 10,
+    "className": "",
+    "visible": true,
+    "disabled": false
+  },
+  {
+    "id": "sc2_grp_quick",
+    "type": "ui-group",
+    "name": "Quick Actions",
+    "page": "sc2_page",
+    "width": 12,
+    "height": 1,
+    "order": 1,
+    "showTitle": true,
+    "className": "",
+    "visible": true,
+    "disabled": false
+  },
+  {
+    "id": "sc2_grp_counties",
+    "type": "ui-group",
+    "name": "County Scrapers",
+    "page": "sc2_page",
+    "width": 12,
+    "height": 1,
+    "order": 2,
+    "showTitle": true,
+    "className": "",
+    "visible": true,
+    "disabled": false
+  },
+  {
+    "id": "sc2_grp_status",
+    "type": "ui-group",
+    "name": "Trigger Log",
+    "page": "sc2_page",
+    "width": 12,
+    "height": 1,
+    "order": 3,
+    "showTitle": true,
+    "className": "",
+    "visible": true,
+    "disabled": false
+  },
+  {
+    "id": "sc2_comment",
+    "type": "comment",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Scraper Control \u2014 Manual Triggers via GitHub Actions",
+    "info": "Each button triggers workflow_dispatch via GitHub API.\nRequires GITHUB_PAT env var.",
+    "x": 320,
+    "y": 20,
+    "wires": []
+  },
+  {
+    "id": "sc2_status_text",
+    "type": "ui-text",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_status",
+    "order": 1,
+    "width": 12,
+    "height": 1,
+    "name": "Status",
+    "label": "Last Action",
+    "format": "{{msg.payload}}",
+    "font": "",
+    "fontSize": 14,
+    "color": "#00c853",
+    "className": "",
+    "x": 750,
+    "y": 60,
+    "wires": []
+  },
+  {
+    "id": "sc2_btn_all",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_quick",
+    "order": 1,
+    "width": 6,
+    "height": 1,
+    "name": "Run ALL",
+    "label": "\ud83d\ude80 Run ALL 15 Scrapers",
+    "tooltip": "10s stagger",
+    "color": "#ffffff",
+    "bgcolor": "#b71c1c",
+    "className": "",
+    "icon": "mdi-rocket-launch",
+    "payload": "all",
+    "payloadType": "str",
+    "topic": "trigger-all",
+    "topicType": "str",
+    "x": 130,
+    "y": 60,
+    "wires": [
+      [
+        "sc2_fn_all"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_all",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Stagger ALL",
+    "func": "var scrapers = [\n  {county:\"Brevard\",wf:\"scrape_brevard.yml\"},\\n  {county:\"Charlotte\",wf:\"scrape_charlotte.yml\"},\\n  {county:\"Highlands\",wf:\"scrape_highlands.yml\"},\\n  {county:\"Hillsborough\",wf:\"scrape_hillsborough.yml\"},\\n  {county:\"Indian River\",wf:\"scrape_indian_river.yml\"},\\n  {county:\"Lake\",wf:\"scrape_lake.yml\"},\\n  {county:\"Manatee\",wf:\"scrape_manatee.yml\"},\\n  {county:\"Martin\",wf:\"scrape_martin.yml\"},\\n  {county:\"Orange\",wf:\"scrape_orange.yml\"},\\n  {county:\"Osceola\",wf:\"scrape_osceola.yml\"},\\n  {county:\"Palm Beach\",wf:\"scrape_palm_beach.yml\"},\\n  {county:\"Pinellas\",wf:\"scrape_pinellas.yml\"},\\n  {county:\"Polk\",wf:\"scrape_polk.yml\"},\\n  {county:\"Sarasota\",wf:\"scrape_sarasota.yml\"},\\n  {county:\"Seminole\",wf:\"scrape_seminole.yml\"}\n];\nvar pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nvar delay = 0;\nscrapers.forEach(function(s) {\n  setTimeout(function() {\n    node.send({\n      headers: {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'},\n      url: 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/'+s.wf+'/dispatches',\n      payload: JSON.stringify({ref:'main'}),\n      _county: s.county\n    });\n  }, delay);\n  delay += 10000;\n});\nmsg.payload = '\u23f3 Triggering all 15 scrapers (10s stagger)...';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 330,
+    "y": 60,
+    "wires": [
+      [
+        "sc2_http_all",
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_all",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST dispatch",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "x": 530,
+    "y": 60,
+    "wires": [
+      [
+        "sc2_res_all"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_all",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 720,
+    "y": 60,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_btn_01",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_counties",
+    "order": 1,
+    "width": 4,
+    "height": 1,
+    "name": "Brevard",
+    "label": "\ufffd\ufffd Brevard",
+    "tooltip": "cron: 15 8,14,20,2 UTC",
+    "color": "#ffffff",
+    "bgcolor": "#1b5e20",
+    "className": "",
+    "icon": "mdi-play",
+    "payload": "Brevard",
+    "payloadType": "str",
+    "topic": "trigger",
+    "topicType": "str",
+    "x": 120,
+    "y": 140,
+    "wires": [
+      [
+        "sc2_fn_01"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_01",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "API: Brevard",
+    "func": "var pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nmsg.headers = {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'};\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/scrape_brevard.yml/dispatches';\nmsg.payload = JSON.stringify({ref:'main'});\nmsg._county = 'Brevard';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 310,
+    "y": 140,
+    "wires": [
+      [
+        "sc2_http_01"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_01",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "senderr": true,
+    "x": 490,
+    "y": 140,
+    "wires": [
+      [
+        "sc2_res_01"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_01",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 660,
+    "y": 140,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_btn_02",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_counties",
+    "order": 2,
+    "width": 4,
+    "height": 1,
+    "name": "Charlotte",
+    "label": "\ufffd\ufffd Charlotte",
+    "tooltip": "cron: 25 7,13,19,1 UTC",
+    "color": "#ffffff",
+    "bgcolor": "#1b5e20",
+    "className": "",
+    "icon": "mdi-play",
+    "payload": "Charlotte",
+    "payloadType": "str",
+    "topic": "trigger",
+    "topicType": "str",
+    "x": 120,
+    "y": 200,
+    "wires": [
+      [
+        "sc2_fn_02"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_02",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "API: Charlotte",
+    "func": "var pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nmsg.headers = {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'};\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/scrape_charlotte.yml/dispatches';\nmsg.payload = JSON.stringify({ref:'main'});\nmsg._county = 'Charlotte';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 310,
+    "y": 200,
+    "wires": [
+      [
+        "sc2_http_02"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_02",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "senderr": true,
+    "x": 490,
+    "y": 200,
+    "wires": [
+      [
+        "sc2_res_02"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_02",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 660,
+    "y": 200,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_btn_03",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_counties",
+    "order": 3,
+    "width": 4,
+    "height": 1,
+    "name": "Highlands",
+    "label": "\ufffd\ufffd Highlands",
+    "tooltip": "cron: 5 9,15,21,3 UTC",
+    "color": "#ffffff",
+    "bgcolor": "#1b5e20",
+    "className": "",
+    "icon": "mdi-play",
+    "payload": "Highlands",
+    "payloadType": "str",
+    "topic": "trigger",
+    "topicType": "str",
+    "x": 120,
+    "y": 260,
+    "wires": [
+      [
+        "sc2_fn_03"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_03",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "API: Highlands",
+    "func": "var pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nmsg.headers = {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'};\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/scrape_highlands.yml/dispatches';\nmsg.payload = JSON.stringify({ref:'main'});\nmsg._county = 'Highlands';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 310,
+    "y": 260,
+    "wires": [
+      [
+        "sc2_http_03"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_03",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "senderr": true,
+    "x": 490,
+    "y": 260,
+    "wires": [
+      [
+        "sc2_res_03"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_03",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 660,
+    "y": 260,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_btn_04",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_counties",
+    "order": 4,
+    "width": 4,
+    "height": 1,
+    "name": "Hillsborough",
+    "label": "\ufffd\ufffd Hillsborough",
+    "tooltip": "cron: 30 7,13,19,1 UTC",
+    "color": "#ffffff",
+    "bgcolor": "#1b5e20",
+    "className": "",
+    "icon": "mdi-play",
+    "payload": "Hillsborough",
+    "payloadType": "str",
+    "topic": "trigger",
+    "topicType": "str",
+    "x": 120,
+    "y": 320,
+    "wires": [
+      [
+        "sc2_fn_04"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_04",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "API: Hillsborough",
+    "func": "var pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nmsg.headers = {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'};\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/scrape_hillsborough.yml/dispatches';\nmsg.payload = JSON.stringify({ref:'main'});\nmsg._county = 'Hillsborough';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 310,
+    "y": 320,
+    "wires": [
+      [
+        "sc2_http_04"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_04",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "senderr": true,
+    "x": 490,
+    "y": 320,
+    "wires": [
+      [
+        "sc2_res_04"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_04",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 660,
+    "y": 320,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_btn_05",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_counties",
+    "order": 5,
+    "width": 4,
+    "height": 1,
+    "name": "Indian River",
+    "label": "\ufffd\ufffd Indian River",
+    "tooltip": "cron: 55 8,14,20,2 UTC",
+    "color": "#ffffff",
+    "bgcolor": "#1b5e20",
+    "className": "",
+    "icon": "mdi-play",
+    "payload": "Indian River",
+    "payloadType": "str",
+    "topic": "trigger",
+    "topicType": "str",
+    "x": 120,
+    "y": 380,
+    "wires": [
+      [
+        "sc2_fn_05"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_05",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "API: Indian River",
+    "func": "var pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nmsg.headers = {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'};\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/scrape_indian_river.yml/dispatches';\nmsg.payload = JSON.stringify({ref:'main'});\nmsg._county = 'Indian River';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 310,
+    "y": 380,
+    "wires": [
+      [
+        "sc2_http_05"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_05",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "senderr": true,
+    "x": 490,
+    "y": 380,
+    "wires": [
+      [
+        "sc2_res_05"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_05",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 660,
+    "y": 380,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_btn_06",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_counties",
+    "order": 6,
+    "width": 4,
+    "height": 1,
+    "name": "Lake",
+    "label": "\ufffd\ufffd Lake",
+    "tooltip": "cron: 35 8,14,20,2 UTC",
+    "color": "#ffffff",
+    "bgcolor": "#1b5e20",
+    "className": "",
+    "icon": "mdi-play",
+    "payload": "Lake",
+    "payloadType": "str",
+    "topic": "trigger",
+    "topicType": "str",
+    "x": 120,
+    "y": 440,
+    "wires": [
+      [
+        "sc2_fn_06"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_06",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "API: Lake",
+    "func": "var pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nmsg.headers = {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'};\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/scrape_lake.yml/dispatches';\nmsg.payload = JSON.stringify({ref:'main'});\nmsg._county = 'Lake';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 310,
+    "y": 440,
+    "wires": [
+      [
+        "sc2_http_06"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_06",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "senderr": true,
+    "x": 490,
+    "y": 440,
+    "wires": [
+      [
+        "sc2_res_06"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_06",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 660,
+    "y": 440,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_btn_07",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_counties",
+    "order": 7,
+    "width": 4,
+    "height": 1,
+    "name": "Manatee",
+    "label": "\ufffd\ufffd Manatee",
+    "tooltip": "cron: 35 7,13,19,1 UTC",
+    "color": "#ffffff",
+    "bgcolor": "#1b5e20",
+    "className": "",
+    "icon": "mdi-play",
+    "payload": "Manatee",
+    "payloadType": "str",
+    "topic": "trigger",
+    "topicType": "str",
+    "x": 120,
+    "y": 500,
+    "wires": [
+      [
+        "sc2_fn_07"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_07",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "API: Manatee",
+    "func": "var pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nmsg.headers = {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'};\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/scrape_manatee.yml/dispatches';\nmsg.payload = JSON.stringify({ref:'main'});\nmsg._county = 'Manatee';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 310,
+    "y": 500,
+    "wires": [
+      [
+        "sc2_http_07"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_07",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "senderr": true,
+    "x": 490,
+    "y": 500,
+    "wires": [
+      [
+        "sc2_res_07"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_07",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 660,
+    "y": 500,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_btn_08",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_counties",
+    "order": 8,
+    "width": 4,
+    "height": 1,
+    "name": "Martin",
+    "label": "\ufffd\ufffd Martin",
+    "tooltip": "cron: 45 8,14,20,2 UTC",
+    "color": "#ffffff",
+    "bgcolor": "#1b5e20",
+    "className": "",
+    "icon": "mdi-play",
+    "payload": "Martin",
+    "payloadType": "str",
+    "topic": "trigger",
+    "topicType": "str",
+    "x": 120,
+    "y": 560,
+    "wires": [
+      [
+        "sc2_fn_08"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_08",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "API: Martin",
+    "func": "var pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nmsg.headers = {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'};\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/scrape_martin.yml/dispatches';\nmsg.payload = JSON.stringify({ref:'main'});\nmsg._county = 'Martin';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 310,
+    "y": 560,
+    "wires": [
+      [
+        "sc2_http_08"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_08",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "senderr": true,
+    "x": 490,
+    "y": 560,
+    "wires": [
+      [
+        "sc2_res_08"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_08",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 660,
+    "y": 560,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_btn_09",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_counties",
+    "order": 9,
+    "width": 4,
+    "height": 1,
+    "name": "Orange",
+    "label": "\ufffd\ufffd Orange",
+    "tooltip": "cron: 40 7,13,19,1 UTC",
+    "color": "#ffffff",
+    "bgcolor": "#1b5e20",
+    "className": "",
+    "icon": "mdi-play",
+    "payload": "Orange",
+    "payloadType": "str",
+    "topic": "trigger",
+    "topicType": "str",
+    "x": 120,
+    "y": 620,
+    "wires": [
+      [
+        "sc2_fn_09"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_09",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "API: Orange",
+    "func": "var pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nmsg.headers = {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'};\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/scrape_orange.yml/dispatches';\nmsg.payload = JSON.stringify({ref:'main'});\nmsg._county = 'Orange';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 310,
+    "y": 620,
+    "wires": [
+      [
+        "sc2_http_09"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_09",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "senderr": true,
+    "x": 490,
+    "y": 620,
+    "wires": [
+      [
+        "sc2_res_09"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_09",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 660,
+    "y": 620,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_btn_10",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_counties",
+    "order": 10,
+    "width": 4,
+    "height": 1,
+    "name": "Osceola",
+    "label": "\ufffd\ufffd Osceola",
+    "tooltip": "cron: 45 7,13,19,1 UTC",
+    "color": "#ffffff",
+    "bgcolor": "#1b5e20",
+    "className": "",
+    "icon": "mdi-play",
+    "payload": "Osceola",
+    "payloadType": "str",
+    "topic": "trigger",
+    "topicType": "str",
+    "x": 120,
+    "y": 680,
+    "wires": [
+      [
+        "sc2_fn_10"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_10",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "API: Osceola",
+    "func": "var pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nmsg.headers = {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'};\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/scrape_osceola.yml/dispatches';\nmsg.payload = JSON.stringify({ref:'main'});\nmsg._county = 'Osceola';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 310,
+    "y": 680,
+    "wires": [
+      [
+        "sc2_http_10"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_10",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "senderr": true,
+    "x": 490,
+    "y": 680,
+    "wires": [
+      [
+        "sc2_res_10"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_10",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 660,
+    "y": 680,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_btn_11",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_counties",
+    "order": 11,
+    "width": 4,
+    "height": 1,
+    "name": "Palm Beach",
+    "label": "\ufffd\ufffd Palm Beach",
+    "tooltip": "cron: 50 7,13,19,1 UTC",
+    "color": "#ffffff",
+    "bgcolor": "#1b5e20",
+    "className": "",
+    "icon": "mdi-play",
+    "payload": "Palm Beach",
+    "payloadType": "str",
+    "topic": "trigger",
+    "topicType": "str",
+    "x": 120,
+    "y": 740,
+    "wires": [
+      [
+        "sc2_fn_11"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_11",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "API: Palm Beach",
+    "func": "var pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nmsg.headers = {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'};\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/scrape_palm_beach.yml/dispatches';\nmsg.payload = JSON.stringify({ref:'main'});\nmsg._county = 'Palm Beach';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 310,
+    "y": 740,
+    "wires": [
+      [
+        "sc2_http_11"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_11",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "senderr": true,
+    "x": 490,
+    "y": 740,
+    "wires": [
+      [
+        "sc2_res_11"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_11",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 660,
+    "y": 740,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_btn_12",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_counties",
+    "order": 12,
+    "width": 4,
+    "height": 1,
+    "name": "Pinellas",
+    "label": "\ufffd\ufffd Pinellas",
+    "tooltip": "cron: 55 7,13,19,1 UTC",
+    "color": "#ffffff",
+    "bgcolor": "#1b5e20",
+    "className": "",
+    "icon": "mdi-play",
+    "payload": "Pinellas",
+    "payloadType": "str",
+    "topic": "trigger",
+    "topicType": "str",
+    "x": 120,
+    "y": 800,
+    "wires": [
+      [
+        "sc2_fn_12"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_12",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "API: Pinellas",
+    "func": "var pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nmsg.headers = {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'};\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/scrape_pinellas.yml/dispatches';\nmsg.payload = JSON.stringify({ref:'main'});\nmsg._county = 'Pinellas';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 310,
+    "y": 800,
+    "wires": [
+      [
+        "sc2_http_12"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_12",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "senderr": true,
+    "x": 490,
+    "y": 800,
+    "wires": [
+      [
+        "sc2_res_12"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_12",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 660,
+    "y": 800,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_btn_13",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_counties",
+    "order": 13,
+    "width": 4,
+    "height": 1,
+    "name": "Polk",
+    "label": "\ufffd\ufffd Polk",
+    "tooltip": "cron: 0 8,14,20,2 UTC",
+    "color": "#ffffff",
+    "bgcolor": "#1b5e20",
+    "className": "",
+    "icon": "mdi-play",
+    "payload": "Polk",
+    "payloadType": "str",
+    "topic": "trigger",
+    "topicType": "str",
+    "x": 120,
+    "y": 860,
+    "wires": [
+      [
+        "sc2_fn_13"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_13",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "API: Polk",
+    "func": "var pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nmsg.headers = {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'};\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/scrape_polk.yml/dispatches';\nmsg.payload = JSON.stringify({ref:'main'});\nmsg._county = 'Polk';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 310,
+    "y": 860,
+    "wires": [
+      [
+        "sc2_http_13"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_13",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "senderr": true,
+    "x": 490,
+    "y": 860,
+    "wires": [
+      [
+        "sc2_res_13"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_13",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 660,
+    "y": 860,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_btn_14",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_counties",
+    "order": 14,
+    "width": 4,
+    "height": 1,
+    "name": "Sarasota",
+    "label": "\ufffd\ufffd Sarasota",
+    "tooltip": "cron: 5 8,14,20,2 UTC",
+    "color": "#ffffff",
+    "bgcolor": "#1b5e20",
+    "className": "",
+    "icon": "mdi-play",
+    "payload": "Sarasota",
+    "payloadType": "str",
+    "topic": "trigger",
+    "topicType": "str",
+    "x": 120,
+    "y": 920,
+    "wires": [
+      [
+        "sc2_fn_14"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_14",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "API: Sarasota",
+    "func": "var pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nmsg.headers = {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'};\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/scrape_sarasota.yml/dispatches';\nmsg.payload = JSON.stringify({ref:'main'});\nmsg._county = 'Sarasota';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 310,
+    "y": 920,
+    "wires": [
+      [
+        "sc2_http_14"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_14",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "senderr": true,
+    "x": 490,
+    "y": 920,
+    "wires": [
+      [
+        "sc2_res_14"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_14",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 660,
+    "y": 920,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_btn_15",
+    "type": "ui-button",
+    "z": "tab_scraper_ctrl_v2",
+    "group": "sc2_grp_counties",
+    "order": 15,
+    "width": 4,
+    "height": 1,
+    "name": "Seminole",
+    "label": "\ufffd\ufffd Seminole",
+    "tooltip": "cron: 10 8,14,20,2 UTC",
+    "color": "#ffffff",
+    "bgcolor": "#1b5e20",
+    "className": "",
+    "icon": "mdi-play",
+    "payload": "Seminole",
+    "payloadType": "str",
+    "topic": "trigger",
+    "topicType": "str",
+    "x": 120,
+    "y": 980,
+    "wires": [
+      [
+        "sc2_fn_15"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_fn_15",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "API: Seminole",
+    "func": "var pat = env.get('GITHUB_PAT');\nif (!pat) { msg.payload = '\u274c GITHUB_PAT missing'; return msg; }\nmsg.headers = {'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json','User-Agent':'Shamrock-NodeRED'};\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/workflows/scrape_seminole.yml/dispatches';\nmsg.payload = JSON.stringify({ref:'main'});\nmsg._county = 'Seminole';\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 310,
+    "y": 980,
+    "wires": [
+      [
+        "sc2_http_15"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_http_15",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "POST",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "senderr": true,
+    "x": 490,
+    "y": 980,
+    "wires": [
+      [
+        "sc2_res_15"
+      ]
+    ]
+  },
+  {
+    "id": "sc2_res_15",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Result",
+    "func": "var c = msg._county || '?';\nvar s = msg.statusCode;\nif (s === 204) {\n  msg.payload = '\u2705 ' + c + ' triggered @ ' + new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'});\n} else {\n  msg.payload = '\u274c ' + c + ' failed (HTTP ' + s + ')';\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "x": 660,
+    "y": 980,
+    "wires": [
+      [
+        "sc2_status_text"
+      ]
+    ]
   }
 ]

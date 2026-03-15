@@ -43,6 +43,8 @@ services:
       - SIGNNOW_API_KEY=${SIGNNOW_API_KEY}
       # Security
       - WEBHOOK_HMAC_SECRET=${WEBHOOK_HMAC_SECRET}
+      # GitHub
+      - GITHUB_PAT=${GITHUB_PAT}
     
     ports:
       - "1880:1880"
