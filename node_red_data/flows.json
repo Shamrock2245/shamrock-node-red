@@ -244,7 +244,7 @@
     "icon": "user-secret",
     "layout": "grid",
     "theme": "87c093119a9e46fb",
-    "order": 4,
+    "order": 5,
     "className": ""
   },
   {
@@ -284,7 +284,7 @@
     "icon": "cash-register",
     "layout": "grid",
     "theme": "87c093119a9e46fb",
-    "order": 5,
+    "order": 6,
     "className": ""
   },
   {
@@ -324,7 +324,7 @@
     "icon": "server",
     "layout": "grid",
     "theme": "87c093119a9e46fb",
-    "order": 6,
+    "order": 7,
     "className": ""
   },
   {
@@ -374,7 +374,7 @@
     "icon": "briefcase",
     "layout": "grid",
     "theme": "87c093119a9e46fb",
-    "order": 7,
+    "order": 8,
     "className": ""
   },
   {
@@ -414,7 +414,7 @@
     "icon": "dashboard",
     "layout": "grid",
     "theme": "87c093119a9e46fb",
-    "order": 3,
+    "order": 4,
     "className": ""
   },
   {
@@ -4247,7 +4247,7 @@
     "type": "function",
     "z": "tab-advanced",
     "name": "Configure Global Vars",
-    "func": "// Set critical global context variables\nglobal.set('NGROK_BASE_URL', 'http://178.156.179.237:1880');\nglobal.set('gas_api_key', 'shamrock_live_auth_v555');\nglobal.set('GAS_URL', 'https://script.google.com/macros/s/AKfycbw5_1C0c47zYHNKEMNUBJ9tpz3Lx3q-oae2hIX7LRPXgmAF7LrfsYy_-w7coTlm6Kzq/exec');\nglobal.set('GAS_URL_ALT', 'https://script.google.com/macros/s/AKfycbw5_1C0c47zYHNKEMNUBJ9tpz3Lx3q-oae2hIX7LRPXgmAF7LrfsYy_-w7coTlm6Kzq/exec');\nglobal.set('GAS_URL_OPS', 'https://script.google.com/macros/s/AKfycbw5_1C0c47zYHNKEMNUBJ9tpz3Lx3q-oae2hIX7LRPXgmAF7LrfsYy_-w7coTlm6Kzq/exec');\n\nconst endpoints = {\n    'Wix Intake':        'http://178.156.179.237:1880/wix-intake',\n    'Wix Intake Start':  'http://178.156.179.237:1880/intake-start',\n    'Wix Intake Complete': 'http://178.156.179.237:1880/intake-complete',\n    'Scraper Update':    'http://178.156.179.237:1880/api/scraper/webhook',\n    'Scraper Results':   'http://178.156.179.237:1880/webhook/scraper-results',\n    'WhatsApp (Twilio)': 'http://178.156.179.237:1880/whatsapp',\n    'Telegram (legacy)': 'http://178.156.179.237:1880/telegram',\n    'Telegram Bot':      'http://178.156.179.237:1880/webhook/telegram-bot',\n    'Telegram Convo':    'http://178.156.179.237:1880/webhook/telegram-conversation',\n    'Telegram MiniApp':  'http://178.156.179.237:1880/webhook/telegram-miniapp',\n    'ElevenLabs Status': 'http://178.156.179.237:1880/webhook/elevenlabs-status',\n    'SignNow Events':    'http://178.156.179.237:1880/signnow-event',\n    'Scout/Arrest':      'http://178.156.179.237:1880/webhook/scout'\n};\n\nglobal.set('WEBHOOK_ENDPOINTS', endpoints);\nnode.status({fill:\"green\",shape:\"dot\",text:\"Configured \" + Object.keys(endpoints).length + \" endpoints\"});\n\n// Log to console\nnode.warn(\"=== WEBHOOK ENDPOINTS CONFIGURED ===\");\nfor (let [name, url] of Object.entries(endpoints)) {\n    node.warn(name + \": \" + url);\n}\n\nreturn msg;",
+    "func": "// Set critical global context variables\n\nglobal.set('NGROK_BASE_URL', env.get('NODE_RED_BASE_URL') || env.get('NGROK_BASE_URL') || 'http://localhost:1880');\nglobal.set('gas_api_key', env.get('GAS_API_KEY') || 'shamrock_live_auth_v555');\nglobal.set('SLACK_TOKEN', env.get('SLACK_BOT_TOKEN') || '');\nglobal.set('MONGODB_URI', env.get('MONGODB_URI') || '');\nglobal.set('GAS_URL', 'https://script.google.com/macros/s/AKfycbw5_1C0c47zYHNKEMNUBJ9tpz3Lx3q-oae2hIX7LRPXgmAF7LrfsYy_-w7coTlm6Kzq/exec');\nglobal.set('GAS_URL_ALT', 'https://script.google.com/macros/s/AKfycbw5_1C0c47zYHNKEMNUBJ9tpz3Lx3q-oae2hIX7LRPXgmAF7LrfsYy_-w7coTlm6Kzq/exec');\nglobal.set('GAS_URL_OPS', 'https://script.google.com/macros/s/AKfycbw5_1C0c47zYHNKEMNUBJ9tpz3Lx3q-oae2hIX7LRPXgmAF7LrfsYy_-w7coTlm6Kzq/exec');\n\nconst baseUrl = global.get('NGROK_BASE_URL') || 'http://localhost:1880';\nconst endpoints = {\n    'Wix Intake':        baseUrl + '/wix-intake',\n    'Wix Intake Start':  baseUrl + '/intake-start',\n    'Wix Intake Complete': baseUrl + '/intake-complete',\n    'Scraper Update':    baseUrl + '/api/scraper/webhook',\n    'Scraper Results':   baseUrl + '/webhook/scraper-results',\n    'WhatsApp (Twilio)': baseUrl + '/whatsapp',\n    'Telegram (legacy)': baseUrl + '/telegram',\n    'Telegram Bot':      baseUrl + '/webhook/telegram-bot',\n    'Telegram Convo':    baseUrl + '/webhook/telegram-conversation',\n    'Telegram MiniApp':  baseUrl + '/webhook/telegram-miniapp',\n    'ElevenLabs Status': baseUrl + '/webhook/elevenlabs-status',\n    'SignNow Events':    baseUrl + '/signnow-event',\n    'Scout/Arrest':      baseUrl + '/webhook/scout'\n};\n\nglobal.set('WEBHOOK_ENDPOINTS', endpoints);\nnode.status({fill:\"green\",shape:\"dot\",text:\"Configured \" + Object.keys(endpoints).length + \" endpoints\"});\n\n// Log to console\nnode.warn(\"=== WEBHOOK ENDPOINTS CONFIGURED ===\");\nfor (let [name, url] of Object.entries(endpoints)) {\n    node.warn(name + \": \" + url);\n}\n\nreturn msg;",
     "outputs": 1,
     "x": 400,
     "y": 1060,
@@ -12053,7 +12053,7 @@
     "icon": "home",
     "layout": "grid",
     "theme": "87c093119a9e46fb",
-    "order": 2,
+    "order": 3,
     "_users": []
   },
   {
