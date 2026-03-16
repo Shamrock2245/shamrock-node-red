@@ -10,8 +10,6 @@
 #
 ################################################################################
 
-version: "3.8"
-
 services:
   shamrock-nr:
     build:
@@ -45,6 +43,10 @@ services:
       - WEBHOOK_HMAC_SECRET=${WEBHOOK_HMAC_SECRET}
       # GitHub
       - GITHUB_PAT=${GITHUB_PAT}
+      # MongoDB
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_ATLAS_DATA_API_URL=${MONGODB_ATLAS_DATA_API_URL:-}
+      - MONGODB_ATLAS_API_KEY=${MONGODB_ATLAS_API_KEY:-}
     
     ports:
       - "1880:1880"
