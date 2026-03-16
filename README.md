@@ -16,8 +16,9 @@ This is the **Node-RED instance** for Shamrock Bail Bonds. It acts as the centra
 - 🤖 **Powers** 9 AI agents (The Concierge, Clerk, Analyst, Investigator, Closer, Court Clerk, Bounty Hunter, Watchdog, Scout)
 - 📊 **Serves** an 8-page Operations Dashboard with premium dark glassmorphism styling
 - ⏰ **Runs** 51 scheduled automations (scrapers, reminders, reports, health checks)
-- 📡 **Handles** 14 inbound webhook endpoints
+- 📡 **Handles** 14 inbound webhook endpoints (HMAC-authenticated)
 - 📞 **Orchestrates** 5-channel outreach (SMS, WhatsApp, Telegram, Email, ElevenLabs Voice)
+- 🗄️ **Integrates** with MongoDB Atlas for event logging and arrest data analytics
 
 ---
 
@@ -36,7 +37,19 @@ open http://localhost:1880
 open http://localhost:1880/dashboard
 ```
 
-For external webhooks (Telegram, SignNow, etc.), set up ngrok:
+### Environment Setup
+Copy `.env.example` to `.env` and configure all required variables:
+```bash
+cp .env.example .env
+# Edit .env with your credentials:
+# - GAS_WEBHOOK_URL, GAS_API_KEY
+# - SLACK_BOT_TOKEN
+# - TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
+# - MONGODB_URI
+# - WEBHOOK_HMAC_SECRET
+```
+
+For external webhooks (Telegram, SignNow, etc.), use ngrok:
 ```bash
 ngrok http 1880
 ```
@@ -47,17 +60,16 @@ ngrok http 1880
 
 | Document | Purpose |
 |---|---|
-| [OVERVIEW.md](OVERVIEW.md) | 🗺 **Visual map** — ecosystem diagram, intake pipeline, 24-hour cycle |
+| [OVERVIEW.md](OVERVIEW.md) | 🗺 Visual map — ecosystem diagram, intake pipeline, 24-hour cycle |
 | [SYSTEM.md](SYSTEM.md) | Architecture, tech stack, directory layout, flow tab map |
 | [AGENTS.md](AGENTS.md) | Digital workforce — 9 AI agents with roles, data flows, KPIs |
 | [INTEGRATIONS.md](INTEGRATIONS.md) | External services — GAS, Twilio, Slack, Telegram, SignNow, ElevenLabs |
 | [APIS.md](APIS.md) | HTTP endpoints, webhooks, rate limits, security |
 | [CAPABILITIES.md](CAPABILITIES.md) | Feature inventory — 40+ capabilities by business function |
-| [FLOWS.md](FLOWS.md) | Detailed reference for every flow tab and what it does |
+| [FLOWS.md](FLOWS.md) | Detailed reference for every flow tab |
 | [TASKS.md](TASKS.md) | Prioritized backlog with effort estimates |
-| [TODO.md](TODO.md) | Immediate action items checklist |
 | [SCHEDULING.md](SCHEDULING.md) | Cron schedule bible — daily timeline, intervals, collision risks |
-| [SECURITY.md](SECURITY.md) | PII handling, secrets management, compliance requirements |
+| [SECURITY.md](SECURITY.md) | PII handling, secrets management, compliance |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | Developer onboarding, conventions, deployment guide |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues and fixes |
 | [RUNBOOKS.md](RUNBOOKS.md) | Step-by-step operational procedures |
@@ -77,7 +89,7 @@ ngrok http 1880
                                ┌────────▼────────┐
                                │    NODE-RED      │
                                │  19 Flow Tabs    │
-                               │  643 Nodes       │
+                               │  643+ Nodes      │
                                │  51 Scheduled    │
                                │  14 Webhooks     │
                                └───┬─────────┬────┘
@@ -85,9 +97,9 @@ ngrok http 1880
        ┌───────────────────────────┘         └──────────────────────┐
        │                                                            │
   ┌────▼────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────▼──┐
-  │ Google  │  │  Slack   │  │ Eleven   │  │  Swipe   │  │ Dashboard │
-  │  Apps   │  │  Ops     │  │  Labs    │  │ Simple   │  │  8 Pages  │
-  │ Script  │  │  Hub     │  │  Voice   │  │ Payments │  │  20 Groups│
+  │ Google  │  │  Slack   │  │ Eleven   │  │ MongoDB  │  │ Dashboard │
+  │  Apps   │  │  Ops     │  │  Labs    │  │  Atlas   │  │  8 Pages  │
+  │ Script  │  │  Hub     │  │  Voice   │  │  Events  │  │  20 Groups│
   └─────────┘  └──────────┘  └──────────┘  └──────────┘  └───────────┘
 ```
 
@@ -122,24 +134,27 @@ ngrok http 1880
 ## Key Rules
 
 1. **Node-RED is the Router, not the Processor** — heavy logic lives in GAS
-2. **Secrets in credentials, never in function nodes** — use `env.get()` or credential nodes
-3. **Every HTTP request needs error handling** — check `msg.statusCode`
-4. **Dashboard forms MUST have `options`** — empty options = invalid node
-5. **Test cron timing against the schedule** — see [SCHEDULING.md](SCHEDULING.md) for collision risks
+2. **Secrets in `.env`, never in function nodes** — use `env.get()` or credential nodes
+3. **Every HTTP request needs error handling** — Global Error Catch → Slack alerts
+4. **Webhook endpoints are HMAC-authenticated** — `httpNodeMiddleware` in `settings.js`
+5. **Dashboard forms MUST have `options`** — empty options = invalid node
 6. **Shutdown awareness** — every prep function checks `global.get('SYSTEM_SHUTDOWN')` before firing
 
 ---
 
 ## Summary Stats
-- **Total flow tabs**: 19 (1 disabled pending 10DLC)
-- **Total nodes**: 643
-- **Function nodes**: 208 (153.7 KB of production code)
-- **HTTP request nodes**: 115
-- **Inject timers**: 51
-- **Dashboard pages**: 8
-- **Dashboard groups**: 20
-- **UI templates**: 13 (all with premium dark glassmorphism)
-- **Stub functions**: 0
+
+| Metric | Value |
+|--------|-------|
+| Total flow tabs | 19 (1 disabled pending 10DLC) |
+| Total nodes | 643+ |
+| Function nodes | 208 (153.7 KB of production code) |
+| HTTP request nodes | 115 |
+| Inject timers | 51 |
+| Dashboard pages | 8 |
+| Dashboard groups | 20 |
+| UI templates | 13 (premium dark glassmorphism) |
+| Stub functions | 0 |
 
 ---
 
@@ -149,3 +164,9 @@ ngrok http 1880
 |---|---|
 | [shamrock-bail-portal-site](https://github.com/Shamrock2245/shamrock-bail-portal-site) | Wix website + GAS backend |
 | **shamrock-node-red** (this repo) | Node-RED automation engine |
+| [swfl-arrest-scrapers](https://github.com/Shamrock2245/swfl-arrest-scrapers) | 19-county scraper fleet |
+| [shamrock-telegram-app](https://github.com/Shamrock2245/shamrock-telegram-app) | Telegram Mini-Apps (Netlify) |
+
+---
+
+*Maintained by Shamrock Engineering & AI Agents · March 2026*
