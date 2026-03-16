@@ -244,7 +244,7 @@
     "icon": "user-secret",
     "layout": "grid",
     "theme": "87c093119a9e46fb",
-    "order": 5,
+    "order": 4,
     "className": ""
   },
   {
@@ -284,7 +284,7 @@
     "icon": "cash-register",
     "layout": "grid",
     "theme": "87c093119a9e46fb",
-    "order": 6,
+    "order": 5,
     "className": ""
   },
   {
@@ -324,7 +324,7 @@
     "icon": "server",
     "layout": "grid",
     "theme": "87c093119a9e46fb",
-    "order": 7,
+    "order": 6,
     "className": ""
   },
   {
@@ -374,7 +374,7 @@
     "icon": "briefcase",
     "layout": "grid",
     "theme": "87c093119a9e46fb",
-    "order": 8,
+    "order": 7,
     "className": ""
   },
   {
@@ -414,7 +414,7 @@
     "icon": "dashboard",
     "layout": "grid",
     "theme": "87c093119a9e46fb",
-    "order": 4,
+    "order": 3,
     "className": ""
   },
   {
@@ -4247,7 +4247,7 @@
     "type": "function",
     "z": "tab-advanced",
     "name": "Configure Global Vars",
-    "func": "// Set critical global context variables\n\nglobal.set('NGROK_BASE_URL', env.get('NODE_RED_BASE_URL') || env.get('NGROK_BASE_URL') || 'http://localhost:1880');\nglobal.set('gas_api_key', env.get('GAS_API_KEY') || 'shamrock_live_auth_v555');\nglobal.set('SLACK_TOKEN', env.get('SLACK_BOT_TOKEN') || '');\nglobal.set('MONGODB_URI', env.get('MONGODB_URI') || '');\nglobal.set('GAS_URL', 'https://script.google.com/macros/s/AKfycbw5_1C0c47zYHNKEMNUBJ9tpz3Lx3q-oae2hIX7LRPXgmAF7LrfsYy_-w7coTlm6Kzq/exec');\nglobal.set('GAS_URL_ALT', 'https://script.google.com/macros/s/AKfycbw5_1C0c47zYHNKEMNUBJ9tpz3Lx3q-oae2hIX7LRPXgmAF7LrfsYy_-w7coTlm6Kzq/exec');\nglobal.set('GAS_URL_OPS', 'https://script.google.com/macros/s/AKfycbw5_1C0c47zYHNKEMNUBJ9tpz3Lx3q-oae2hIX7LRPXgmAF7LrfsYy_-w7coTlm6Kzq/exec');\n\nconst baseUrl = global.get('NGROK_BASE_URL') || 'http://localhost:1880';\nconst endpoints = {\n    'Wix Intake':        baseUrl + '/wix-intake',\n    'Wix Intake Start':  baseUrl + '/intake-start',\n    'Wix Intake Complete': baseUrl + '/intake-complete',\n    'Scraper Update':    baseUrl + '/api/scraper/webhook',\n    'Scraper Results':   baseUrl + '/webhook/scraper-results',\n    'WhatsApp (Twilio)': baseUrl + '/whatsapp',\n    'Telegram (legacy)': baseUrl + '/telegram',\n    'Telegram Bot':      baseUrl + '/webhook/telegram-bot',\n    'Telegram Convo':    baseUrl + '/webhook/telegram-conversation',\n    'Telegram MiniApp':  baseUrl + '/webhook/telegram-miniapp',\n    'ElevenLabs Status': baseUrl + '/webhook/elevenlabs-status',\n    'SignNow Events':    baseUrl + '/signnow-event',\n    'Scout/Arrest':      baseUrl + '/webhook/scout'\n};\n\nglobal.set('WEBHOOK_ENDPOINTS', endpoints);\nnode.status({fill:\"green\",shape:\"dot\",text:\"Configured \" + Object.keys(endpoints).length + \" endpoints\"});\n\n// Log to console\nnode.warn(\"=== WEBHOOK ENDPOINTS CONFIGURED ===\");\nfor (let [name, url] of Object.entries(endpoints)) {\n    node.warn(name + \": \" + url);\n}\n\nreturn msg;",
+    "func": "// Set critical global context variables\nconst slackToken = env.get('SLACK_BOT_TOKEN');\nif (slackToken) {\n    global.set('SLACK_TOKEN', slackToken);\n    node.warn('SLACK_TOKEN set from env (' + slackToken.substring(0,8) + '...)');\n} else {\n    node.warn('WARNING: SLACK_BOT_TOKEN env var not set — Slack notifications will fail!');\n}\nglobal.set('NGROK_BASE_URL', env.get('NGROK_BASE_URL') || 'http://178.156.179.237:1880');\nglobal.set('gas_api_key', env.get('GAS_API_KEY') || 'shamrock_live_auth_v555');\nglobal.set('GAS_URL', env.get('GAS_WEBHOOK_URL') || 'https://script.google.com/macros/s/AKfycbw5_1C0c47zYHNKEMNUBJ9tpz3Lx3q-oae2hIX7LRPXgmAF7LrfsYy_-w7coTlm6Kzq/exec');\nglobal.set('GAS_URL_ALT', env.get('GAS_WEBHOOK_URL') || 'https://script.google.com/macros/s/AKfycbw5_1C0c47zYHNKEMNUBJ9tpz3Lx3q-oae2hIX7LRPXgmAF7LrfsYy_-w7coTlm6Kzq/exec');\nglobal.set('GAS_URL_OPS', env.get('GAS_WEBHOOK_URL') || 'https://script.google.com/macros/s/AKfycbw5_1C0c47zYHNKEMNUBJ9tpz3Lx3q-oae2hIX7LRPXgmAF7LrfsYy_-w7coTlm6Kzq/exec');\n\nconst base = global.get('NGROK_BASE_URL');\nconst endpoints = {\n    'Wix Intake':        base + '/wix-intake',\n    'Wix Intake Start':  base + '/intake-start',\n    'Wix Intake Complete': base + '/intake-complete',\n    'Scraper Update':    base + '/api/scraper/webhook',\n    'Scraper Results':   base + '/webhook/scraper-results',\n    'WhatsApp (Twilio)': base + '/whatsapp',\n    'Telegram (legacy)': base + '/telegram',\n    'Telegram Bot':      base + '/webhook/telegram-bot',\n    'Telegram Convo':    base + '/webhook/telegram-conversation',\n    'Telegram MiniApp':  base + '/webhook/telegram-miniapp',\n    'ElevenLabs Status': base + '/webhook/elevenlabs-status',\n    'SignNow Events':    base + '/signnow-event',\n    'Scout/Arrest':      base + '/webhook/scout'\n};\n\nglobal.set('WEBHOOK_ENDPOINTS', endpoints);\nnode.status({fill:\"green\",shape:\"dot\",text:\"Configured \" + Object.keys(endpoints).length + \" endpoints\" + (slackToken ? ' + Slack' : ' (NO SLACK!)')});\n\n// Log to console\nnode.warn(\"=== WEBHOOK ENDPOINTS CONFIGURED ===\");\nfor (let [name, url] of Object.entries(endpoints)) {\n    node.warn(name + \": \" + url);\n}\n\nreturn msg;",
     "outputs": 1,
     "x": 400,
     "y": 1060,
@@ -12053,7 +12053,7 @@
     "icon": "home",
     "layout": "grid",
     "theme": "87c093119a9e46fb",
-    "order": 3,
+    "order": 2,
     "_users": []
   },
   {
