@@ -6,8 +6,10 @@
     "dependencies": {
         "@flowfuse/node-red-dashboard": "^1.30.2",
         "@node-red-contrib-themes/theme-collection": "^4.1.1",
+        "bcryptjs": "^3.0.3",
         "node-red-contrib-slack": "^2.1.0",
         "node-red-contrib-telegrambot": "^17.1.0",
+        "node-red-node-mongodb": "^0.2.5",
         "node-red-node-twilio": "^0.1.0"
     }
 }

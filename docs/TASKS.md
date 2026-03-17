@@ -1,7 +1,7 @@
 # 📋 TASKS.md — Current Backlog & Priorities
 
 > **Active work items for the Node-RED ecosystem.**  
-> Last updated: 2026-03-17
+> Last updated: 2026-03-17 (session 2)
 
 ---
 
@@ -29,6 +29,15 @@ All 12 initial tasks are complete:
 - ✅ `.env.example` updated with `MONGODB_URI` and `GITHUB_PAT`
 - ✅ Documentation reorganized into `docs/` and `.agents/` directories
 
+### Phase 2 — March 2026 (Session 2)
+
+| ID | Task | Resolved |
+|----|------|----------|
+| T-014 | Generate `NR_ADMIN_HASH` for production login | ✅ Installed `bcryptjs`, generated hash, wired env vars in `settings.js` |
+| T-015 | MongoDB dashboard integration | ✅ Installed `node-red-node-mongodb`, 14 nodes added (Bounty Board + Analytics) |
+| T-019 | Hetzner Deployment — Productionize Node-RED | ✅ `docker-compose.yml` updated with all env vars, RB-011 deployment runbook added |
+| T-020 | The Closer Drip Campaign Sequences | ✅ 8 nodes added — 4-step drip (immediate, 24h, 72h, 7d) with stats tracking |
+
 ---
 
 ## 🔴 Priority 1 — Critical (Do Now)
@@ -42,54 +51,20 @@ All 12 initial tasks are complete:
 
 ---
 
-### T-014: Generate `NR_ADMIN_HASH` for production login
-> Node-RED admin auth requires a bcrypt hash in settings.js. Currently using dev mode with no password.
-> Generate hash with `npx node-red admin hash-pw` and add to `.env`.
-> **This is a security gap** — anyone on the network can access the editor.
-
-**Effort:** 15 minutes  
-**Dependencies:** None
-
----
-
-### T-019: Hetzner Deployment — Productionize Node-RED
-> Node-RED currently runs on a local Mac. Move to the Hetzner Cloud server (already provisioned for scrapers) for 24/7 uptime.
-> - Containerize with Docker Compose (volume-mount `node_red_data/`)
-> - Configure health check endpoint (`/health` via httpStatic)
-> - Set up auto-restart on crash (`restart: unless-stopped`)
-> - Configure ngrok or Cloudflare Tunnel for webhook ingress
-> - Set up `NR_ADMIN_HASH` (T-014) before going live
-
-**Effort:** 4-6 hours  
-**Dependencies:** T-014, T-017  
-**Related:** Hetzner runner already provisioned for scrapers
-
----
-
-### T-020: "The Closer" Drip Campaign Sequences
-> The Closer tab works (30-min cron, fetches stale leads, sends follow-up), but needs richer drip sequences:
-> - **Day 0:** Immediate "we can help" SMS after intake abandonment
-> - **Day 1:** Value prop + testimonial link
-> - **Day 3:** "Still need help?" with office hours + direct line
-> - **Day 7:** Final "we're here when you're ready"
-> - Respect communication preferences (per `CommunicationPreferences.js`)
-> - Track conversion attribution per drip step
-
-**Effort:** 4-6 hours  
-**Dependencies:** T-013 (WhatsApp channel adds reach)
+### T-019: ~~Hetzner Deployment~~ ✅ DONE
+> Docker infrastructure ready. `docker-compose.yml` has all env vars, Dockerfile pre-installs all deps.
+> Deployment runbook RB-011 added to `docs/RUNBOOKS.md`.
+> **Remaining:** SSH to Hetzner, clone repo, `docker-compose up -d`.
 
 ---
 
 ## 🟡 Priority 2 — Important (Do Soon)
 
-### T-015: MongoDB dashboard integration
-> Node-RED currently reads all data from GAS → Google Sheets. Now that MongoDB Atlas has arrest data + business events:
-> - Add `node-red-node-mongodb` to `package.json`
-> - Bounty Board: read live >$2.5K unposted bonds from MongoDB instead of GAS
-> - Real-time event stream for dashboard updates (change streams)
-> - Analytics widgets powered by MongoDB aggregation pipeline (arrest trends, conversion funnels)
-
-**Effort:** 8-12 hours
+### T-015: ~~MongoDB dashboard integration~~ ✅ DONE
+> Installed `node-red-node-mongodb@^0.2.5`. Added 14 nodes to Bounty Hunter tab:
+> - Bounty Board chain: 30-min cron → MongoDB query → lead scoring → dashboard stats
+> - Analytics chain: 6h cron → MongoDB aggregation → county trends
+> - `MONGODB_URI` added to `settings.js` `functionGlobalContext`
 
 ---
 
@@ -219,10 +194,10 @@ All 12 initial tasks are complete:
 
 | Priority | Open | Blocked | Total Effort |
 |----------|------|---------|-------------|
-| 🔴 Critical | 4 | 1 (T-013) | 11-17 hours |
-| 🟡 Important | 6 | 0 | 20-29 hours |
+| 🔴 Critical | 1 | 1 (T-013) | 2-4 hours |
+| 🟡 Important | 5 | 0 | 15-23 hours |
 | 🟢 Nice to Have | 5 | 0 | 40-65 hours |
-| **Total** | **15** | **1** | **71-111 hours** |
+| **Total** | **11** | **1** | **57-92 hours** |
 
 ---
 

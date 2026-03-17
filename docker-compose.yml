@@ -20,8 +20,14 @@ services:
     
     environment:
       - TZ=America/New_York
+      - NODE_ENV=${NODE_ENV:-production}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
       - NODE_RED_CREDENTIAL_SECRET=${NR_CREDENTIAL_SECRET:-shamrock-bail-2026}
+      # Admin Auth
+      - NR_ADMIN_USER=${NR_ADMIN_USER:-admin}
       - NR_ADMIN_HASH=${NR_ADMIN_HASH}
+      - NR_VIEWER_USER=${NR_VIEWER_USER:-viewer}
+      - NR_VIEWER_HASH=${NR_VIEWER_HASH}
       # GAS
       - GAS_WEBHOOK_URL=${GAS_WEBHOOK_URL}
       - GAS_API_KEY=${GAS_API_KEY}

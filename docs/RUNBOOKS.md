@@ -276,3 +276,82 @@ curl -s http://localhost:1880/flows | python3 -m json.tool > flows_export.json
 # 4. GAS: Trigger any GAS webhook and check response
 # 5. ElevenLabs: Trigger test call from dashboard
 ```
+
+---
+
+## RB-011: Deploy to Hetzner Cloud (Production)
+
+### Prerequisites
+- Hetzner Cloud server provisioned (ARM or x86, Ubuntu 22.04+)
+- Docker & Docker Compose installed on server
+- SSH access configured
+- GitHub PAT for private repo cloning
+
+### Initial Deployment
+
+```bash
+# 1. SSH into Hetzner server
+ssh root@YOUR_HETZNER_IP
+
+# 2. Clone the repo
+git clone https://github.com/Shamrock2245/shamrock-node-red.git
+cd shamrock-node-red
+
+# 3. Create .env from template
+cp .env.example .env
+nano .env  # Fill in all production values
+
+# 4. Generate admin password hash ON the server
+docker run --rm nodered/node-red node -e \
+  "console.log(require('bcryptjs').hashSync('YOUR_PASSWORD', 10))"
+# Copy the hash into .env → NR_ADMIN_HASH
+
+# 5. Build and start
+docker-compose up -d --build
+
+# 6. Verify it's running
+docker-compose ps                              # Should show "Up"
+curl -s -o /dev/null -w "%{http_code}" http://localhost:1880/  # Should be 200
+docker-compose logs -f shamrock-nr             # Watch logs
+```
+
+### Set Up Webhook Ingress (Cloudflare Tunnel or ngrok)
+
+```bash
+# Option A: Cloudflare Tunnel (recommended — free, stable URL)
+cloudflared tunnel create shamrock-nodered
+cloudflared tunnel route dns shamrock-nodered ops.shamrockbailbonds.biz
+cloudflared tunnel run shamrock-nodered
+
+# Option B: ngrok (paid plan for stable URL)
+ngrok http 1880 --domain=shamrock-ops.ngrok.io
+```
+
+### Update External Webhooks
+After getting a stable URL, update webhook registrations:
+1. **Telegram**: `POST https://api.telegram.org/bot{TOKEN}/setWebhook?url={URL}/webhook/telegram-bot`
+2. **SignNow**: Update in SignNow dashboard → Events
+3. **Wix**: Update `http-functions.js` endpoints in `shamrock-bail-portal-site`
+
+### Redeployment (After Code Changes)
+
+```bash
+ssh root@YOUR_HETZNER_IP
+cd shamrock-node-red
+git pull origin main
+docker-compose up -d --build    # Rebuild image with new code
+docker-compose logs -f shamrock-nr  # Verify
+```
+
+### Monitoring
+
+```bash
+# Health check
+curl http://localhost:1880/
+
+# Resource usage
+docker stats shamrock-node-red
+
+# Log rotation is configured (10MB × 3 files)
+docker-compose logs --tail=100 shamrock-nr
+```

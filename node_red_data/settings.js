@@ -25,17 +25,17 @@ module.exports = {
     // ═══════════════════════════════════════
     // ADMIN AUTHENTICATION
     // ═══════════════════════════════════════
-    // Default password: "shamrock2026" — CHANGE THIS on first login!
+    // Default password: "shamrock2026!" — CHANGE IN PRODUCTION!
     // Generate new hash: node -e "console.log(require('bcryptjs').hashSync('YOUR_PASSWORD', 10))"
     adminAuth: {
         type: "credentials",
         users: [{
-            username: "admin",
-            password: process.env.NR_ADMIN_HASH || "$2a$10$kCxcLVpDHRVj2kVN0TZkUOdSzP7Q4v2xR8oYjBqCdU0m7eBnqY3RW",
+            username: process.env.NR_ADMIN_USER || "admin",
+            password: process.env.NR_ADMIN_HASH || "$2b$10$0DxysBwJFz.tgALq0EISueaLYjgTA/y9uuVvpMeOmjx.UpP21A1PW",
             permissions: "*"
         }, {
-            username: "viewer",
-            password: process.env.NR_VIEWER_HASH || "$2a$10$kCxcLVpDHRVj2kVN0TZkUOdSzP7Q4v2xR8oYjBqCdU0m7eBnqY3RW",
+            username: process.env.NR_VIEWER_USER || "viewer",
+            password: process.env.NR_VIEWER_HASH || "$2b$10$0DxysBwJFz.tgALq0EISueaLYjgTA/y9uuVvpMeOmjx.UpP21A1PW",
             permissions: "read"
         }],
         default: {
@@ -89,6 +89,9 @@ module.exports = {
             
             // Webhook Auth
             WEBHOOK_HMAC_SECRET: process.env.WEBHOOK_HMAC_SECRET || "",
+            
+            // MongoDB
+            MONGODB_URI: process.env.MONGODB_URI || "",
             
             // Misc
             NODE_ENV: process.env.NODE_ENV || "production",
