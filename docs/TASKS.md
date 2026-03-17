@@ -38,6 +38,15 @@ All 12 initial tasks are complete:
 | T-019 | Hetzner Deployment — Productionize Node-RED | ✅ `docker-compose.yml` updated with all env vars, RB-011 deployment runbook added |
 | T-020 | The Closer Drip Campaign Sequences | ✅ 8 nodes added — 4-step drip (immediate, 24h, 72h, 7d) with stats tracking |
 
+### Phase 3 — March 2026 (Session 3)
+
+| ID | Task | Resolved |
+|----|------|----------|
+| T-016 | Configure remaining Slack webhooks | ✅ Fixed 25 function nodes from old `SLACK_TOKEN` → `SLACK_BOT_TOKEN` |
+| T-021 | Communication Preference Enforcement | ✅ Subflow + hourly sync cron (7 nodes) |
+| T-023 | Smart Cron Collision Avoidance | ✅ Staggered 15 colliding inject timers across offset minutes |
+| T-024 | Client Portal Deep Links | ✅ Subflow generating Telegram, Wix, and bot deep links |
+
 ---
 
 ## 🔴 Priority 1 — Critical (Do Now)
@@ -61,10 +70,12 @@ All 12 initial tasks are complete:
 ## 🟡 Priority 2 — Important (Do Soon)
 
 ### T-015: ~~MongoDB dashboard integration~~ ✅ DONE
-> Installed `node-red-node-mongodb@^0.2.5`. Added 14 nodes to Bounty Hunter tab:
-> - Bounty Board chain: 30-min cron → MongoDB query → lead scoring → dashboard stats
-> - Analytics chain: 6h cron → MongoDB aggregation → county trends
-> - `MONGODB_URI` added to `settings.js` `functionGlobalContext`
+
+---
+
+### T-016: ~~Configure remaining Slack webhooks~~ ✅ DONE
+> Fixed 25 function nodes using old `global.get('SLACK_TOKEN')` reference.
+> All now use `(global.get('env').SLACK_BOT_TOKEN || global.get('SLACK_TOKEN') || '')` with backward-compatible fallback.
 
 ---
 
@@ -76,15 +87,10 @@ All 12 initial tasks are complete:
 
 ---
 
-### T-021: Communication Preference Enforcement in Node-RED
-> GAS `CommunicationPreferences.js` now stores per-client channel preferences (SMS, WhatsApp, Telegram, Email, Voice).
-> Node-RED flows that dispatch messages (The Closer, Court Clerk, Payment Reminders, Review Harvester, Bond Renewal Reminders) should:
-> - Query preferences before sending
-> - Route through preferred channel only
-> - Fall back to SMS if no preference set
-
-**Effort:** 3-4 hours  
-**Dependencies:** GAS `CommunicationPreferences` endpoint (already live)
+### T-021: ~~Communication Preference Enforcement~~ ✅ DONE
+> Created reusable subflow "Check Comm Preferences" (2 outputs: allowed/blocked).
+> Added hourly sync chain: 15 * * * * → GAS → global context cache.
+> 7 nodes total. Other flows can now drop in the subflow before outbound messages.
 
 ---
 
@@ -101,13 +107,11 @@ All 12 initial tasks are complete:
 
 ---
 
-### T-023: Smart Cron Collision Avoidance
-> 58 inject timers are live. Some fire in overlapping windows causing GAS rate limit hits (especially 6-7 AM and the 30-second intervals).
-> - Audit and stagger overlapping crons (see `SCHEDULING.md`)
-> - Add jitter (random 5-15s delay) to high-frequency timers
-> - Implement rate-limiting queue for GAS HTTP requests
-
-**Effort:** 2-3 hours
+### T-023: ~~Smart Cron Collision Avoidance~~ ✅ DONE
+> Staggered 15 inject timers:
+> - 8 × 30-min crons spread across 2-min intervals (0, 2, 4, 6, 8, 10, 12, 14 past)
+> - 7 hourly/daily collisions offset by 3-5 minutes
+> - 5-min Watchdog and GAS Scheduler offset by 2 minutes
 
 ---
 
@@ -195,9 +199,9 @@ All 12 initial tasks are complete:
 | Priority | Open | Blocked | Total Effort |
 |----------|------|---------|-------------|
 | 🔴 Critical | 1 | 1 (T-013) | 2-4 hours |
-| 🟡 Important | 5 | 0 | 15-23 hours |
+| 🟡 Important | 1 | 0 | 4-6 hours |
 | 🟢 Nice to Have | 5 | 0 | 40-65 hours |
-| **Total** | **11** | **1** | **57-92 hours** |
+| **Total** | **7** | **1** | **46-75 hours** |
 
 ---
 

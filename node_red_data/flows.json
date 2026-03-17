@@ -507,7 +507,7 @@
     "type": "function",
     "z": "tab-shamrock",
     "name": "Format Slack Block Kit message",
-    "func": "const payload = msg.payload || {};\nconst name = payload.name || \"Unknown Client\";\nconst phone = payload.phone || \"No phone provided\";\nconst county = payload.county || \"Unknown County\";\nconst charges = payload.charges || \"Not specified\";\nconst bondAmount = payload.bondAmount ? `$${payload.bondAmount}` : \"TBD\";\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\") ,\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\n\nmsg.payload = {\n    \"channel\": \"C09MP494D1T\",\n    \"blocks\": [\n        {\n            \"type\": \"header\",\n            \"text\": {\n                \"type\": \"plain_text\",\n                \"text\": \"🚨 New Intake Lead - \" + county,\n                \"emoji\": true\n            }\n        },\n        {\n            \"type\": \"divider\"\n        },\n        {\n            \"type\": \"section\",\n            \"fields\": [\n                {\n                    \"type\": \"mrkdwn\",\n                    \"text\": \"*Client Name:*\\n\" + name\n                },\n                {\n                    \"type\": \"mrkdwn\",\n                    \"text\": \"*Phone:*\\n\" + phone\n                }\n            ]\n        },\n        {\n            \"type\": \"section\",\n            \"fields\": [\n                {\n                    \"type\": \"mrkdwn\",\n                    \"text\": \"*Charges:*\\n\" + charges\n                },\n                {\n                    \"type\": \"mrkdwn\",\n                    \"text\": \"*Bond Amount:*\\n\" + bondAmount\n                }\n            ]\n        },\n        {\n            \"type\": \"divider\"\n        },\n        {\n            \"type\": \"context\",\n            \"elements\": [\n                {\n                    \"type\": \"mrkdwn\",\n                    \"text\": \"_Triggered by Wix Webhook Node-RED Flow_\"\n                }\n            ]\n        }\n    ]\n};\n\nreturn msg;",
+    "func": "const payload = msg.payload || {};\nconst name = payload.name || \"Unknown Client\";\nconst phone = payload.phone || \"No phone provided\";\nconst county = payload.county || \"Unknown County\";\nconst charges = payload.charges || \"Not specified\";\nconst bondAmount = payload.bondAmount ? `$${payload.bondAmount}` : \"TBD\";\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\") ,\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\n\nmsg.payload = {\n    \"channel\": \"C09MP494D1T\",\n    \"blocks\": [\n        {\n            \"type\": \"header\",\n            \"text\": {\n                \"type\": \"plain_text\",\n                \"text\": \"🚨 New Intake Lead - \" + county,\n                \"emoji\": true\n            }\n        },\n        {\n            \"type\": \"divider\"\n        },\n        {\n            \"type\": \"section\",\n            \"fields\": [\n                {\n                    \"type\": \"mrkdwn\",\n                    \"text\": \"*Client Name:*\\n\" + name\n                },\n                {\n                    \"type\": \"mrkdwn\",\n                    \"text\": \"*Phone:*\\n\" + phone\n                }\n            ]\n        },\n        {\n            \"type\": \"section\",\n            \"fields\": [\n                {\n                    \"type\": \"mrkdwn\",\n                    \"text\": \"*Charges:*\\n\" + charges\n                },\n                {\n                    \"type\": \"mrkdwn\",\n                    \"text\": \"*Bond Amount:*\\n\" + bondAmount\n                }\n            ]\n        },\n        {\n            \"type\": \"divider\"\n        },\n        {\n            \"type\": \"context\",\n            \"elements\": [\n                {\n                    \"type\": \"mrkdwn\",\n                    \"text\": \"_Triggered by Wix Webhook Node-RED Flow_\"\n                }\n            ]\n        }\n    ]\n};\n\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -3087,7 +3087,7 @@
     "type": "function",
     "z": "tab-shamrock",
     "name": "Format Error Alert",
-    "func": "const err = msg.error || {};\nconst source = err.source ? (err.source.name || err.source.type || err.source.id) : \"Unknown Node\";\nconst text = `🚨 *Node-RED CRITICAL ERROR* 🚨\\n\\n*Source Node:* ${source}\\n*Error Message:* ${err.message || \"Unknown Error\"}\\n\\n` + \"```\" + JSON.stringify(msg, null, 2).substring(0, 500) + \"```\";\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\n\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": text\n};\n\nreturn msg;",
+    "func": "const err = msg.error || {};\nconst source = err.source ? (err.source.name || err.source.type || err.source.id) : \"Unknown Node\";\nconst text = `🚨 *Node-RED CRITICAL ERROR* 🚨\\n\\n*Source Node:* ${source}\\n*Error Message:* ${err.message || \"Unknown Error\"}\\n\\n` + \"```\" + JSON.stringify(msg, null, 2).substring(0, 500) + \"```\";\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\n\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": text\n};\n\nreturn msg;",
     "outputs": 1,
     "x": 350,
     "y": 2600,
@@ -3471,7 +3471,7 @@
     "type": "function",
     "z": "tab-advanced",
     "name": "Format \"Signed\" Alert",
-    "func": "const event = msg.payload.meta || {};\nif(event.event === 'document.update' || true) { // Always trigger for demo\n    msg.payload = {\n        \"channel\": \"C09MSHM72D8\", // #bonds-live\n        \"text\": \"🎉 *Document Signed!* 🎉\\n> The indemnitor has completed the packet! Ready to post.\"\n    };\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\") ,\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    return msg;\n}\nreturn null;",
+    "func": "const event = msg.payload.meta || {};\nif(event.event === 'document.update' || true) { // Always trigger for demo\n    msg.payload = {\n        \"channel\": \"C09MSHM72D8\", // #bonds-live\n        \"text\": \"🎉 *Document Signed!* 🎉\\n> The indemnitor has completed the packet! Ready to post.\"\n    };\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\") ,\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    return msg;\n}\nreturn null;",
     "outputs": 1,
     "x": 380,
     "y": 480,
@@ -3690,7 +3690,7 @@
     "type": "function",
     "z": "tab-advanced",
     "name": "Filter Bounty > $2,500",
-    "func": "const payload = msg.payload || {};\nconst arrests = Array.isArray(payload.arrests) ? payload.arrests : [payload];\n\nlet massiveBonds = arrests.filter(a => {\n    const bondStr = String(a.BondAmount || a.bondAmount || '0').replace(/[^0-9.]/g, '');\n    return parseFloat(bondStr) >= 2500;\n});\n\nif (massiveBonds.length === 0) return null;\n\nconst blocks = massiveBonds.map(a => {\n    return {\n        \"type\": \"section\",\n        \"text\": {\n            \"type\": \"mrkdwn\",\n            \"text\": `*Name:* ${a.DefendantName || a.name || 'Unknown'}\\n*County:* ${a.County || a.county || 'SWFL'}\\n*Bond:* $${a.BondAmount || a.bondAmount}\\n*Charges:* ${a.Charges || a.charges || 'Pending'}`\n        }\n    };\n});\n\nmsg.payload = {\n    \"channel\": \"C0ACWDRQWD9\",\n    \"text\": \"🚨 *High Value Arrest(s) Detected!* 🚨\",\n    \"blocks\": [\n        {\n            \"type\": \"header\",\n            \"text\": {\n                \"type\": \"plain_text\",\n                \"text\": \"🚨 The Scout: High Value Targets\",\n                \"emoji\": true\n            }\n        },\n        ...blocks\n    ]\n};\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\n\nreturn msg;",
+    "func": "const payload = msg.payload || {};\nconst arrests = Array.isArray(payload.arrests) ? payload.arrests : [payload];\n\nlet massiveBonds = arrests.filter(a => {\n    const bondStr = String(a.BondAmount || a.bondAmount || '0').replace(/[^0-9.]/g, '');\n    return parseFloat(bondStr) >= 2500;\n});\n\nif (massiveBonds.length === 0) return null;\n\nconst blocks = massiveBonds.map(a => {\n    return {\n        \"type\": \"section\",\n        \"text\": {\n            \"type\": \"mrkdwn\",\n            \"text\": `*Name:* ${a.DefendantName || a.name || 'Unknown'}\\n*County:* ${a.County || a.county || 'SWFL'}\\n*Bond:* $${a.BondAmount || a.bondAmount}\\n*Charges:* ${a.Charges || a.charges || 'Pending'}`\n        }\n    };\n});\n\nmsg.payload = {\n    \"channel\": \"C0ACWDRQWD9\",\n    \"text\": \"🚨 *High Value Arrest(s) Detected!* 🚨\",\n    \"blocks\": [\n        {\n            \"type\": \"header\",\n            \"text\": {\n                \"type\": \"plain_text\",\n                \"text\": \"🚨 The Scout: High Value Targets\",\n                \"emoji\": true\n            }\n        },\n        ...blocks\n    ]\n};\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\n\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -4024,7 +4024,7 @@
     "type": "function",
     "z": "tab-advanced",
     "name": "Slack Voice Alert",
-    "func": "if (!msg.slackAlert) return null;\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = msg.slackAlert;\nreturn msg;",
+    "func": "if (!msg.slackAlert) return null;\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = msg.slackAlert;\nreturn msg;",
     "outputs": 1,
     "x": 680,
     "y": 770,
@@ -4465,7 +4465,7 @@
     "type": "function",
     "z": "075324f9f77c4bfe",
     "name": "📢 Format Slack Alert",
-    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `☘️ *Social Auto-Pilot*\\n` + (msg.publishResult.success ? `✅ Posted successfully` : `❌ Post failed: ${JSON.stringify(msg.publishResult.platforms)}`) + `\\n_${msg.publishResult.timestamp}_`\n};\nreturn msg;",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `☘️ *Social Auto-Pilot*\\n` + (msg.publishResult.success ? `✅ Posted successfully` : `❌ Post failed: ${JSON.stringify(msg.publishResult.platforms)}`) + `\\n_${msg.publishResult.timestamp}_`\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -4546,7 +4546,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "*/30 * * * *",
+    "crontab": "0,30 * * * *",
     "once": false,
     "onceDelay": 0.1,
     "topic": "",
@@ -4636,7 +4636,7 @@
     "type": "function",
     "z": "349776f462c04333",
     "name": "📢 Format Court Alert",
-    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nconst r = msg.courtResult;\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `📋 *Court Clerk Report*\\n\\n📅 Court Dates: ${r.courtDates}\\n🔴 Forfeitures: ${r.forfeitures}\\n🟢 Discharges: ${r.discharges}\\n\\n_Total Processed: ${r.processed}_`\n};\nreturn msg;",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nconst r = msg.courtResult;\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `📋 *Court Clerk Report*\\n\\n📅 Court Dates: ${r.courtDates}\\n🔴 Forfeitures: ${r.forfeitures}\\n🟢 Discharges: ${r.discharges}\\n\\n_Total Processed: ${r.processed}_`\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -4717,7 +4717,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "*/30 * * * *",
+    "crontab": "2,32 * * * *",
     "once": false,
     "onceDelay": 0.1,
     "topic": "",
@@ -4807,7 +4807,7 @@
     "type": "function",
     "z": "3b50687c49b34aab",
     "name": "📢 Slack Summary",
-    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nconst r = msg.closerResult;\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `🎯 *The Closer Report*\\n\\n📊 Intakes Scanned: ${r.scanned}\\n📤 Follow-Ups Sent: ${r.sent}\\n⏭️ Skipped: ${r.skipped}\\n\\n_Drip tiers: 1h → 24h → 72h_`\n};\nreturn msg;",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nconst r = msg.closerResult;\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `🎯 *The Closer Report*\\n\\n📊 Intakes Scanned: ${r.scanned}\\n📤 Follow-Ups Sent: ${r.sent}\\n⏭️ Skipped: ${r.skipped}\\n\\n_Drip tiers: 1h → 24h → 72h_`\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -4999,7 +4999,7 @@
     "type": "function",
     "z": "62372935a6134827",
     "name": "📢 Format Slack Briefing",
-    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": msg.briefing\n};\nreturn msg;",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": msg.briefing\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -5192,7 +5192,7 @@
     "type": "function",
     "z": "da825df237884267",
     "name": "🔥 Format Hot Leads",
-    "func": "// Format hot leads for Slack\nif (!msg.hotLeads || msg.hotLeads.length === 0) return null;\n\nconst blocks = msg.hotLeads.slice(0, 5).map(l => {\n    const name = l.DefendantName || l.name || 'Unknown';\n    const bond = l.BondAmount || l.bondAmount || 'TBD';\n    const county = l.County || l.county || 'SWFL';\n    const charges = l.Charges || l.charges || 'Pending';\n    const score = l.leadScore;\n    return `🔥 *${name}* (Score: ${score})\\n> Bond: $${bond} | County: ${county}\\n> Charges: ${charges}`;\n}).join('\\n\\n');\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"C0ACWDRQWD9\",\n    \"text\": `🎯 *THE BOUNTY HUNTER — Hot Leads*\\n${msg.hotLeads.length} target(s) detected!\\n\\n${blocks}\\n\\n_Auto-scored by Node-RED_`\n};\nreturn msg;",
+    "func": "// Format hot leads for Slack\nif (!msg.hotLeads || msg.hotLeads.length === 0) return null;\n\nconst blocks = msg.hotLeads.slice(0, 5).map(l => {\n    const name = l.DefendantName || l.name || 'Unknown';\n    const bond = l.BondAmount || l.bondAmount || 'TBD';\n    const county = l.County || l.county || 'SWFL';\n    const charges = l.Charges || l.charges || 'Pending';\n    const score = l.leadScore;\n    return `🔥 *${name}* (Score: ${score})\\n> Bond: $${bond} | County: ${county}\\n> Charges: ${charges}`;\n}).join('\\n\\n');\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"C0ACWDRQWD9\",\n    \"text\": `🎯 *THE BOUNTY HUNTER — Hot Leads*\\n${msg.hotLeads.length} target(s) detected!\\n\\n${blocks}\\n\\n_Auto-scored by Node-RED_`\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -5212,7 +5212,7 @@
     "type": "function",
     "z": "da825df237884267",
     "name": "🟡 Format Warm Leads",
-    "func": "// Format warm leads for logging\nif (!msg.warmLeads || msg.warmLeads.length === 0) return null;\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `🟡 *Bounty Hunter — ${msg.warmLeads.length} Warm Lead(s)*\\n_Scores 40-69. Monitor for follow-up._`\n};\nreturn msg;",
+    "func": "// Format warm leads for logging\nif (!msg.warmLeads || msg.warmLeads.length === 0) return null;\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `🟡 *Bounty Hunter — ${msg.warmLeads.length} Warm Lead(s)*\\n_Scores 40-69. Monitor for follow-up._`\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -5438,7 +5438,7 @@
     "type": "function",
     "z": "9ade1856b4a143be",
     "name": "🚨 Format Alert",
-    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `🚨 *WATCHDOG ALERT — Service Down!*\\n\\n${msg.healthSummary}\\n\\n_Checked at ${new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'})} ET_`\n};\nreturn msg;",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `🚨 *WATCHDOG ALERT — Service Down!*\\n\\n${msg.healthSummary}\\n\\n_Checked at ${new Date().toLocaleTimeString('en-US', {timeZone: 'America/New_York'})} ET_`\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -5549,7 +5549,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "*/5 * * * *",
+    "crontab": "2,7,12,17,22,27,32,37,42,47,52,57 * * * *",
     "once": false,
     "onceDelay": 0.1,
     "topic": "",
@@ -5924,7 +5924,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "*/30 * * * *",
+    "crontab": "4,34 * * * *",
     "once": false,
     "onceDelay": 0.1,
     "topic": "",
@@ -6049,7 +6049,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "*/30 * * * *",
+    "crontab": "6,36 * * * *",
     "once": false,
     "onceDelay": 0.1,
     "topic": "",
@@ -6174,7 +6174,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "*/30 * * * *",
+    "crontab": "8,38 * * * *",
     "once": false,
     "onceDelay": 0.1,
     "topic": "",
@@ -6674,7 +6674,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "0 7 * * *",
+    "crontab": "3 7 * * *",
     "once": false,
     "onceDelay": 0.1,
     "topic": "",
@@ -7174,7 +7174,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "0 11 * * *",
+    "crontab": "3 11 * * *",
     "once": false,
     "onceDelay": 0.1,
     "topic": "",
@@ -7559,7 +7559,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "*/30 * * * *",
+    "crontab": "10,40 * * * *",
     "once": false,
     "onceDelay": 0.1,
     "topic": "",
@@ -7720,7 +7720,7 @@
     "type": "function",
     "z": "e6949e9df6bc4905",
     "name": "📢 Slack Report",
-    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nconst r = msg.waResult;\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `📱 *WhatsApp Campaign Report*\\n\\n✅ Sent: ${r.sent}\\n❌ Failed: ${r.failed}\\n\\n_Via Twilio WhatsApp Business_`\n};\nreturn msg;",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nconst r = msg.waResult;\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `📱 *WhatsApp Campaign Report*\\n\\n✅ Sent: ${r.sent}\\n❌ Failed: ${r.failed}\\n\\n_Via Twilio WhatsApp Business_`\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -7801,7 +7801,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "*/30 * * * *",
+    "crontab": "12,42 * * * *",
     "once": false,
     "onceDelay": 0.1,
     "topic": "",
@@ -7960,7 +7960,7 @@
     "type": "function",
     "z": "6647cd5307914885",
     "name": "🚨 30h+ ESCALATE",
-    "func": "// Escalate to staff — 30+ hours unsigned\nconst docs = msg.payload || [];\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\n\nconst docList = docs.map(d => \n    `• *${d.recipientName || 'Unknown'}* — ${d.hoursOld}h unsigned`\n).join('\\n');\n\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `🚨 *SignNow ESCALATION — ${docs.length} Doc(s) Unsigned 30+ Hours*\\n\\n${docList}\\n\\n_Manual follow-up required. These deals may be going cold._`\n};\nnode.status({fill:\"red\", shape:\"ring\", text: docs.length + \" ESCALATED!\"});\nreturn msg;",
+    "func": "// Escalate to staff — 30+ hours unsigned\nconst docs = msg.payload || [];\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\n\nconst docList = docs.map(d => \n    `• *${d.recipientName || 'Unknown'}* — ${d.hoursOld}h unsigned`\n).join('\\n');\n\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `🚨 *SignNow ESCALATION — ${docs.length} Doc(s) Unsigned 30+ Hours*\\n\\n${docList}\\n\\n_Manual follow-up required. These deals may be going cold._`\n};\nnode.status({fill:\"red\", shape:\"ring\", text: docs.length + \" ESCALATED!\"});\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -8011,7 +8011,7 @@
     "type": "function",
     "z": "6647cd5307914885",
     "name": "📢 Slack Summary",
-    "func": "const result = msg.payload || {};\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `📝 *SignNow Tracker*: ${result.sent || 0} reminder(s) sent (${msg.category || 'unknown'} tier)`\n};\nreturn msg;",
+    "func": "const result = msg.payload || {};\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `📝 *SignNow Tracker*: ${result.sent || 0} reminder(s) sent (${msg.category || 'unknown'} tier)`\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -8233,7 +8233,7 @@
     "type": "function",
     "z": "2916c0669be64f55",
     "name": "📢 Slack Report",
-    "func": "const result = msg.payload || {};\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `⭐ *Review Harvester*: ${result.sent || 0} review request(s) sent\\n_Boosting that Google SEO! 🍀_`\n};\nreturn msg;",
+    "func": "const result = msg.payload || {};\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `⭐ *Review Harvester*: ${result.sent || 0} review request(s) sent\\n_Boosting that Google SEO! 🍀_`\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -8314,7 +8314,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "0 9 * * *",
+    "crontab": "3 9 * * *",
     "once": false,
     "onceDelay": 0.1,
     "topic": "",
@@ -8455,7 +8455,7 @@
     "type": "function",
     "z": "3f0cdaee1ab64048",
     "name": "📢 Slack",
-    "func": "const result = msg.payload || {};\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `💰 *Payment Reminders*: ${result.sent || 0} reminder(s) sent for upcoming installments`\n};\nreturn msg;",
+    "func": "const result = msg.payload || {};\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `💰 *Payment Reminders*: ${result.sent || 0} reminder(s) sent for upcoming installments`\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -8536,7 +8536,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "0 * * * *",
+    "crontab": "3 * * * *",
     "once": false,
     "onceDelay": 0.1,
     "topic": "",
@@ -8629,7 +8629,7 @@
     "type": "function",
     "z": "92127b16db094acd",
     "name": "⚠️ Missed Check-In",
-    "func": "// Format missed check-in alert (YELLOW priority)\nconst defendants = msg.payload || [];\nconst list = defendants.map(d => \n    `• *${d.name}* — Bond: $${d.bondAmount || 'N/A'} | Last check-in: ${d.lastCheckIn || 'NEVER'}`\n).join('\\n');\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `⚠️ *MISSED CHECK-IN — ${defendants.length} Defendant(s)*\\n\\n${list}\\n\\n_Action: Attempt contact. If unreachable for 48h → escalate to recovery._`\n};\nnode.status({fill:\"yellow\", shape:\"dot\", text: defendants.length + \" missed check-ins\"});\nreturn msg;",
+    "func": "// Format missed check-in alert (YELLOW priority)\nconst defendants = msg.payload || [];\nconst list = defendants.map(d => \n    `• *${d.name}* — Bond: $${d.bondAmount || 'N/A'} | Last check-in: ${d.lastCheckIn || 'NEVER'}`\n).join('\\n');\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `⚠️ *MISSED CHECK-IN — ${defendants.length} Defendant(s)*\\n\\n${list}\\n\\n_Action: Attempt contact. If unreachable for 48h → escalate to recovery._`\n};\nnode.status({fill:\"yellow\", shape:\"dot\", text: defendants.length + \" missed check-ins\"});\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -8649,7 +8649,7 @@
     "type": "function",
     "z": "92127b16db094acd",
     "name": "🚨 Missed COURT",
-    "func": "// Format missed court date alert (RED — CRITICAL)\nconst defendants = msg.payload || [];\nconst list = defendants.map(d => \n    `🚨 *${d.name}* — Bond: $${d.bondAmount || 'N/A'} | Court: ${d.courtDate || 'TODAY'} | County: ${d.county || 'Unknown'}`\n).join('\\n');\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"blocks\": [\n        {\n            \"type\": \"header\",\n            \"text\": {\"type\": \"plain_text\", \"text\": \"🚨 CRITICAL: MISSED COURT DATE\", \"emoji\": true}\n        },\n        {\"type\": \"divider\"},\n        {\n            \"type\": \"section\",\n            \"text\": {\"type\": \"mrkdwn\", \"text\": list}\n        },\n        {\"type\": \"divider\"},\n        {\n            \"type\": \"section\",\n            \"text\": {\"type\": \"mrkdwn\", \"text\": \"⚡ *IMMEDIATE ACTION REQUIRED:*\\n1. Contact defendant + indemnitor NOW\\n2. If unreachable → file motion with court\\n3. Activate recovery process\"}\n        }\n    ],\n    \"text\": \"🚨 MISSED COURT DATE — \" + defendants.length + \" defendant(s)\"\n};\nnode.status({fill:\"red\", shape:\"ring\", text: \"🚨 \" + defendants.length + \" MISSED COURT!\"});\nreturn msg;",
+    "func": "// Format missed court date alert (RED — CRITICAL)\nconst defendants = msg.payload || [];\nconst list = defendants.map(d => \n    `🚨 *${d.name}* — Bond: $${d.bondAmount || 'N/A'} | Court: ${d.courtDate || 'TODAY'} | County: ${d.county || 'Unknown'}`\n).join('\\n');\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"blocks\": [\n        {\n            \"type\": \"header\",\n            \"text\": {\"type\": \"plain_text\", \"text\": \"🚨 CRITICAL: MISSED COURT DATE\", \"emoji\": true}\n        },\n        {\"type\": \"divider\"},\n        {\n            \"type\": \"section\",\n            \"text\": {\"type\": \"mrkdwn\", \"text\": list}\n        },\n        {\"type\": \"divider\"},\n        {\n            \"type\": \"section\",\n            \"text\": {\"type\": \"mrkdwn\", \"text\": \"⚡ *IMMEDIATE ACTION REQUIRED:*\\n1. Contact defendant + indemnitor NOW\\n2. If unreachable → file motion with court\\n3. Activate recovery process\"}\n        }\n    ],\n    \"text\": \"🚨 MISSED COURT DATE — \" + defendants.length + \" defendant(s)\"\n};\nnode.status({fill:\"red\", shape:\"ring\", text: \"🚨 \" + defendants.length + \" MISSED COURT!\"});\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -8758,7 +8758,7 @@
     "type": "function",
     "z": "47df6624715c4999",
     "name": "📢 Slack: New Intake",
-    "func": "// Alert Slack about new intake\nconst i = msg.intake;\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"C09MP494D1T\",\n    \"blocks\": [\n        {\"type\": \"header\", \"text\": {\"type\": \"plain_text\", \"text\": \"🚨 New Intake — \" + i.county, \"emoji\": true}},\n        {\"type\": \"divider\"},\n        {\"type\": \"section\", \"fields\": [\n            {\"type\": \"mrkdwn\", \"text\": \"*Client:*\\n\" + i.name},\n            {\"type\": \"mrkdwn\", \"text\": \"*Phone:*\\n\" + i.phone}\n        ]},\n        {\"type\": \"section\", \"fields\": [\n            {\"type\": \"mrkdwn\", \"text\": \"*Charges:*\\n\" + i.charges},\n            {\"type\": \"mrkdwn\", \"text\": \"*Bond:*\\n$\" + i.bondAmount}\n        ]},\n        {\"type\": \"context\", \"elements\": [\n            {\"type\": \"mrkdwn\", \"text\": \"_Case \" + i.caseId + \" — Pipeline auto-processing..._\"}\n        ]}\n    ]\n};\nreturn msg;",
+    "func": "// Alert Slack about new intake\nconst i = msg.intake;\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"C09MP494D1T\",\n    \"blocks\": [\n        {\"type\": \"header\", \"text\": {\"type\": \"plain_text\", \"text\": \"🚨 New Intake — \" + i.county, \"emoji\": true}},\n        {\"type\": \"divider\"},\n        {\"type\": \"section\", \"fields\": [\n            {\"type\": \"mrkdwn\", \"text\": \"*Client:*\\n\" + i.name},\n            {\"type\": \"mrkdwn\", \"text\": \"*Phone:*\\n\" + i.phone}\n        ]},\n        {\"type\": \"section\", \"fields\": [\n            {\"type\": \"mrkdwn\", \"text\": \"*Charges:*\\n\" + i.charges},\n            {\"type\": \"mrkdwn\", \"text\": \"*Bond:*\\n$\" + i.bondAmount}\n        ]},\n        {\"type\": \"context\", \"elements\": [\n            {\"type\": \"mrkdwn\", \"text\": \"_Case \" + i.caseId + \" — Pipeline auto-processing..._\"}\n        ]}\n    ]\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -8904,7 +8904,7 @@
     "type": "function",
     "z": "47df6624715c4999",
     "name": "✅ Pipeline Complete",
-    "func": "const result = msg.payload || {};\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `✅ *Intake Pipeline Complete*\\n\\n👤 ${msg.intake.name}\\n📝 SignNow packet created\\n📤 Signing link sent via SMS\\n🔗 ${msg.signingLink || 'Link sent'}\\n\\n_Case ${msg.intake.caseId} — now tracking in SignNow Tracker_`\n};\nreturn msg;",
+    "func": "const result = msg.payload || {};\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `✅ *Intake Pipeline Complete*\\n\\n👤 ${msg.intake.name}\\n📝 SignNow packet created\\n📤 Signing link sent via SMS\\n🔗 ${msg.signingLink || 'Link sent'}\\n\\n_Case ${msg.intake.caseId} — now tracking in SignNow Tracker_`\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -9086,7 +9086,7 @@
     "type": "function",
     "z": "c9cd99104acc4337",
     "name": "📢 Format Report",
-    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": msg.revenueReport\n};\nreturn msg;",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": msg.revenueReport\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -9257,7 +9257,7 @@
     "type": "function",
     "z": "887060be91704551",
     "name": "📢 Scout Report",
-    "func": "const r = msg.scoutResult;\nconst countyBreakdown = Object.entries(r.byCounty)\n    .map(([county, count]) => `  📍 ${county}: ${count}`)\n    .join('\\n');\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `🔭 *THE SCOUT — Expansion Report*\\n\\n` +\n            `📊 Total New Arrests: ${r.total}\\n` +\n            `🔥 High-Value (>$2.5k): ${r.highValue}\\n\\n` +\n            `${countyBreakdown}\\n\\n` +\n            `_Expansion targets: Sarasota, Manatee, Glades, DeSoto, Highlands_`\n};\nreturn msg;",
+    "func": "const r = msg.scoutResult;\nconst countyBreakdown = Object.entries(r.byCounty)\n    .map(([county, count]) => `  📍 ${county}: ${count}`)\n    .join('\\n');\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `🔭 *THE SCOUT — Expansion Report*\\n\\n` +\n            `📊 Total New Arrests: ${r.total}\\n` +\n            `🔥 High-Value (>$2.5k): ${r.highValue}\\n\\n` +\n            `${countyBreakdown}\\n\\n` +\n            `_Expansion targets: Sarasota, Manatee, Glades, DeSoto, Highlands_`\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -9428,7 +9428,7 @@
     "type": "function",
     "z": "50d6f3b3f3794f04",
     "name": "📢 Format Report",
-    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": msg.performanceReport\n};\nreturn msg;",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": msg.performanceReport\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -9509,7 +9509,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "0 6 * * *",
+    "crontab": "3 6 * * *",
     "once": false,
     "onceDelay": 0.1,
     "topic": "",
@@ -9623,7 +9623,7 @@
     "type": "function",
     "z": "3733b542a5e24d06",
     "name": "📢 Slack Report",
-    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `🌤️ *Weather-Based Posting*\\n\\n${msg.weatherContext || 'Boost triggered'}\\n\\n_Extra posts scheduled by Node-RED_`\n};\nreturn msg;",
+    "func": "msg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || global.get(\"SLACK_TOKEN\") || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `🌤️ *Weather-Based Posting*\\n\\n${msg.weatherContext || 'Boost triggered'}\\n\\n_Extra posts scheduled by Node-RED_`\n};\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -15260,7 +15260,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "*/30 * * * *",
+    "crontab": "14,44 * * * *",
     "once": false,
     "onceDelay": 0.1,
     "topic": "mongo-bounty",
@@ -15387,7 +15387,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "0 */6 * * *",
+    "crontab": "5 */6 * * *",
     "once": false,
     "onceDelay": 0.1,
     "topic": "analytics",
@@ -15470,6 +15470,237 @@
     "targetType": "msg",
     "x": 1060,
     "y": 680,
+    "wires": []
+  },
+  {
+    "id": "subflow_pref_check",
+    "type": "subflow",
+    "name": "🔒 Check Comm Preferences",
+    "info": "T-021: Checks client communication preferences before sending.\\n\\nInput: msg.phone or msg.clientId\\nOutput 1: Allowed (pass through)\\nOutput 2: Blocked (preference says no)\\n\\nReads from global context \"comm_preferences\" cache,\\nfalls back to GAS query if not cached.",
+    "category": "Shamrock",
+    "in": [
+      {
+        "x": 50,
+        "y": 100,
+        "wires": [
+          {
+            "id": "pref_fn_001"
+          }
+        ]
+      }
+    ],
+    "out": [
+      {
+        "x": 700,
+        "y": 80,
+        "wires": [
+          {
+            "id": "pref_fn_001",
+            "port": 0
+          }
+        ]
+      },
+      {
+        "x": 700,
+        "y": 160,
+        "wires": [
+          {
+            "id": "pref_fn_001",
+            "port": 1
+          }
+        ]
+      }
+    ],
+    "env": [],
+    "meta": {},
+    "color": "#87CEEB"
+  },
+  {
+    "id": "pref_fn_001",
+    "type": "function",
+    "z": "subflow_pref_check",
+    "name": "Check Preferences",
+    "func": "// T-021: Communication Preference Enforcement\n// Checks if we're allowed to send to this client via the specified channel\n// msg.channel = 'sms' | 'whatsapp' | 'telegram' | 'email' | 'voice'\n// msg.phone = client phone number (used as lookup key)\n\nconst phone = msg.phone || msg.payload?.phone || '';\nconst channel = msg.channel || 'sms'; // default to SMS\n\nif (!phone) {\n    // No phone number — can't check prefs, allow through\n    node.status({fill:'yellow',shape:'ring',text:'No phone — skipping pref check'});\n    return [msg, null];\n}\n\n// Normalize phone for lookup\nconst normalPhone = phone.replace(/\\D/g, '').slice(-10);\n\n// Check cached preferences (populated by GAS via scheduled sync)\nconst prefs = global.get('comm_preferences') || {};\nconst clientPref = prefs[normalPhone];\n\nif (!clientPref) {\n    // No prefs on file — default to ALLOW (opt-out model)\n    node.status({fill:'green',shape:'dot',text:'No prefs — allowed'});\n    msg.prefStatus = 'no_prefs_default_allow';\n    return [msg, null];\n}\n\n// Check if this channel is allowed\nconst channelMap = {\n    sms: clientPref.sms !== false,         // Default: true\n    whatsapp: clientPref.whatsapp !== false,\n    telegram: clientPref.telegram !== false,\n    email: clientPref.email !== false,\n    voice: clientPref.voice !== false\n};\n\nconst allowed = channelMap[channel] !== false;\n\nif (allowed) {\n    node.status({fill:'green',shape:'dot',text:channel + ' — ALLOWED'});\n    msg.prefStatus = 'allowed';\n    return [msg, null];\n} else {\n    node.status({fill:'red',shape:'ring',text:channel + ' — BLOCKED by pref'});\n    msg.prefStatus = 'blocked';\n    msg.blockedReason = 'Client opted out of ' + channel;\n    return [null, msg];\n}",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 350,
+    "y": 100,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "subflow_deep_links",
+    "type": "subflow",
+    "name": "🔗 Build Portal Deep Link",
+    "info": "T-024: Generates deep links to Telegram Mini-App or Wix Portal.\\n\\nInput: msg.linkType = \"court\" | \"payment\" | \"checkin\" | \"status\" | \"intake\"\\nInput: msg.caseId (optional)\\nOutput: msg.deepLink (URL string)",
+    "category": "Shamrock",
+    "in": [
+      {
+        "x": 50,
+        "y": 100,
+        "wires": [
+          {
+            "id": "link_fn_001"
+          }
+        ]
+      }
+    ],
+    "out": [
+      {
+        "x": 700,
+        "y": 100,
+        "wires": [
+          {
+            "id": "link_fn_001",
+            "port": 0
+          }
+        ]
+      }
+    ],
+    "env": [],
+    "meta": {},
+    "color": "#90EE90"
+  },
+  {
+    "id": "link_fn_001",
+    "type": "function",
+    "z": "subflow_deep_links",
+    "name": "Generate Deep Link",
+    "func": "// T-024: Build portal deep links for SMS/WhatsApp messages\n// Generates links to Telegram Mini-App or Wix Portal\n\nconst TELEGRAM_BASE = 'https://shamrock-telegram.netlify.app';\nconst WIX_BASE = 'https://www.shamrockbailbonds.biz';\nconst BOT_DEEPLINK = 'https://t.me/ShamrockBail_bot?start=';\n\nconst linkType = msg.linkType || msg.payload?.linkType || 'status';\nconst caseId = msg.caseId || msg.payload?.caseId || '';\n\nconst ROUTES = {\n    // Telegram Mini-App routes\n    court:   { tg: TELEGRAM_BASE + '/status',   wix: WIX_BASE + '/court-dates',  label: 'View Court Date' },\n    payment: { tg: TELEGRAM_BASE + '/payments',  wix: WIX_BASE + '/payments',     label: 'Make Payment' },\n    checkin: { tg: TELEGRAM_BASE + '/checkin',   wix: WIX_BASE + '/check-in',     label: 'Check In' },\n    status:  { tg: TELEGRAM_BASE + '/status',    wix: WIX_BASE + '/case-status',  label: 'Case Status' },\n    intake:  { tg: TELEGRAM_BASE + '/intake',    wix: WIX_BASE + '/intake',       label: 'Start Intake' },\n    docs:    { tg: TELEGRAM_BASE + '/documents', wix: WIX_BASE + '/documents',    label: 'View Documents' }\n};\n\nconst route = ROUTES[linkType] || ROUTES.status;\n\n// Build links with case ID parameter if available\nconst params = caseId ? '?caseId=' + encodeURIComponent(caseId) : '';\nmsg.deepLink = route.tg + params;\nmsg.wixLink = route.wix + params;\nmsg.botLink = BOT_DEEPLINK + linkType + (caseId ? '_' + caseId : '');\nmsg.linkLabel = route.label;\n\n// Formatted SMS snippet\nmsg.smsSnippet = route.label + ': ' + msg.deepLink;\n\nnode.status({fill:'green',shape:'dot',text:linkType + ' → ' + msg.deepLink.substring(0, 40) + '...'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 350,
+    "y": 100,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "pref_sync_comment",
+    "type": "comment",
+    "z": "tab-shamrock",
+    "name": "🔒 COMM PREFERENCES — Hourly Sync from GAS",
+    "info": "T-021: Syncs client communication preferences from GAS every hour.",
+    "x": 350,
+    "y": 1260,
+    "wires": []
+  },
+  {
+    "id": "pref_sync_inject",
+    "type": "inject",
+    "z": "tab-shamrock",
+    "name": "⏰ Sync Prefs (Hourly)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "15 * * * *",
+    "once": true,
+    "onceDelay": 10,
+    "topic": "pref-sync",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 1300,
+    "wires": [
+      [
+        "pref_sync_prep"
+      ]
+    ]
+  },
+  {
+    "id": "pref_sync_prep",
+    "type": "function",
+    "z": "tab-shamrock",
+    "name": "🔍 Prep Pref Sync",
+    "func": "// Fetch all client communication preferences from GAS\nconst gasUrl = global.get('env').GAS_WEBHOOK_URL;\nif (!gasUrl) return null;\n\nmsg.url = gasUrl;\nmsg.method = 'POST';\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.payload = {\n    action: 'getCommPreferences',\n    source: 'node-red'\n};\n\nnode.status({fill:'blue',shape:'dot',text:'Syncing prefs...'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 1300,
+    "wires": [
+      [
+        "pref_sync_gas"
+      ]
+    ]
+  },
+  {
+    "id": "pref_sync_gas",
+    "type": "http request",
+    "z": "tab-shamrock",
+    "name": "📡 GAS: Get Preferences",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 620,
+    "y": 1300,
+    "wires": [
+      [
+        "pref_sync_store"
+      ]
+    ]
+  },
+  {
+    "id": "pref_sync_store",
+    "type": "function",
+    "z": "tab-shamrock",
+    "name": "💾 Store Preferences",
+    "func": "// Store preference map in global context\n// Expected: { \"2395551234\": { sms: true, whatsapp: false, ... }, ... }\nvar data = msg.payload;\ntry {\n    if (typeof data === 'string') data = JSON.parse(data);\n} catch(e) {\n    node.warn('Pref sync: non-JSON response');\n    return null;\n}\n\nconst prefs = data.data || data.preferences || data;\nif (prefs && typeof prefs === 'object') {\n    global.set('comm_preferences', prefs);\n    global.set('comm_preferences_updated', new Date().toISOString());\n    const count = Object.keys(prefs).length;\n    node.status({fill:'green',shape:'dot',text:count + ' prefs cached @ ' + new Date().toLocaleTimeString()});\n} else {\n    node.status({fill:'yellow',shape:'ring',text:'No prefs returned'});\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 840,
+    "y": 1300,
+    "wires": [
+      [
+        "pref_sync_debug"
+      ]
+    ]
+  },
+  {
+    "id": "pref_sync_debug",
+    "type": "debug",
+    "z": "tab-shamrock",
+    "name": "🔍 Pref Sync Debug",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "x": 1060,
+    "y": 1300,
     "wires": []
   }
 ]
