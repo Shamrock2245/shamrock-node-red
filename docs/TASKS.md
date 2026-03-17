@@ -1,7 +1,7 @@
 # 📋 TASKS.md — Current Backlog & Priorities
 
 > **Active work items for the Node-RED ecosystem.**  
-> Last updated: 2026-03-16
+> Last updated: 2026-03-17
 
 ---
 
@@ -27,10 +27,11 @@ All 12 initial tasks are complete:
 **Bonus fixes:**
 - ✅ `SLACK_TOKEN` initialization — fixed to correctly read `SLACK_BOT_TOKEN` from env
 - ✅ `.env.example` updated with `MONGODB_URI` and `GITHUB_PAT`
+- ✅ Documentation reorganized into `docs/` and `.agents/` directories
 
 ---
 
-## 🔴 Priority 1 — Critical
+## 🔴 Priority 1 — Critical (Do Now)
 
 ### T-013: Wire WhatsApp Campaigns tab to Twilio
 > The WhatsApp Campaigns flow tab (14 nodes) is currently **disabled** pending Twilio 10DLC approval.
@@ -44,18 +45,49 @@ All 12 initial tasks are complete:
 ### T-014: Generate `NR_ADMIN_HASH` for production login
 > Node-RED admin auth requires a bcrypt hash in settings.js. Currently using dev mode with no password.
 > Generate hash with `npx node-red admin hash-pw` and add to `.env`.
+> **This is a security gap** — anyone on the network can access the editor.
 
-**Effort:** 15 minutes
+**Effort:** 15 minutes  
+**Dependencies:** None
 
 ---
 
-## 🟡 Priority 2 — Important
+### T-019: Hetzner Deployment — Productionize Node-RED
+> Node-RED currently runs on a local Mac. Move to the Hetzner Cloud server (already provisioned for scrapers) for 24/7 uptime.
+> - Containerize with Docker Compose (volume-mount `node_red_data/`)
+> - Configure health check endpoint (`/health` via httpStatic)
+> - Set up auto-restart on crash (`restart: unless-stopped`)
+> - Configure ngrok or Cloudflare Tunnel for webhook ingress
+> - Set up `NR_ADMIN_HASH` (T-014) before going live
+
+**Effort:** 4-6 hours  
+**Dependencies:** T-014, T-017  
+**Related:** Hetzner runner already provisioned for scrapers
+
+---
+
+### T-020: "The Closer" Drip Campaign Sequences
+> The Closer tab works (30-min cron, fetches stale leads, sends follow-up), but needs richer drip sequences:
+> - **Day 0:** Immediate "we can help" SMS after intake abandonment
+> - **Day 1:** Value prop + testimonial link
+> - **Day 3:** "Still need help?" with office hours + direct line
+> - **Day 7:** Final "we're here when you're ready"
+> - Respect communication preferences (per `CommunicationPreferences.js`)
+> - Track conversion attribution per drip step
+
+**Effort:** 4-6 hours  
+**Dependencies:** T-013 (WhatsApp channel adds reach)
+
+---
+
+## 🟡 Priority 2 — Important (Do Soon)
 
 ### T-015: MongoDB dashboard integration
-> Node-RED currently reads all data from GAS → Google Sheets. Now that MongoDB Atlas has arrest data + business events, consider adding:
-> - MongoDB read nodes for Bounty Board (live >$2.5K unposted bonds)
-> - MongoDB event stream for real-time dashboard updates
-> - Analytics widgets powered by MongoDB aggregation pipeline
+> Node-RED currently reads all data from GAS → Google Sheets. Now that MongoDB Atlas has arrest data + business events:
+> - Add `node-red-node-mongodb` to `package.json`
+> - Bounty Board: read live >$2.5K unposted bonds from MongoDB instead of GAS
+> - Real-time event stream for dashboard updates (change streams)
+> - Analytics widgets powered by MongoDB aggregation pipeline (arrest trends, conversion funnels)
 
 **Effort:** 8-12 hours
 
@@ -69,13 +101,61 @@ All 12 initial tasks are complete:
 
 ---
 
-## 🟢 Priority 3 — Nice to Have
+### T-021: Communication Preference Enforcement in Node-RED
+> GAS `CommunicationPreferences.js` now stores per-client channel preferences (SMS, WhatsApp, Telegram, Email, Voice).
+> Node-RED flows that dispatch messages (The Closer, Court Clerk, Payment Reminders, Review Harvester, Bond Renewal Reminders) should:
+> - Query preferences before sending
+> - Route through preferred channel only
+> - Fall back to SMS if no preference set
+
+**Effort:** 3-4 hours  
+**Dependencies:** GAS `CommunicationPreferences` endpoint (already live)
+
+---
+
+### T-022: Scraper Fleet Health Dashboard
+> Scraper Control tab exists but needs richer monitoring:
+> - Last-run timestamp per county (Lee, Charlotte, Collier, DeSoto, Hendry, Manatee, Sarasota)
+> - Records scraped in last 24h (bar chart)
+> - Error rate per scraper (red/yellow/green)
+> - GitHub Actions workflow status integration
+> - One-click manual trigger per county
+
+**Effort:** 4-6 hours  
+**Dependencies:** Scraper Control tab (exists), GitHub API
+
+---
+
+### T-023: Smart Cron Collision Avoidance
+> 58 inject timers are live. Some fire in overlapping windows causing GAS rate limit hits (especially 6-7 AM and the 30-second intervals).
+> - Audit and stagger overlapping crons (see `SCHEDULING.md`)
+> - Add jitter (random 5-15s delay) to high-frequency timers
+> - Implement rate-limiting queue for GAS HTTP requests
+
+**Effort:** 2-3 hours
+
+---
+
+### T-024: Client Portal Deep Links from Node-RED
+> When Node-RED sends SMS/WhatsApp to clients, include deep links to the Telegram Mini-App or Wix Portal:
+> - Court reminders → link to case status page
+> - Payment reminders → link to payment page
+> - Check-in requests → link to check-in form
+> - SignNow follow-ups → link to signing page
+
+**Effort:** 2-3 hours  
+**Dependencies:** Telegram Mini-App routes (already live at `shamrock-telegram.netlify.app`)
+
+---
+
+## 🟢 Priority 3 — Nice to Have (Future)
 
 ### T-017: Docker Compose for production deployment
 > Currently running via `npx node-red`. Should be containerized for Hetzner deployment with:
 > - `docker-compose.yml` with volume mounts for `node_red_data/`
 > - Health check endpoint
 > - Auto-restart policy
+> - Nginx reverse proxy with HTTPS
 
 **Effort:** 2-4 hours
 
@@ -84,9 +164,66 @@ All 12 initial tasks are complete:
 ### T-018: Backup and version flow snapshots
 > Implement periodic `flows.json` export to GitHub using the Node-RED Admin API.
 > Cron → GET `/flows` → commit to `shamrock-node-red` repo.
+> Could run as a GitHub Action on the Hetzner runner.
 
-**Effort:** 2-3 hours
+**Effort:** 2-3 hours  
+**Dependencies:** T-019 (Hetzner deployment)
 
 ---
 
-*Maintained by Shamrock Engineering & AI Agents*
+### T-025: Agent-to-Agent Communication Bus
+> Currently agents operate independently. Add a lightweight pub/sub mechanism:
+> - Global context `agent_events` array as event bus
+> - Scout detects arrest → notifies Bounty Hunter + Clerk simultaneously
+> - Closer detects conversion → notifies Analyst for outcome tracking
+> - Watchdog detects failure → pauses affected agent crons
+
+**Effort:** 6-8 hours
+
+---
+
+### T-026: Voice AI (Shannon) Dashboard Integration
+> Shannon (ElevenLabs voice agent) handles after-hours calls but Node-RED has no visibility into call volume or outcomes.
+> - Ingest call transcripts from ElevenLabs webhook → display on dashboard
+> - Track: calls/day, avg duration, intake conversion rate
+> - Surface missed-call alerts to Slack
+
+**Effort:** 4-6 hours  
+**Dependencies:** ElevenLabs webhook endpoint (exists in Digital Workforce tab)
+
+---
+
+### T-027: A/B Testing Framework for Outreach Templates
+> The Closer, Court Clerk, Payment Reminders all send templated messages.
+> - Store message variants in flow context
+> - Randomly assign variant per send
+> - Track response rate per variant
+> - Surface winning templates on dashboard
+
+**Effort:** 6-8 hours
+
+---
+
+### T-028: Multi-Tenant Readiness
+> Possible future expansion to other bail bond agencies (franchise model).
+> - Abstract agency-specific config (name, phone, counties, GAS URL) into environment variables
+> - Namespace flow context per agency
+> - Multi-tenant dashboard with agency switcher
+
+**Effort:** 20-40 hours  
+**Status:** 🔮 Long-term vision
+
+---
+
+## 📊 Backlog Summary
+
+| Priority | Open | Blocked | Total Effort |
+|----------|------|---------|-------------|
+| 🔴 Critical | 4 | 1 (T-013) | 11-17 hours |
+| 🟡 Important | 6 | 0 | 20-29 hours |
+| 🟢 Nice to Have | 5 | 0 | 40-65 hours |
+| **Total** | **15** | **1** | **71-111 hours** |
+
+---
+
+*Maintained by Shamrock Engineering & AI Agents · March 2026*
