@@ -6538,7 +6538,7 @@
     "id": "e902263901fb43a0",
     "type": "inject",
     "z": "47a279345d2c43f7",
-    "name": "⏰ 6:00 AM (Offenders)",
+    "name": "⏰ 6:00 AM (Offenders) [DISABLED — see Repeat Offender Alerts tab]",
     "props": [
       {
         "p": "payload"
@@ -6549,7 +6549,7 @@
       }
     ],
     "repeat": "",
-    "crontab": "0 6 * * *",
+    "crontab": "",
     "once": false,
     "onceDelay": 0.1,
     "topic": "",
