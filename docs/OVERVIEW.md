@@ -9,7 +9,7 @@
 
 Node-RED sits at the center of the Shamrock tech stack, routing data between 10+ external services.
 
-![Shamrock Digital Ecosystem](docs/images/ecosystem_map.png)
+![Shamrock Digital Ecosystem](images/ecosystem_map.png)
 
 ### What's Connected
 
@@ -32,7 +32,7 @@ Node-RED sits at the center of the Shamrock tech stack, routing data between 10+
 
 This is the core business flow — from arrest to bond posted, fully automated.
 
-![Bail Bond Intake & Signing Pipeline](docs/images/intake_signing_flow.png)
+![Bail Bond Intake & Signing Pipeline](images/intake_signing_flow.png)
 
 ### The 8-Step Pipeline
 
@@ -98,7 +98,7 @@ This is the core business flow — from arrest to bond posted, fully automated.
 
 Node-RED runs 39 scheduled tasks across a full 24-hour cycle, plus continuous health monitoring.
 
-![24-Hour Automation Cycle](docs/images/daily_automation_cycle.png)
+![24-Hour Automation Cycle](images/daily_automation_cycle.png)
 
 ### Peak Windows (Watch for Load)
 
@@ -140,7 +140,7 @@ Node-RED runs 39 scheduled tasks across a full 24-hour cycle, plus continuous he
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-Each agent has a dedicated Node-RED tab with its own triggers, processing logic, and output channels. See [AGENTS.md](AGENTS.md) for full details.
+Each agent has a dedicated Node-RED tab with its own triggers, processing logic, and output channels. See [AGENTS.md](../.agents/AGENTS.md) for full details.
 
 ---
 
@@ -219,4 +219,4 @@ Proactive lead generation:
 | Operations Dashboard | http://localhost:1880/dashboard |
 | GitHub Repo | https://github.com/Shamrock2245/shamrock-node-red |
 | Portal Site Repo | https://github.com/Shamrock2245/shamrock-bail-portal-site |
-| Full Doc Index | [README.md](README.md) |
+| Full Doc Index | [README.md](../README.md) |

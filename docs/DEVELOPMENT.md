@@ -42,32 +42,35 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:1880/
 shamrock-node-red/
 │
 ├── README.md                    # Project overview & doc index
-├── SYSTEM.md                    # Architecture reference
-├── AGENTS.md                    # Digital workforce directory
-├── INTEGRATIONS.md              # External service map
-├── APIS.md                      # HTTP endpoint registry
-├── CAPABILITIES.md              # Feature inventory
-├── FLOWS.md                     # Detailed flow tab reference
-├── TASKS.md                     # Prioritized backlog
-├── TODO.md                      # Immediate action items
-├── SCHEDULING.md                # Cron schedule bible
-├── SECURITY.md                  # PII, secrets, compliance
-├── DEVELOPMENT.md               # This file
-├── TROUBLESHOOTING.md           # Common issues & fixes
-├── RUNBOOKS.md                  # Operational procedures
+├── .agents/                     # 🤖 AI agent configuration
+│   ├── AGENTS.md                # Digital workforce directory (9 agents)
+│   └── workflows/               # Agent workflow definitions
+│       └── start-node-red.md    # Node-RED startup workflow
+├── docs/                        # 📚 All reference documentation
+│   ├── SYSTEM.md                # Architecture & tech stack
+│   ├── OVERVIEW.md              # Big picture ecosystem map
+│   ├── FLOWS.md                 # Flow tab deep dive
+│   ├── INTEGRATIONS.md          # External services
+│   ├── APIS.md                  # HTTP endpoints & webhooks
+│   ├── CAPABILITIES.md          # Feature inventory
+│   ├── SCHEDULING.md            # Cron schedule bible
+│   ├── SECURITY.md              # PII, secrets, compliance
+│   ├── DEVELOPMENT.md           # This file
+│   ├── TROUBLESHOOTING.md       # Common issues & fixes
+│   ├── RUNBOOKS.md              # Operational procedures
+│   ├── TASKS.md                 # Prioritized backlog
+│   ├── dashboard-capabilities.md
+│   └── images/                  # Diagrams and visual assets
 │
 ├── node_red_data/               # ⚡ Node-RED userDir (THE RUNTIME)
-│   ├── flows.json               # Master flow definitions (452 nodes)
+│   ├── flows.json               # Master flow definitions (766 nodes, 21 tabs)
 │   ├── flows_cred.json          # Encrypted credentials (DO NOT COMMIT)
 │   ├── settings.js              # Server configuration
 │   ├── package.json             # Dashboard + contrib nodes
-│   ├── context/                 # Persistent flow context
-│   └── lib/                     # Shared library functions
+│   └── context/                 # Persistent flow context
 │
-├── automation_flows.json        # Legacy export: automation flows
-├── gas_scheduler_flows.json     # Legacy export: GAS scheduler
-├── deploy_automations.py        # Python deploy script
-├── inject_irb.js                # IRB flow injection utility
+├── start.sh                     # One-command startup script
+├── docker-compose.yml           # Docker deployment config
 └── .gitignore
 ```
 
@@ -201,16 +204,15 @@ node -e "const f = require('./node_red_data/flows.json'); console.log('Nodes:', 
 
 If you are an AI agent working on this codebase:
 
-1. **Read the docs first** — Start with `README.md` → `SYSTEM.md` → `CAPABILITIES.md`
-2. **Check `TASKS.md`** for the current backlog before starting new work
-3. **Update `TODO.md`** as you complete items
-4. **Never modify `flows_cred.json`** — it contains encrypted secrets
-5. **Always validate JSON** after modifying `flows.json`
-6. **Restart Node-RED** after any script-based flow changes
-7. **Search `is:invalid`** in the editor after deploying to catch broken nodes
-8. **Follow the naming conventions** above for all new nodes
-9. **Check `SCHEDULING.md`** before adding cron triggers — avoid collisions
-10. **Read `SECURITY.md`** before handling any PII data
+1. **Read the docs first** — Start with `README.md` → `docs/SYSTEM.md` → `docs/CAPABILITIES.md` → `.agents/AGENTS.md`
+2. **Check `docs/TASKS.md`** for the current backlog before starting new work
+3. **Never modify `flows_cred.json`** — it contains encrypted secrets
+4. **Always validate JSON** after modifying `flows.json`
+5. **Restart Node-RED** after any script-based flow changes
+6. **Search `is:invalid`** in the editor after deploying to catch broken nodes
+7. **Follow the naming conventions** above for all new nodes
+8. **Check `docs/SCHEDULING.md`** before adding cron triggers — avoid collisions
+9. **Read `docs/SECURITY.md`** before handling any PII data
 
 ### Common AI Agent Tasks
 | Task | Start Here |
@@ -218,9 +220,9 @@ If you are an AI agent working on this codebase:
 | "Add a new dashboard form" | [RUNBOOKS.md](RUNBOOKS.md) RB-005 |
 | "Add a new scheduled task" | [RUNBOOKS.md](RUNBOOKS.md) RB-006 |
 | "Fix an invalid node" | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) §2 |
-| "Wire a stub function" | [TASKS.md](TASKS.md) T-001 |
 | "Add a new integration" | [INTEGRATIONS.md](INTEGRATIONS.md) for patterns |
 | "Debug a failing webhook" | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) §3-5 |
+| "Understand the AI agents" | [AGENTS.md](../.agents/AGENTS.md) |
 
 ---
 

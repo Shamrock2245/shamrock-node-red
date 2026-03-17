@@ -1,6 +1,6 @@
 # 🏗 SYSTEM.md — Shamrock Node-RED Architecture
 
-> **Last Updated**: 2026-03-10
+> **Last Updated**: 2026-03-17
 > **Owner**: Shamrock Bail Bonds — Digital Operations
 
 ---
@@ -13,7 +13,7 @@ Node-RED is the **Central Nervous System** of the Shamrock digital operation. It
 2. **Orchestrates** calls to Google Apps Script (GAS) for heavy processing
 3. **Routes** alerts and data to Slack, SMS, WhatsApp, and AI voice agents
 4. **Powers** the Operations Dashboard for real-time business intelligence
-5. **Schedules** 39 automated triggers (scrapers, reports, reminders, health checks)
+5. **Schedules** 58 automated triggers (scrapers, reports, reminders, health checks)
 
 ```
 ┌──────────┐    Webhooks     ┌────────────┐    GAS Calls    ┌──────────────┐
@@ -59,19 +59,33 @@ Node-RED is the **Central Nervous System** of the Shamrock digital operation. It
 
 ```
 shamrock-node-red/
-├── node_red_data/              # Node-RED userDir
-│   ├── flows.json              # ⚡ THE MASTER FLOW FILE (452 nodes, 19 tabs)
-│   ├── flows_cred.json         # Encrypted credentials
-│   ├── settings.js             # Server config (auth, ports, context stores)
-│   ├── package.json            # Installed node modules
-│   ├── context/                # Persistent flow/global context data
-│   └── lib/                    # Shared library functions
-├── automation_flows.json       # Legacy: original automation exports
-├── gas_scheduler_flows.json    # Legacy: GAS scheduler exports
-├── deploy_automations.py       # Deploy script for automations tab
-├── deploy_gas_scheduler.py     # Deploy script for GAS scheduler
-├── inject_irb.js               # IRB flow injection utility
-└── README.md                   # (TODO)
+├── README.md                    # Project overview & doc index
+├── .agents/                     # 🤖 AI agent configuration
+│   ├── AGENTS.md                # Digital workforce directory
+│   └── workflows/               # Agent workflow definitions
+├── docs/                        # 📚 Reference documentation
+│   ├── SYSTEM.md                # This file — architecture reference
+│   ├── OVERVIEW.md              # Big picture ecosystem map
+│   ├── FLOWS.md                 # Flow tab deep dive
+│   ├── INTEGRATIONS.md          # External services
+│   ├── APIS.md                  # HTTP endpoints & webhooks
+│   ├── CAPABILITIES.md          # Feature inventory
+│   ├── SCHEDULING.md            # Cron schedule bible
+│   ├── SECURITY.md              # PII, secrets, compliance
+│   ├── DEVELOPMENT.md           # Developer & AI onboarding
+│   ├── TROUBLESHOOTING.md       # Common issues & fixes
+│   ├── RUNBOOKS.md              # Operational procedures
+│   ├── TASKS.md                 # Prioritized backlog
+│   └── images/                  # Diagrams and visual assets
+├── node_red_data/               # ⚡ Node-RED userDir (THE RUNTIME)
+│   ├── flows.json               # Master flow definitions (766 nodes, 21 tabs)
+│   ├── flows_cred.json          # Encrypted credentials (DO NOT COMMIT)
+│   ├── settings.js              # Server config (auth, ports, context stores)
+│   ├── package.json             # Installed node modules
+│   └── context/                 # Persistent flow/global context data
+├── start.sh                     # One-command startup script
+├── docker-compose.yml           # Docker deployment config
+└── .env.example                 # Environment variable template
 ```
 
 ---
@@ -106,7 +120,7 @@ Editor available at: `http://localhost:1880`
 
 ---
 
-## Flow Architecture (19 Tabs)
+## Flow Architecture (21 Tabs)
 
 | Tab | Purpose | Trigger Type |
 |---|---|---|
@@ -118,8 +132,8 @@ Editor available at: `http://localhost:1880`
 | Morning Briefing | Daily ops summary to Slack | Cron (7 AM) |
 | The Bounty Hunter | High-value unposted bond tracking | Cron (hourly) |
 | Watchdog | System health monitoring | Cron (5 min) |
-| GAS Scheduler | Master scheduler for all GAS endpoints | Crons (15 scheduled tasks) |
-| WhatsApp Campaigns | Outbound WhatsApp drip campaigns | Cron (30 min) |
+| GAS Scheduler | Master scheduler for all GAS endpoints | Crons (16 scheduled tasks) |
+| WhatsApp Campaigns | Outbound WhatsApp drip campaigns | ⏸ Disabled (awaiting 10DLC) |
 | SignNow Tracker | Document signing status monitoring | Cron (30 min) |
 | Review Harvester | Google review solicitation automation | Cron (10 AM) |
 | Payment Reminders | Automated payment collection | Cron (9 AM) |
@@ -129,3 +143,5 @@ Editor available at: `http://localhost:1880`
 | The Scout | New arrest detection across counties | Cron (5 AM) |
 | Staff Performance | Weekly performance reports | Cron (Fri 5 PM) |
 | Weather Posting | Weather-based social content | Cron (6 AM) |
+| Bond Renewal Reminders | Bond renewal check & SMS dispatch | Cron (8 AM daily) |
+| Scraper Control | Scraper fleet orchestration & status | Crons + UI |

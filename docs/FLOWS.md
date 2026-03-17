@@ -1,6 +1,6 @@
 # 📑 FLOWS.md — Detailed Flow Tab Reference
 
-> **Deep dive into every flow tab — what each node does, how data moves, and what's wired. Updated 2026-03-10.**
+> **Deep dive into every flow tab — what each node does, how data moves, and what's wired. Updated 2026-03-17.**
 
 ---
 
@@ -129,7 +129,7 @@ Each follows: `Inject (timer) → Hardened Prep Function → HTTP POST to GAS �
 
 ---
 
-## Tabs 4-19: Specialized Automation Flows (All ✅ 100%)
+## Tabs 4-21: Specialized Automation Flows (All ✅ 100%)
 
 ### Social Auto-Pilot (13 nodes)
 Three daily crons (8 AM, 2 PM, 8 PM) → Fetch content from GAS → OpenAI generation → Post to platforms → Log to Slack
@@ -178,3 +178,9 @@ Friday 5 PM cron → Fetch weekly stats (bonds written, revenue, response time, 
 
 ### Weather Posting (12 nodes)
 6 AM cron → Fetch Fort Myers weather (Open-Meteo API) → Analyze & decide post relevance → Generate content → POST to platforms → Slack report
+
+### Bond Renewal Reminders (nodes)
+Daily 8 AM cron → GAS `checkBondRenewals` → Filter bonds approaching renewal date → Send SMS reminders via Twilio → POST summary to Slack #ops
+
+### Scraper Control (nodes)
+Dashboard UI + crons → Orchestrate scraper fleet (Lee, Charlotte, Collier, DeSoto, Hendry, Manatee, Sarasota) → Status display → Manual trigger buttons → Exec node for Docker containers → Health logging
