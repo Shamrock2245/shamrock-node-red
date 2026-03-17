@@ -93,6 +93,9 @@ module.exports = {
             // MongoDB
             MONGODB_URI: process.env.MONGODB_URI || "",
             
+            // GitHub (for T-022 scraper health monitoring)
+            GITHUB_PAT: process.env.GITHUB_PAT || "",
+            
             // Misc
             NODE_ENV: process.env.NODE_ENV || "production",
             TZ: process.env.TZ || "America/New_York"

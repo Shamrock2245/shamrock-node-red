@@ -15702,5 +15702,727 @@
     "x": 1060,
     "y": 1300,
     "wires": []
+  },
+  {
+    "id": "t022_comment",
+    "type": "comment",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "📊 SCRAPER FLEET HEALTH — Automated Monitoring",
+    "info": "T-022: Monitors scraper fleet health via GitHub Actions API.\\nPolls workflow run status every 15 minutes.",
+    "x": 380,
+    "y": 760,
+    "wires": []
+  },
+  {
+    "id": "t022_inject",
+    "type": "inject",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "⏰ Health Check (15m)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "1,16,31,46 * * * *",
+    "once": true,
+    "onceDelay": 30,
+    "topic": "scraper-health",
+    "payload": "",
+    "payloadType": "date",
+    "x": 160,
+    "y": 800,
+    "wires": [
+      [
+        "t022_prep"
+      ]
+    ]
+  },
+  {
+    "id": "t022_prep",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "🏗️ Build Health Queries",
+    "func": "// T-022: Query GitHub Actions for scraper workflow status\nconst githubPat = global.get('env').GITHUB_PAT;\nif (!githubPat) {\n    node.status({fill:'yellow',shape:'ring',text:'No GITHUB_PAT'});\n    return null;\n}\n\nconst COUNTIES = [\n    'brevard', 'charlotte', 'highlands', 'hillsborough',\n    'indian-river', 'lake', 'manatee', 'martin',\n    'orange', 'osceola', 'palm-beach', 'pinellas',\n    'polk', 'sarasota', 'seminole'\n];\n\nmsg.url = 'https://api.github.com/repos/Shamrock2245/swfl-arrest-scrapers/actions/runs?per_page=30&status=completed';\nmsg.method = 'GET';\nmsg.headers = {\n    'Authorization': 'Bearer ' + githubPat,\n    'Accept': 'application/vnd.github.v3+json',\n    'User-Agent': 'ShamrockNodeRED'\n};\nmsg.counties = COUNTIES;\n\nnode.status({fill:'blue',shape:'dot',text:'Fetching GitHub Actions...'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 800,
+    "wires": [
+      [
+        "t022_gh_req"
+      ]
+    ]
+  },
+  {
+    "id": "t022_gh_req",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "📡 GitHub: Workflow Runs",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 600,
+    "y": 800,
+    "wires": [
+      [
+        "t022_parse"
+      ]
+    ]
+  },
+  {
+    "id": "t022_parse",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "📊 Parse Health Status",
+    "func": "// Parse GitHub Actions workflow runs into fleet health matrix\nconst runs = (msg.payload && msg.payload.workflow_runs) || [];\nconst now = Date.now();\nconst health = {};\n\nruns.forEach(run => {\n    // Extract county from workflow name (e.g., \"scrape-charlotte\")\n    const name = (run.name || '').toLowerCase();\n    const county = name.replace(/^scrape[-_]?/, '').replace(/[-_]/g, ' ').trim();\n    if (!county) return;\n\n    if (!health[county]) {\n        health[county] = {\n            lastRun: run.updated_at,\n            lastStatus: run.conclusion || run.status,\n            runCount24h: 0,\n            successCount24h: 0,\n            failCount24h: 0,\n            avgDurationSec: 0,\n            durations: []\n        };\n    }\n\n    const runAge = (now - new Date(run.updated_at)) / (1000 * 60 * 60);\n    if (runAge <= 24) {\n        health[county].runCount24h++;\n        if (run.conclusion === 'success') health[county].successCount24h++;\n        else if (run.conclusion === 'failure') health[county].failCount24h++;\n    }\n\n    // Duration\n    if (run.run_started_at && run.updated_at) {\n        const dur = (new Date(run.updated_at) - new Date(run.run_started_at)) / 1000;\n        health[county].durations.push(dur);\n    }\n});\n\n// Calculate averages and health scores\nObject.keys(health).forEach(county => {\n    const h = health[county];\n    if (h.durations.length) {\n        h.avgDurationSec = Math.round(h.durations.reduce((a, b) => a + b, 0) / h.durations.length);\n    }\n    delete h.durations;\n\n    // Health score: green (healthy), yellow (degraded), red (down)\n    const lastRunAge = (now - new Date(h.lastRun)) / (1000 * 60 * 60);\n    if (h.lastStatus === 'failure' || lastRunAge > 12) {\n        h.healthColor = 'red';\n        h.healthStatus = lastRunAge > 12 ? 'STALE' : 'FAILING';\n    } else if (h.failCount24h > 2 || lastRunAge > 6) {\n        h.healthColor = 'yellow';\n        h.healthStatus = 'DEGRADED';\n    } else {\n        h.healthColor = 'green';\n        h.healthStatus = 'HEALTHY';\n    }\n    h.lastRunAgeHours = Math.round(lastRunAge * 10) / 10;\n});\n\n// Store globally\nglobal.set('scraper_fleet_health', health);\nglobal.set('scraper_fleet_updated', new Date().toISOString());\n\n// Count status\nconst counties = Object.keys(health);\nconst red = counties.filter(c => health[c].healthColor === 'red').length;\nconst yellow = counties.filter(c => health[c].healthColor === 'yellow').length;\nconst green = counties.filter(c => health[c].healthColor === 'green').length;\n\nmsg.healthData = { health, counties: counties.length, red, yellow, green };\nnode.status({fill: red > 0 ? 'red' : yellow > 0 ? 'yellow' : 'green',\n    shape:'dot', text: green + '🟢 ' + yellow + '🟡 ' + red + '🔴 | ' + counties.length + ' scrapers'\n});\n\n// Only alert if there are problems\nif (red > 0) {\n    msg.alertNeeded = true;\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 820,
+    "y": 800,
+    "wires": [
+      [
+        "t022_alert_check",
+        "t022_debug"
+      ]
+    ]
+  },
+  {
+    "id": "t022_alert_check",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "🚨 Alert on Failures",
+    "func": "// Send Slack alert if any scrapers are red\nif (!msg.alertNeeded) return null;\n\nconst health = msg.healthData.health;\nconst problems = Object.entries(health)\n    .filter(([_, h]) => h.healthColor === 'red')\n    .map(([county, h]) => '• *' + county + '*: ' + h.healthStatus +\n         ' (last run ' + h.lastRunAgeHours + 'h ago, status: ' + h.lastStatus + ')');\n\nconst token = (global.get('env').SLACK_BOT_TOKEN || global.get('SLACK_TOKEN') || '');\nmsg.url = 'https://slack.com/api/chat.postMessage';\nmsg.headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };\nmsg.payload = {\n    channel: '#alerts',\n    text: '🚨 Scraper Fleet Alert',\n    blocks: [{\n        type: 'section',\n        text: { type: 'mrkdwn', text: '*🚨 Scraper Fleet Health Alert*\\n\\n' + problems.join('\\n') +\n            '\\n\\n_' + msg.healthData.green + ' healthy, ' + msg.healthData.yellow + ' degraded, ' +\n            msg.healthData.red + ' critical_' }\n    }]\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1060,
+    "y": 800,
+    "wires": [
+      [
+        "t022_slack"
+      ]
+    ]
+  },
+  {
+    "id": "t022_slack",
+    "type": "http request",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "📤 Slack Alert",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1260,
+    "y": 800,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "t022_debug",
+    "type": "debug",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "🔍 Health Debug",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "healthData",
+    "targetType": "msg",
+    "x": 1060,
+    "y": 860,
+    "wires": []
+  },
+  {
+    "id": "t025_comment",
+    "type": "comment",
+    "z": "tab-shamrock",
+    "name": "🔀 AGENT COMMUNICATION BUS — Cross-Tab Event System",
+    "info": "T-025: Lightweight pub/sub for inter-agent coordination.\\nAgents publish events via link-out nodes, bus routes to subscribers.",
+    "x": 380,
+    "y": 1380,
+    "wires": []
+  },
+  {
+    "id": "t025_link_in",
+    "type": "link in",
+    "z": "tab-shamrock",
+    "name": "📥 Agent Event Bus (IN)",
+    "links": [],
+    "x": 160,
+    "y": 1420,
+    "wires": [
+      [
+        "t025_router"
+      ]
+    ]
+  },
+  {
+    "id": "t025_router",
+    "type": "function",
+    "z": "tab-shamrock",
+    "name": "🔀 Event Router",
+    "func": "// T-025: Route events between agents\n// Expected msg.agentEvent = { type, source, data, timestamp }\nconst evt = msg.agentEvent || msg.payload;\nif (!evt || !evt.type) return null;\n\nevt.timestamp = evt.timestamp || new Date().toISOString();\n\n// Log to event bus history (circular buffer)\nconst history = global.get('agent_event_bus') || [];\nhistory.push(evt);\nif (history.length > 200) history.shift();\nglobal.set('agent_event_bus', history);\n\n// Route based on event type\nconst routes = {\n    'arrest_detected':  1, // → Bounty Hunter + Clerk\n    'intake_started':   2, // → Analyst + Concierge\n    'lead_converted':   3, // → Closer (attribution tracking)\n    'document_signed':  4, // → Case Manager\n    'scraper_failed':   5, // → Watchdog\n    'agent_error':      5, // → Watchdog\n    'pref_updated':     6  // → All outbound agents\n};\n\nconst routeIdx = routes[evt.type] || 0;\nconst outputs = [null, null, null, null, null, null, null];\noutputs[routeIdx] = msg;\n\nnode.status({fill:'green',shape:'dot',text:evt.type + ' from ' + (evt.source || '?') + ' @ ' + new Date().toLocaleTimeString()});\nreturn outputs;",
+    "outputs": 7,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 1420,
+    "wires": [
+      [
+        "t025_debug"
+      ],
+      [
+        "t025_link_bounty"
+      ],
+      [
+        "t025_link_analyst"
+      ],
+      [
+        "t025_link_closer"
+      ],
+      [
+        "t025_link_case"
+      ],
+      [
+        "t025_link_watch"
+      ],
+      [
+        "t025_link_prefs"
+      ]
+    ]
+  },
+  {
+    "id": "t025_link_bounty",
+    "type": "link out",
+    "z": "tab-shamrock",
+    "name": "→ Bounty Hunter",
+    "mode": "link",
+    "links": [],
+    "x": 620,
+    "y": 1360,
+    "wires": []
+  },
+  {
+    "id": "t025_link_analyst",
+    "type": "link out",
+    "z": "tab-shamrock",
+    "name": "→ Analyst",
+    "mode": "link",
+    "links": [],
+    "x": 620,
+    "y": 1400,
+    "wires": []
+  },
+  {
+    "id": "t025_link_closer",
+    "type": "link out",
+    "z": "tab-shamrock",
+    "name": "→ Closer",
+    "mode": "link",
+    "links": [],
+    "x": 620,
+    "y": 1440,
+    "wires": []
+  },
+  {
+    "id": "t025_link_case",
+    "type": "link out",
+    "z": "tab-shamrock",
+    "name": "→ Case Manager",
+    "mode": "link",
+    "links": [],
+    "x": 620,
+    "y": 1480,
+    "wires": []
+  },
+  {
+    "id": "t025_link_watch",
+    "type": "link out",
+    "z": "tab-shamrock",
+    "name": "→ Watchdog",
+    "mode": "link",
+    "links": [],
+    "x": 620,
+    "y": 1520,
+    "wires": []
+  },
+  {
+    "id": "t025_link_prefs",
+    "type": "link out",
+    "z": "tab-shamrock",
+    "name": "→ All (Prefs)",
+    "mode": "link",
+    "links": [],
+    "x": 620,
+    "y": 1560,
+    "wires": []
+  },
+  {
+    "id": "t025_debug",
+    "type": "debug",
+    "z": "tab-shamrock",
+    "name": "🔍 Event Bus Debug",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "agentEvent",
+    "targetType": "msg",
+    "x": 620,
+    "y": 1320,
+    "wires": []
+  },
+  {
+    "id": "t026_comment",
+    "type": "comment",
+    "z": "tab-advanced",
+    "name": "📞 SHANNON VOICE DASHBOARD — Call Analytics & Transcripts",
+    "info": "T-026: Tracks ElevenLabs voice call volume, duration, and outcomes.",
+    "x": 380,
+    "y": 560,
+    "wires": []
+  },
+  {
+    "id": "t026_inject",
+    "type": "inject",
+    "z": "tab-advanced",
+    "name": "⏰ Voice Stats (Hourly)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "20 * * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "voice-stats",
+    "payload": "",
+    "payloadType": "date",
+    "x": 160,
+    "y": 600,
+    "wires": [
+      [
+        "t026_prep"
+      ]
+    ]
+  },
+  {
+    "id": "t026_prep",
+    "type": "function",
+    "z": "tab-advanced",
+    "name": "📊 Compile Voice Stats",
+    "func": "// T-026: Compile Shannon call stats from global context\n// Process Voice Call Status (existing node) writes call events to global\nconst callLog = global.get('shannon_call_log') || [];\nconst now = Date.now();\nconst last24h = callLog.filter(c => (now - new Date(c.timestamp)) < 86400000);\nconst last7d = callLog.filter(c => (now - new Date(c.timestamp)) < 604800000);\n\nconst stats = {\n    lastUpdate: new Date().toISOString(),\n    today: {\n        totalCalls: last24h.length,\n        avgDurationSec: last24h.length ?\n            Math.round(last24h.reduce((s, c) => s + (c.duration || 0), 0) / last24h.length) : 0,\n        intakesStarted: last24h.filter(c => c.outcome === 'intake_started').length,\n        paperworkSent: last24h.filter(c => c.outcome === 'paperwork_sent').length,\n        voicemails: last24h.filter(c => c.outcome === 'voicemail').length,\n        missed: last24h.filter(c => c.outcome === 'missed' || c.outcome === 'no_answer').length\n    },\n    week: {\n        totalCalls: last7d.length,\n        intakeConversionRate: last7d.length ?\n            Math.round(last7d.filter(c => c.outcome === 'intake_started').length / last7d.length * 100) : 0\n    },\n    recentCalls: last24h.slice(-10).reverse() // Last 10 calls for display\n};\n\nglobal.set('shannon_dashboard_stats', stats);\n\n// Check for missed calls to alert on\nconst recentMissed = last24h.filter(c =>\n    c.outcome === 'missed' && (now - new Date(c.timestamp)) < 3600000\n);\n\nif (recentMissed.length > 0) {\n    msg.missedAlert = recentMissed;\n}\n\nmsg.payload = stats;\nnode.status({fill:'green',shape:'dot',text:\n    stats.today.totalCalls + ' calls today | ' +\n    stats.today.intakesStarted + ' intakes | ' +\n    stats.today.paperworkSent + ' packets sent'\n});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 600,
+    "wires": [
+      [
+        "t026_missed",
+        "t026_debug"
+      ]
+    ]
+  },
+  {
+    "id": "t026_missed",
+    "type": "function",
+    "z": "tab-advanced",
+    "name": "📱 Missed Call Alert",
+    "func": "// Alert on missed calls in the last hour\nif (!msg.missedAlert || msg.missedAlert.length === 0) return null;\n\nconst token = (global.get('env').SLACK_BOT_TOKEN || global.get('SLACK_TOKEN') || '');\nconst missed = msg.missedAlert;\n\nmsg.url = 'https://slack.com/api/chat.postMessage';\nmsg.headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };\nmsg.payload = {\n    channel: '#after-hours',\n    text: '📱 ' + missed.length + ' missed call(s) in the last hour',\n    blocks: [{\n        type: 'section',\n        text: { type: 'mrkdwn', text: '*📱 Shannon — Missed Calls Alert*\\n\\n' +\n            missed.map(c => '• ' + (c.callerPhone || 'Unknown') +\n                ' @ ' + new Date(c.timestamp).toLocaleTimeString() +\n                ' (' + (c.duration || 0) + 's)').join('\\n') +\n            '\\n\\n_Follow up ASAP — potential leads._'\n        }\n    }]\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 620,
+    "y": 600,
+    "wires": [
+      [
+        "t026_slack"
+      ]
+    ]
+  },
+  {
+    "id": "t026_slack",
+    "type": "http request",
+    "z": "tab-advanced",
+    "name": "📤 Slack: #after-hours",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 840,
+    "y": 600,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "t026_debug",
+    "type": "debug",
+    "z": "tab-advanced",
+    "name": "🔍 Voice Stats Debug",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "x": 620,
+    "y": 660,
+    "wires": []
+  },
+  {
+    "id": "subflow_ab_test",
+    "type": "subflow",
+    "name": "🧪 A/B Test Selector",
+    "info": "T-027: Selects message template variant and tracks performance.\\n\\nInput: msg.templateKey (e.g., \"closer_step1\")\\nOutput: msg.selectedVariant, msg.variantId",
+    "category": "Shamrock",
+    "in": [
+      {
+        "x": 50,
+        "y": 100,
+        "wires": [
+          {
+            "id": "ab_fn_001"
+          }
+        ]
+      }
+    ],
+    "out": [
+      {
+        "x": 700,
+        "y": 100,
+        "wires": [
+          {
+            "id": "ab_fn_001",
+            "port": 0
+          }
+        ]
+      }
+    ],
+    "env": [],
+    "meta": {},
+    "color": "#FFD700"
+  },
+  {
+    "id": "ab_fn_001",
+    "type": "function",
+    "z": "subflow_ab_test",
+    "name": "Select Variant + Track",
+    "func": "// T-027: A/B Testing Framework\n// Selects a template variant and tracks send counts + response rates\n\nconst templateKey = msg.templateKey || msg.topic || 'default';\n\n// Get or initialize test registry\nconst registry = global.get('ab_test_registry') || {};\n\nif (!registry[templateKey]) {\n    // Default: single variant (A) until variants are configured\n    registry[templateKey] = {\n        variants: [\n            { id: 'A', weight: 50, sends: 0, responses: 0, conversions: 0 },\n            { id: 'B', weight: 50, sends: 0, responses: 0, conversions: 0 }\n        ],\n        createdAt: new Date().toISOString()\n    };\n    global.set('ab_test_registry', registry);\n}\n\nconst test = registry[templateKey];\nconst variants = test.variants;\n\n// Weighted random selection\nconst totalWeight = variants.reduce((s, v) => s + v.weight, 0);\nlet rand = Math.random() * totalWeight;\nlet selected = variants[0];\n\nfor (const v of variants) {\n    rand -= v.weight;\n    if (rand <= 0) { selected = v; break; }\n}\n\n// Track send\nselected.sends++;\nglobal.set('ab_test_registry', registry);\n\nmsg.selectedVariant = selected.id;\nmsg.variantId = templateKey + '_' + selected.id;\nmsg.abTestKey = templateKey;\n\n// Store variant stats for reporting\nmsg.variantStats = variants.map(v => ({\n    id: v.id,\n    sends: v.sends,\n    responses: v.responses,\n    responseRate: v.sends > 0 ? Math.round(v.responses / v.sends * 100) : 0\n}));\n\nnode.status({fill:'green',shape:'dot',text:templateKey + ' → ' + selected.id + ' (send #' + selected.sends + ')'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 350,
+    "y": 100,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "t027_comment",
+    "type": "comment",
+    "z": "tab-shamrock",
+    "name": "🧪 A/B TEST REPORTS — Template Performance Tracking",
+    "info": "T-027: Weekly report on template variant performance.",
+    "x": 380,
+    "y": 1580,
+    "wires": []
+  },
+  {
+    "id": "t027_inject",
+    "type": "inject",
+    "z": "tab-shamrock",
+    "name": "⏰ A/B Report (Weekly Mon 10AM)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 10 * * 1",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "ab-report",
+    "payload": "",
+    "payloadType": "date",
+    "x": 200,
+    "y": 1620,
+    "wires": [
+      [
+        "t027_report"
+      ]
+    ]
+  },
+  {
+    "id": "t027_report",
+    "type": "function",
+    "z": "tab-shamrock",
+    "name": "📊 A/B Report Builder",
+    "func": "// Weekly A/B test performance summary\nconst registry = global.get('ab_test_registry') || {};\nconst tests = Object.entries(registry);\nif (tests.length === 0) {\n    node.status({fill:'yellow',shape:'ring',text:'No active tests'});\n    return null;\n}\n\nlet report = '*🧪 Weekly A/B Test Report*\\n\\n';\n\ntests.forEach(([key, test]) => {\n    report += '*' + key + '*\\n';\n    test.variants.forEach(v => {\n        const rate = v.sends > 0 ? Math.round(v.responses / v.sends * 100) : 0;\n        const convRate = v.sends > 0 ? Math.round(v.conversions / v.sends * 100) : 0;\n        const bar = rate > 50 ? '🟢' : rate > 25 ? '🟡' : '🔴';\n        report += '  ' + bar + ' Variant ' + v.id + ': ' + v.sends + ' sends, ' +\n            rate + '% response, ' + convRate + '% conversion\\n';\n    });\n    // Highlight winner\n    const sorted = [...test.variants].sort((a, b) => {\n        const rA = a.sends > 0 ? a.responses / a.sends : 0;\n        const rB = b.sends > 0 ? b.responses / b.sends : 0;\n        return rB - rA;\n    });\n    if (sorted[0].sends > 10) {\n        report += '  👑 __Winner: Variant ' + sorted[0].id + '__\\n';\n    }\n    report += '\\n';\n});\n\nconst token = (global.get('env').SLACK_BOT_TOKEN || global.get('SLACK_TOKEN') || '');\nmsg.url = 'https://slack.com/api/chat.postMessage';\nmsg.headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };\nmsg.payload = {\n    channel: '#shamrock',\n    text: 'Weekly A/B Test Report',\n    blocks: [{ type: 'section', text: { type: 'mrkdwn', text: report } }]\n};\n\nnode.status({fill:'green',shape:'dot',text:tests.length + ' active tests reported'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 480,
+    "y": 1620,
+    "wires": [
+      [
+        "t027_slack"
+      ]
+    ]
+  },
+  {
+    "id": "t027_slack",
+    "type": "http request",
+    "z": "tab-shamrock",
+    "name": "📤 Slack: A/B Report",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 700,
+    "y": 1620,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "subflow_tenant",
+    "type": "subflow",
+    "name": "🏢 Tenant Context",
+    "info": "T-028: Injects tenant-specific config into message context.\\n\\nInput: msg (any)\\nOutput: msg enriched with msg.tenant = { name, phone, counties, gasUrl, timezone }",
+    "category": "Shamrock",
+    "in": [
+      {
+        "x": 50,
+        "y": 100,
+        "wires": [
+          {
+            "id": "tenant_fn_001"
+          }
+        ]
+      }
+    ],
+    "out": [
+      {
+        "x": 700,
+        "y": 100,
+        "wires": [
+          {
+            "id": "tenant_fn_001",
+            "port": 0
+          }
+        ]
+      }
+    ],
+    "env": [],
+    "meta": {},
+    "color": "#DDA0DD"
+  },
+  {
+    "id": "tenant_fn_001",
+    "type": "function",
+    "z": "subflow_tenant",
+    "name": "Load Tenant Config",
+    "func": "// T-028: Multi-Tenant Readiness\n// Loads agency-specific config from environment/global context\n// In single-tenant mode (current), returns Shamrock defaults\n// Future: look up tenant from msg.tenantId or request origin\n\nconst tenants = global.get('tenant_configs') || {};\nconst tenantId = msg.tenantId || process.env.TENANT_ID || 'shamrock';\n\nconst DEFAULT_TENANT = {\n    id: 'shamrock',\n    name: 'Shamrock Bail Bonds',\n    phone: '(239) 444-2663',\n    address: '1528 Broadway, Ft. Myers, FL 33901',\n    counties: ['lee', 'charlotte', 'collier', 'desoto', 'hendry', 'manatee', 'sarasota'],\n    gasUrl: global.get('env').GAS_WEBHOOK_URL || '',\n    timezone: 'America/New_York',\n    slackChannel: '#shamrock',\n    telegramBot: '@ShamrockBail_bot',\n    portalUrl: 'https://www.shamrockbailbonds.biz',\n    miniAppUrl: 'https://shamrock-telegram.netlify.app',\n    branding: {\n        color: '#006400',\n        emoji: '☘️',\n        tagline: 'Fast. Frictionless. Everywhere.'\n    }\n};\n\nmsg.tenant = tenants[tenantId] || DEFAULT_TENANT;\nmsg.tenantId = tenantId;\n\nnode.status({fill:'green',shape:'dot',text: msg.tenant.name + ' (' + msg.tenant.counties.length + ' counties)'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 350,
+    "y": 100,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "t018_comment",
+    "type": "comment",
+    "z": "tab-shamrock",
+    "name": "💾 FLOW BACKUP — Automated flows.json Snapshots",
+    "info": "T-018: Daily export of flows.json via Node-RED Admin API.\\nStores snapshots in global context for diff tracking.",
+    "x": 380,
+    "y": 1740,
+    "wires": []
+  },
+  {
+    "id": "t018_inject",
+    "type": "inject",
+    "z": "tab-shamrock",
+    "name": "⏰ Daily Backup (2 AM)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "0 2 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "flow-backup",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 1780,
+    "wires": [
+      [
+        "t018_fetch"
+      ]
+    ]
+  },
+  {
+    "id": "t018_fetch",
+    "type": "function",
+    "z": "tab-shamrock",
+    "name": "📡 Fetch Flows via Admin API",
+    "func": "// T-018: Backup flows.json via the Node-RED Admin API\nmsg.url = 'http://localhost:1880/flows';\nmsg.method = 'GET';\nmsg.headers = { 'Node-RED-API-Version': 'v2' };\n\nnode.status({fill:'blue',shape:'dot',text:'Fetching flows...'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 1780,
+    "wires": [
+      [
+        "t018_admin_req"
+      ]
+    ]
+  },
+  {
+    "id": "t018_admin_req",
+    "type": "http request",
+    "z": "tab-shamrock",
+    "name": "📥 Admin API: /flows",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 620,
+    "y": 1780,
+    "wires": [
+      [
+        "t018_store"
+      ]
+    ]
+  },
+  {
+    "id": "t018_store",
+    "type": "function",
+    "z": "tab-shamrock",
+    "name": "💾 Store Snapshot",
+    "func": "// Store flow snapshot with metadata\nconst flows = msg.payload && msg.payload.flows ? msg.payload.flows : msg.payload;\nif (!flows || !Array.isArray(flows)) {\n    node.status({fill:'red',shape:'ring',text:'Invalid response'});\n    return null;\n}\n\nconst snapshot = {\n    timestamp: new Date().toISOString(),\n    nodeCount: flows.length,\n    tabCount: flows.filter(n => n.type === 'tab').length,\n    hash: flows.length + '_' + Date.now() // Simple fingerprint\n};\n\n// Keep last 30 snapshots\nconst history = global.get('flow_backup_history') || [];\nhistory.push(snapshot);\nif (history.length > 30) history.shift();\nglobal.set('flow_backup_history', history);\nglobal.set('flow_backup_last', snapshot);\n\n// Check for drift (node count change)\nif (history.length > 1) {\n    const prev = history[history.length - 2];\n    const diff = snapshot.nodeCount - prev.nodeCount;\n    if (Math.abs(diff) > 0) {\n        msg.nodeCountDiff = diff;\n        node.status({fill:'yellow',shape:'dot',text:snapshot.nodeCount + ' nodes (' + (diff > 0 ? '+' : '') + diff + ' since last backup)'});\n    } else {\n        node.status({fill:'green',shape:'dot',text:snapshot.nodeCount + ' nodes — no changes'});\n    }\n} else {\n    node.status({fill:'green',shape:'dot',text:snapshot.nodeCount + ' nodes backed up'});\n}\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 840,
+    "y": 1780,
+    "wires": [
+      [
+        "t018_debug"
+      ]
+    ]
+  },
+  {
+    "id": "t018_debug",
+    "type": "debug",
+    "z": "tab-shamrock",
+    "name": "🔍 Backup Debug",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "x": 1060,
+    "y": 1780,
+    "wires": []
   }
 ]

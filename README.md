@@ -15,7 +15,7 @@ This is the **Node-RED instance** for Shamrock Bail Bonds. It acts as the centra
 - 🔗 **Routes** data between Wix, Google Apps Script, Twilio, Slack, Telegram, SignNow, and ElevenLabs
 - 🤖 **Powers** 9 AI agents (The Concierge, Clerk, Analyst, Investigator, Closer, Court Clerk, Bounty Hunter, Watchdog, Scout)
 - 📊 **Serves** a 10-page Operations Dashboard with premium dark glassmorphism styling
-- ⏰ **Runs** 58 scheduled automations (scrapers, reminders, reports, health checks)
+- ⏰ **Runs** 64 scheduled automations (scrapers, reminders, reports, health checks, backups)
 - 📡 **Handles** 14 inbound webhook endpoints (HMAC-authenticated)
 - 📞 **Orchestrates** 5-channel outreach (SMS, WhatsApp, Telegram, Email, ElevenLabs Voice)
 - 🗄️ **Integrates** with MongoDB Atlas for event logging and arrest data analytics
