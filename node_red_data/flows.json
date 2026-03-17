@@ -16642,5 +16642,348 @@
     "x": 380,
     "y": 2000,
     "wires": []
+  },
+  {
+    "id": "tab_repeat_offender",
+    "type": "tab",
+    "label": "Repeat Offender Alerts",
+    "disabled": false,
+    "info": "Monitors repeat offenders from GAS scraper data.\\nDeduplicates by Name + Booking# before writing to sheet.\\nLooks up cosigner info and triggers auto-outreach.\\nSheet: RepeatOffenderAlerts tab in Shamrock_Arrests_Master"
+  },
+  {
+    "id": "ro_comment",
+    "type": "comment",
+    "z": "tab_repeat_offender",
+    "name": "🔁 REPEAT OFFENDER ALERTS — Dedup + Cosigner Lookup + Outreach",
+    "info": "Scans for repeat offenders, deduplicates by Name+Booking,\\nlooks up cosigner contacts, alerts Slack, auto-reaches out.",
+    "x": 420,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "ro_inject",
+    "type": "inject",
+    "z": "tab_repeat_offender",
+    "name": "⏰ Repeat Scan (2h)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "7 */2 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "repeat-offender-scan",
+    "payload": "",
+    "payloadType": "date",
+    "x": 160,
+    "y": 120,
+    "wires": [
+      [
+        "ro_fetch_gas"
+      ]
+    ]
+  },
+  {
+    "id": "ro_fetch_gas",
+    "type": "function",
+    "z": "tab_repeat_offender",
+    "name": "📡 Fetch Repeat Offenders from GAS",
+    "func": "// Call GAS to get the latest repeat offender scan results\nconst gasUrl = global.get('env').GAS_WEBHOOK_URL || global.get('GAS_URL') || '';\nconst apiKey = global.get('gas_api_key') || '';\n\nif (!gasUrl) {\n    node.status({fill:'red',shape:'ring',text:'No GAS URL configured'});\n    return null;\n}\n\nmsg.url = gasUrl + '?action=runDailyRepeatOffenderScan&apiKey=' + encodeURIComponent(apiKey);\nmsg.method = 'GET';\nmsg.headers = { 'Accept': 'application/json' };\nnode.status({fill:'blue',shape:'dot',text:'Scanning for repeat offenders...'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 120,
+    "wires": [
+      [
+        "ro_gas_req"
+      ]
+    ]
+  },
+  {
+    "id": "ro_gas_req",
+    "type": "http request",
+    "z": "tab_repeat_offender",
+    "name": "🌐 GAS: Repeat Scan",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 680,
+    "y": 120,
+    "wires": [
+      [
+        "ro_dedup"
+      ]
+    ]
+  },
+  {
+    "id": "ro_dedup",
+    "type": "function",
+    "z": "tab_repeat_offender",
+    "name": "🧹 Deduplicate (Name + Booking)",
+    "func": "// T-029: Deduplicate repeat offender alerts\n// Key: uppercase(Name) + Booking# — only process truly NEW arrests\nconst result = msg.payload || {};\nconst alerts = Array.isArray(result.alerts || result.data || result)\n    ? (result.alerts || result.data || result) : [];\n\nif (!alerts.length) {\n    node.status({fill:'grey',shape:'ring',text:'No alerts returned'});\n    return null;\n}\n\n// Load seen records from global context (persistent dedup registry)\nconst seen = global.get('repeat_offender_seen') || {};\nconst newAlerts = [];\nconst dupes = [];\n\nalerts.forEach(alert => {\n    const name = (alert.name || alert.Name || '').toUpperCase().trim();\n    const booking = (alert.booking || alert.bookingNumber || alert['Booking/Case'] || '').toString().trim();\n    \n    if (!name || !booking) return; // Skip invalid entries\n    \n    const dedupKey = name + '|' + booking;\n    \n    if (seen[dedupKey]) {\n        // Already seen this exact Name+Booking combo\n        dupes.push(alert);\n        \n        // BUT: update the latest arrest date if it's newer\n        const existingDate = new Date(seen[dedupKey].lastSeen);\n        const alertDate = new Date(alert.timestamp || alert.Timestamp || Date.now());\n        if (alertDate > existingDate) {\n            seen[dedupKey].lastSeen = alertDate.toISOString();\n            seen[dedupKey].arrestCount = (seen[dedupKey].arrestCount || 1) + 1;\n        }\n    } else {\n        // NEW alert — first time seeing this Name+Booking\n        seen[dedupKey] = {\n            firstSeen: new Date().toISOString(),\n            lastSeen: new Date().toISOString(),\n            arrestCount: 1,\n            name: name,\n            booking: booking,\n            county: alert.county || alert.County || '',\n            charges: alert.charges || alert.Charges || '',\n            bondAmount: alert.bondAmount || alert['New Bond Amount'] || 0,\n            historicalBonds: alert.historicalBonds || alert['Historical Bonds Count'] || 0,\n            historicalLiability: alert.historicalLiability || alert['Total Historical Liability'] || 0,\n            details: alert.details || alert.Details || ''\n        };\n        newAlerts.push({\n            ...alert,\n            dedupKey: dedupKey,\n            isNew: true\n        });\n    }\n});\n\n// Persist the dedup registry\nglobal.set('repeat_offender_seen', seen);\n\n// Store for dashboard display\nglobal.set('repeat_offender_stats', {\n    lastScan: new Date().toISOString(),\n    totalTracked: Object.keys(seen).length,\n    newThisScan: newAlerts.length,\n    dupesFiltered: dupes.length\n});\n\nmsg.newAlerts = newAlerts;\nmsg.dupeCount = dupes.length;\nmsg.totalTracked = Object.keys(seen).length;\n\nif (newAlerts.length === 0) {\n    node.status({fill:'green',shape:'dot',\n        text: '0 new | ' + dupes.length + ' dupes filtered | ' + Object.keys(seen).length + ' tracked'});\n    return null; // No new alerts to process\n}\n\nnode.status({fill:'yellow',shape:'dot',\n    text: newAlerts.length + ' NEW | ' + dupes.length + ' dupes filtered'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 920,
+    "y": 120,
+    "wires": [
+      [
+        "ro_cosigner_lookup",
+        "ro_write_sheet"
+      ]
+    ]
+  },
+  {
+    "id": "ro_cosigner_lookup",
+    "type": "function",
+    "z": "tab_repeat_offender",
+    "name": "🔍 Cosigner Lookup (MongoDB + GAS)",
+    "func": "// Look up cosigner/indemnitor info for each new repeat offender\n// Checks: 1) MongoDB historical bonds, 2) GAS Cases sheet, 3) Posted Bonds sheet\nconst alerts = msg.newAlerts || [];\n\n// Build a GAS request to look up cosigners for these defendants\nconst lookupNames = alerts.map(a => {\n    const name = (a.name || a.Name || '').toUpperCase().trim();\n    return name;\n}).filter(Boolean);\n\nif (lookupNames.length === 0) return null;\n\nconst gasUrl = global.get('env').GAS_WEBHOOK_URL || global.get('GAS_URL') || '';\nconst apiKey = global.get('gas_api_key') || '';\n\nmsg.url = gasUrl + '?action=lookupCosigners&apiKey=' + encodeURIComponent(apiKey);\nmsg.method = 'POST';\nmsg.headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };\nmsg.payload = {\n    action: 'lookupCosigners',\n    defendantNames: lookupNames\n};\n\n// Preserve alerts for downstream\nmsg._newAlerts = alerts;\nnode.status({fill:'blue',shape:'dot',text:'Looking up ' + lookupNames.length + ' cosigner(s)...'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 260,
+    "wires": [
+      [
+        "ro_cosigner_req"
+      ]
+    ]
+  },
+  {
+    "id": "ro_cosigner_req",
+    "type": "http request",
+    "z": "tab_repeat_offender",
+    "name": "🌐 GAS: Cosigner Lookup",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 680,
+    "y": 260,
+    "wires": [
+      [
+        "ro_enrich"
+      ]
+    ]
+  },
+  {
+    "id": "ro_enrich",
+    "type": "function",
+    "z": "tab_repeat_offender",
+    "name": "📋 Enrich + Dashboard Store",
+    "func": "// Merge cosigner data with alert data and store for dashboard\nconst cosignerResult = msg.payload || {};\nconst cosigners = cosignerResult.cosigners || cosignerResult.data || {};\nconst alerts = msg._newAlerts || [];\n\nconst enriched = alerts.map(alert => {\n    const name = (alert.name || alert.Name || '').toUpperCase().trim();\n    const cosignerInfo = cosigners[name] || null;\n    \n    return {\n        name: name,\n        county: alert.county || alert.County || '',\n        booking: alert.booking || alert.bookingNumber || alert['Booking/Case'] || '',\n        charges: alert.charges || alert.Charges || '',\n        bondAmount: alert.bondAmount || alert['New Bond Amount'] || 0,\n        historicalBonds: alert.historicalBonds || alert['Historical Bonds Count'] || 0,\n        totalLiability: alert.historicalLiability || alert['Total Historical Liability'] || 0,\n        details: alert.details || alert.Details || '',\n        arrestDate: alert.timestamp || alert.Timestamp || new Date().toISOString(),\n        // Cosigner/Indemnitor info (from lookup)\n        hasCosigner: !!cosignerInfo,\n        cosignerName: cosignerInfo ? (cosignerInfo.indemnitorName || cosignerInfo.cosignerName || '') : '',\n        cosignerPhone: cosignerInfo ? (cosignerInfo.indemnitorPhone || cosignerInfo.cosignerPhone || '') : '',\n        cosignerEmail: cosignerInfo ? (cosignerInfo.indemnitorEmail || cosignerInfo.cosignerEmail || '') : '',\n        previousCaseId: cosignerInfo ? (cosignerInfo.caseId || cosignerInfo.bondNumber || '') : '',\n        // Metadata\n        processedAt: new Date().toISOString(),\n        outreachSent: false\n    };\n});\n\n// Store enriched alerts in global context for dashboard display\nconst dashboardList = global.get('repeat_offender_dashboard') || [];\nenriched.forEach(e => dashboardList.push(e));\n// Keep last 100 for display\nwhile (dashboardList.length > 100) dashboardList.shift();\nglobal.set('repeat_offender_dashboard', dashboardList);\n\nmsg.enrichedAlerts = enriched;\nmsg.withCosigner = enriched.filter(e => e.hasCosigner);\nmsg.withoutCosigner = enriched.filter(e => !e.hasCosigner);\n\nnode.status({fill:'green',shape:'dot',text:\n    enriched.length + ' enriched | ' +\n    msg.withCosigner.length + ' have cosigner'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 920,
+    "y": 260,
+    "wires": [
+      [
+        "ro_slack_alert",
+        "ro_outreach"
+      ]
+    ]
+  },
+  {
+    "id": "ro_slack_alert",
+    "type": "function",
+    "z": "tab_repeat_offender",
+    "name": "📢 Slack: Repeat Offender Alert",
+    "func": "// Post repeat offender alerts to Slack\nconst enriched = msg.enrichedAlerts || [];\nif (enriched.length === 0) return null;\n\nconst token = (global.get('env').SLACK_BOT_TOKEN || global.get('SLACK_TOKEN') || '');\n\nconst blocks = [{\n    type: 'header',\n    text: { type: 'plain_text', text: '🔁 Repeat Offender Alert — ' + enriched.length + ' New', emoji: true }\n}, { type: 'divider' }];\n\nenriched.forEach(e => {\n    let text = '*' + e.name + '* — ' + e.county + ' County\\n' +\n        '> Booking: ' + e.booking + '\\n' +\n        '> Charges: ' + e.charges + '\\n' +\n        '> Bond: $' + (e.bondAmount || 'N/A') + ' | Historical: ' + e.historicalBonds + ' bond(s), $' + (e.totalLiability || 0) + ' total\\n';\n    \n    if (e.hasCosigner) {\n        text += '> 👤 *Cosigner: ' + e.cosignerName + '* — 📱 ' + e.cosignerPhone + '\\n';\n        text += '> _Previous Case: ' + e.previousCaseId + '_\\n';\n        text += '> ✅ *Auto-outreach triggered*';\n    } else {\n        text += '> ⚠️ No cosigner on file — manual lookup needed';\n    }\n    \n    blocks.push({ type: 'section', text: { type: 'mrkdwn', text: text } });\n    blocks.push({ type: 'divider' });\n});\n\nmsg.url = 'https://slack.com/api/chat.postMessage';\nmsg.headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };\nmsg.payload = {\n    channel: '#alerts',\n    text: '🔁 ' + enriched.length + ' Repeat Offender Alert(s)',\n    blocks: blocks\n};\n\nnode.status({fill:'green',shape:'dot',text:enriched.length + ' alerts posted to Slack'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 400,
+    "wires": [
+      [
+        "ro_slack_post"
+      ]
+    ]
+  },
+  {
+    "id": "ro_slack_post",
+    "type": "http request",
+    "z": "tab_repeat_offender",
+    "name": "📤 Slack Post",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 680,
+    "y": 400,
+    "wires": [
+      [
+        "ro_debug"
+      ]
+    ]
+  },
+  {
+    "id": "ro_outreach",
+    "type": "function",
+    "z": "tab_repeat_offender",
+    "name": "📱 Auto-Outreach to Cosigners",
+    "func": "// Send SMS/outreach to cosigners of repeat offenders\nconst withCosigner = (msg.enrichedAlerts || []).filter(e => e.hasCosigner && e.cosignerPhone);\n\nif (withCosigner.length === 0) {\n    node.status({fill:'grey',shape:'ring',text:'No cosigners to reach'});\n    return null;\n}\n\n// Build batch outreach via GAS\nconst gasUrl = global.get('env').GAS_WEBHOOK_URL || global.get('GAS_URL') || '';\nconst apiKey = global.get('gas_api_key') || '';\n\nmsg.url = gasUrl;\nmsg.method = 'POST';\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.payload = {\n    action: 'sendRepeatOffenderOutreach',\n    apiKey: apiKey,\n    contacts: withCosigner.map(e => ({\n        cosignerName: e.cosignerName,\n        cosignerPhone: e.cosignerPhone,\n        defendantName: e.name,\n        booking: e.booking,\n        county: e.county,\n        charges: e.charges,\n        bondAmount: e.bondAmount,\n        previousCaseId: e.previousCaseId,\n        message: 'Hi ' + (e.cosignerName.split(',')[0] || 'there') + \n            ', this is Shamrock Bail Bonds. We see ' + e.name + \n            ' has been arrested again in ' + e.county + \n            ' County. As a previous cosigner, we can help quickly — call us 24/7 at (239) 444-2663. 🍀'\n    }))\n};\n\nnode.status({fill:'green',shape:'dot',text:withCosigner.length + ' cosigner outreach messages queued'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 520,
+    "wires": [
+      [
+        "ro_outreach_req"
+      ]
+    ]
+  },
+  {
+    "id": "ro_outreach_req",
+    "type": "http request",
+    "z": "tab_repeat_offender",
+    "name": "🌐 GAS: Send Outreach",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 680,
+    "y": 520,
+    "wires": [
+      [
+        "ro_outreach_result"
+      ]
+    ]
+  },
+  {
+    "id": "ro_outreach_result",
+    "type": "function",
+    "z": "tab_repeat_offender",
+    "name": "✅ Outreach Result",
+    "func": "const result = msg.payload || {};\nconst sent = result.sent || result.success || 0;\nconst failed = result.failed || result.errors || 0;\n\nnode.status({fill: failed > 0 ? 'yellow' : 'green',\n    shape:'dot', text: 'Sent: ' + sent + ' | Failed: ' + failed});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 920,
+    "y": 520,
+    "wires": [
+      [
+        "ro_debug"
+      ]
+    ]
+  },
+  {
+    "id": "ro_write_sheet",
+    "type": "function",
+    "z": "tab_repeat_offender",
+    "name": "📝 Write Deduped to Sheet",
+    "func": "// Write ONLY new (deduplicated) alerts to the RepeatOffenderAlerts sheet\nconst alerts = msg.newAlerts || [];\nif (alerts.length === 0) return null;\n\nconst gasUrl = global.get('env').GAS_WEBHOOK_URL || global.get('GAS_URL') || '';\nconst apiKey = global.get('gas_api_key') || '';\n\nmsg.url = gasUrl;\nmsg.method = 'POST';\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.payload = {\n    action: 'writeRepeatOffenderAlerts',\n    apiKey: apiKey,\n    alerts: alerts.map(a => ({\n        timestamp: new Date().toISOString(),\n        alertType: 'ARREST',\n        name: (a.name || a.Name || '').toUpperCase().trim(),\n        county: a.county || a.County || '',\n        booking: a.booking || a.bookingNumber || a['Booking/Case'] || '',\n        charges: a.charges || a.Charges || '',\n        bondAmount: a.bondAmount || a['New Bond Amount'] || '',\n        historicalBonds: a.historicalBonds || a['Historical Bonds Count'] || '',\n        totalLiability: a.historicalLiability || a['Total Historical Liability'] || '',\n        details: a.details || a.Details || ''\n    }))\n};\n\nnode.status({fill:'green',shape:'dot',text:alerts.length + ' deduped alerts → Sheet'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 180,
+    "wires": [
+      [
+        "ro_sheet_req"
+      ]
+    ]
+  },
+  {
+    "id": "ro_sheet_req",
+    "type": "http request",
+    "z": "tab_repeat_offender",
+    "name": "🌐 GAS: Write Sheet",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 680,
+    "y": 180,
+    "wires": [
+      [
+        "ro_debug"
+      ]
+    ]
+  },
+  {
+    "id": "ro_debug",
+    "type": "debug",
+    "z": "tab_repeat_offender",
+    "name": "🔍 Repeat Offender Debug",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "x": 1140,
+    "y": 400,
+    "wires": []
   }
 ]
