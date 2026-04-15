@@ -71,9 +71,6 @@ module.exports = {
             
             // Slack
             SLACK_BOT_TOKEN: process.env.SLACK_BOT_TOKEN || "",
-            SLACK_WEBHOOK_OPS: process.env.SLACK_WEBHOOK_OPS || "",
-            SLACK_WEBHOOK_ALERTS: process.env.SLACK_WEBHOOK_ALERTS || "",
-            SLACK_WEBHOOK_LEADS: process.env.SLACK_WEBHOOK_LEADS || "",
             
             // Twilio
             TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID || "",
