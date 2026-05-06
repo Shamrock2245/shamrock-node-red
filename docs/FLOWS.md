@@ -184,3 +184,50 @@ Daily 8 AM cron → GAS `checkBondRenewals` → Filter bonds approaching renewal
 
 ### Scraper Control (nodes)
 Dashboard UI + crons → Orchestrate scraper fleet (Lee, Charlotte, Collier, DeSoto, Hendry, Manatee, Sarasota) → Status display → Manual trigger buttons → Exec node for Docker containers → Health logging
+
+---
+
+## Tabs 23-26: BlueBubbles & iMessage Integration (NEW — May 2026)
+
+> These tabs connect Node-RED directly to the ShamrockLeads Python dashboard (`http://178.156.179.237:8088`) and the BlueBubbles iMessage server. All outbound iMessages go through the dashboard's `/api/imessage/send` endpoint. All env vars use `SHAMROCK_DASHBOARD_URL` and `SHAMROCK_DASHBOARD_API_KEY`.
+
+### BlueBubbles iMessage Router (22 nodes)
+```
+POST /webhook/bluebubbles  ──→ ACK 200 (immediate)
+                           ──→ BB Event Router (classify: new-message, status-update, other)
+                                    ↓ new-message
+                           Classify Inbound (check_in | intake_inquiry | geo_inquiry | general)
+                                    ├──→ Log to Slack #leads (intake_inquiry only)
+                                    └──→ Forward to Dashboard /api/webhooks/bb-inbound
+
+POST /internal/bb-send     ──→ Prep BB Send ──→ Dashboard /api/imessage/send ──→ Result
+```
+
+### FindMy Tracker (12 nodes)
+```
+⏰ Every 15 Min ──→ GET /api/imessage/findmy?refresh=true (dashboard)
+                ──→ Process Locations (Lee County bounds check)
+                        ├── All in county → debug log
+                        └── Breach detected → Format Alert → POST Slack #alerts
+```
+Lee County bounding box: lat 26.30–26.80, lon -82.30 to -81.50
+
+### Speed-to-Contact (iMessage) (14 nodes)
+```
+POST /webhook/speed-to-contact (triggered by Scout on new arrest)
+    ──→ ACK 200 (immediate)
+    ──→ Prep Outreach (build message with geo-link)
+    ──→ Try iMessage via BB ──→ Check Result
+            ├── Success → Log to Slack #leads
+            └── Fail    → Twilio SMS Fallback → Log to Slack #leads
+```
+
+### Paperwork Chase (iMessage) (15 nodes)
+```
+⏰ Every 2 Hours ──→ GET /api/paperwork/pending (dashboard)
+                ──→ Process List (determine escalation by age)
+                        0-4h old  → iMessage reminder (BB)
+                        4-8h old  → SMS reminder (Twilio via BB fallback)
+                        8h+ old   → ElevenLabs voice call escalation
+                ──→ Send Reminders Loop (respects 2h cooldown per contact)
+```
