@@ -1,0 +1,536 @@
+[
+  {
+    "id": "tab_court_ops",
+    "type": "tab",
+    "label": "Court Email & Reports",
+    "disabled": false,
+    "info": "Gmail court scan (dates/forfeitures/discharges) \u2192 Calendar + email + BlueBubbles.\nOfficial OSI/Palmetto bond & discharge XLSX reports."
+  },
+  {
+    "id": "6c54cb2015ee4172",
+    "type": "comment",
+    "z": "tab_court_ops",
+    "name": "\u2696\ufe0f COURT EMAIL + OFFICIAL REPORTS",
+    "info": "1) Scan Gmail every 15m\n2) Calendar + client email + BB\n3) Weekly OSI/Palmetto bond reports\n4) Daily discharge report",
+    "x": 220,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "ce_inject_15",
+    "type": "inject",
+    "z": "tab_court_ops",
+    "name": "\u23f0 Court Email Every 15m",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "900",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "45",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 120,
+    "wires": [
+      [
+        "ce_prep"
+      ]
+    ]
+  },
+  {
+    "id": "ce_inject_manual",
+    "type": "inject",
+    "z": "tab_court_ops",
+    "name": "\u25b6 Scan Court Email Now",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 190,
+    "y": 180,
+    "wires": [
+      [
+        "ce_prep"
+      ]
+    ]
+  },
+  {
+    "id": "ce_prep",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udd0d Prep Court Email Scan",
+    "func": "if (global.get('SYSTEM_SHUTDOWN')) {\n    node.status({fill:'red',shape:'ring',text:'SHUTDOWN'});\n    return null;\n}\nconst base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || env.get('DASHBOARD_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\nmsg.url = base + '/api/automation/court-email-scan';\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nmsg.headers = {'Content-Type':'application/json','X-API-Key':apiKey,'X-Api-Key':apiKey};\nmsg.payload = { since_hours: 24 };\nmsg.method = 'POST';\nnode.status({fill:'blue',shape:'dot',text:'Scanning court email\u2026'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 430,
+    "y": 140,
+    "wires": [
+      [
+        "ce_http"
+      ]
+    ]
+  },
+  {
+    "id": "ce_http",
+    "type": "http request",
+    "z": "tab_court_ops",
+    "name": "\ud83c\udf10 Leads: /court-email-scan",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 700,
+    "y": 140,
+    "wires": [
+      [
+        "ce_slack_fmt"
+      ]
+    ]
+  },
+  {
+    "id": "ce_slack_fmt",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udce2 Slack Court Email Summary",
+    "func": "const r = (msg.payload && msg.payload.result) || msg.payload || {};\nconst by = r.by_type || {};\nconst processed = r.processed || 0;\nif (processed === 0 && !r.error) {\n  node.status({fill:'green',shape:'ring',text:'No new court mail'});\n  return null;\n}\nmsg.headers = {\n  Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n  'Content-Type': 'application/json; charset=utf-8'\n};\nconst fort = by.forfeiture || 0;\nmsg.payload = {\n  channel: fort > 0 ? '#alerts' : (global.get('SLACK_CHANNEL_BONDS') || '#bonds'),\n  text: [\n    '\u2696\ufe0f *Court Email Scanner*',\n    `Processed: ${processed} \u00b7 Calendar: ${r.calendar_events_created||0} \u00b7 Emails: ${r.emails_sent||0} \u00b7 BB: ${r.messages_sent||0}`,\n    `Types \u2014 Court: ${by.courtDate||0} \u00b7 Forfeiture: ${fort} \u00b7 Discharge: ${by.discharge||0} \u00b7 Other: ${by.unknown||0}`,\n    r.error ? ('\u26a0\ufe0f ' + r.error) : ''\n  ].filter(Boolean).join('\\n')\n};\nnode.status({fill: fort>0?'red':'green', shape:'dot', text: processed + ' processed'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 440,
+    "y": 240,
+    "wires": [
+      [
+        "ce_slack"
+      ]
+    ]
+  },
+  {
+    "id": "ce_slack",
+    "type": "http request",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udce4 Slack Post",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 700,
+    "y": 240,
+    "wires": [
+      [
+        "ce_debug"
+      ]
+    ]
+  },
+  {
+    "id": "ce_debug",
+    "type": "debug",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udd0d Court Ops Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 900,
+    "y": 240,
+    "wires": []
+  },
+  {
+    "id": "br_inject_osi",
+    "type": "inject",
+    "z": "tab_court_ops",
+    "name": "\u23f0 Mon 8:00 OSI Bond Report",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "surety",
+        "v": "OSI",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "00 8 * * 1",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "osi",
+    "payload": "",
+    "payloadType": "date",
+    "x": 200,
+    "y": 340,
+    "wires": [
+      [
+        "br_prep"
+      ]
+    ]
+  },
+  {
+    "id": "br_inject_pal",
+    "type": "inject",
+    "z": "tab_court_ops",
+    "name": "\u23f0 Mon 8:15 Palmetto Report",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "surety",
+        "v": "PALMETTO",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "15 8 * * 1",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "palmetto",
+    "payload": "",
+    "payloadType": "date",
+    "x": 210,
+    "y": 400,
+    "wires": [
+      [
+        "br_prep"
+      ]
+    ]
+  },
+  {
+    "id": "br_inject_manual",
+    "type": "inject",
+    "z": "tab_court_ops",
+    "name": "\u25b6 Generate Both Reports",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "both",
+    "payload": "",
+    "payloadType": "date",
+    "x": 200,
+    "y": 460,
+    "wires": [
+      [
+        "br_prep_both"
+      ]
+    ]
+  },
+  {
+    "id": "br_prep",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udcca Prep Bond Report",
+    "func": "if (global.get('SYSTEM_SHUTDOWN')) return null;\nconst base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\nconst surety = msg.surety || msg.topic || 'OSI';\nmsg.url = base + '/api/automation/bond-report';\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nmsg.headers = {'Content-Type':'application/json','X-API-Key':apiKey,'X-Api-Key':apiKey};\nmsg.payload = { surety: String(surety).toUpperCase(), include_discharges: true, store: true };\nmsg.method = 'POST';\nmsg._reportSurety = String(surety).toUpperCase();\nnode.status({fill:'blue',shape:'dot',text:'Building '+msg._reportSurety+' report\u2026'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 450,
+    "y": 360,
+    "wires": [
+      [
+        "br_http"
+      ]
+    ]
+  },
+  {
+    "id": "br_prep_both",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udcca Queue OSI then Palmetto",
+    "func": "const base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nconst headers = {'Content-Type':'application/json','X-API-Key':apiKey,'X-Api-Key':apiKey};\nreturn [\n  { ...msg, url: base+'/api/automation/bond-report', method:'POST', headers, payload:{surety:'OSI',include_discharges:true,store:true}, _reportSurety:'OSI' },\n  { ...msg, url: base+'/api/automation/bond-report', method:'POST', headers, payload:{surety:'PALMETTO',include_discharges:true,store:true}, _reportSurety:'PALMETTO' }\n];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 460,
+    "y": 460,
+    "wires": [
+      [
+        "br_http"
+      ],
+      [
+        "br_http"
+      ]
+    ]
+  },
+  {
+    "id": "br_http",
+    "type": "http request",
+    "z": "tab_court_ops",
+    "name": "\ud83c\udf10 Leads: /bond-report",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 700,
+    "y": 400,
+    "wires": [
+      [
+        "br_slack_fmt"
+      ]
+    ]
+  },
+  {
+    "id": "br_slack_fmt",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udce2 Slack Bond Report Ready",
+    "func": "const p = msg.payload || {};\nif (!p.ok && !p.filename) {\n  node.status({fill:'red',shape:'dot',text:'Report failed'});\n  node.error(p.error || 'bond report failed', msg);\n  return null;\n}\nmsg.headers = {\n  Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n  'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = {\n  channel: global.get('SLACK_CHANNEL_BONDS') || '#bonds',\n  text: `\ud83d\udcd1 *Official ${p.surety || msg._reportSurety || ''} Bond Report* ready\\nFile: \\`${p.filename}\\` \u00b7 ${p.size_bytes||0} bytes \u00b7 Active scanned: ${p.active_rows_scanned||0} \u00b7 Discharges: ${p.discharges||0}`\n};\n// Keep base64 off Slack text \u2014 stored in leads generated_reports\nnode.status({fill:'green',shape:'dot',text:(p.surety||'')+' report OK'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 460,
+    "y": 520,
+    "wires": [
+      [
+        "br_slack"
+      ]
+    ]
+  },
+  {
+    "id": "br_slack",
+    "type": "http request",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udce4 Slack Bonds",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 700,
+    "y": 520,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "dr_inject",
+    "type": "inject",
+    "z": "tab_court_ops",
+    "name": "\u23f0 Daily 9:00 Discharge Report",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "00 9 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 210,
+    "y": 600,
+    "wires": [
+      [
+        "dr_prep"
+      ]
+    ]
+  },
+  {
+    "id": "dr_prep",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udccb Prep Discharge Report",
+    "func": "if (global.get('SYSTEM_SHUTDOWN')) return null;\nconst base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\nmsg.url = base + '/api/automation/discharge-report';\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nmsg.headers = {'Content-Type':'application/json','X-API-Key':apiKey,'X-Api-Key':apiKey};\nmsg.payload = { surety: 'ALL', days_back: 90 };\nmsg.method = 'POST';\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 450,
+    "y": 600,
+    "wires": [
+      [
+        "dr_http"
+      ]
+    ]
+  },
+  {
+    "id": "dr_http",
+    "type": "http request",
+    "z": "tab_court_ops",
+    "name": "\ud83c\udf10 Leads: /discharge-report",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 700,
+    "y": 600,
+    "wires": [
+      [
+        "dr_slack_fmt"
+      ]
+    ]
+  },
+  {
+    "id": "dr_slack_fmt",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udce2 Slack Discharge Report",
+    "func": "const p = msg.payload || {};\nif (!p.ok) return null;\nmsg.headers = {\n  Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n  'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = {\n  channel: global.get('SLACK_CHANNEL_BONDS') || '#bonds',\n  text: `\ud83d\udfe2 *Official Discharge Report*\\nFile: \\`${p.filename}\\` \u00b7 Rows: ${p.discharge_rows||0} \u00b7 Window: ${p.days_back||90}d`\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 460,
+    "y": 680,
+    "wires": [
+      [
+        "dr_slack"
+      ]
+    ]
+  },
+  {
+    "id": "dr_slack",
+    "type": "http request",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udce4 Slack Discharges",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 700,
+    "y": 680,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "co_catch",
+    "type": "catch",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udea8 Court Ops Catch",
+    "scope": null,
+    "uncaught": false,
+    "x": 170,
+    "y": 760,
+    "wires": [
+      [
+        "co_err"
+      ]
+    ]
+  },
+  {
+    "id": "co_err",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "Format Error",
+    "func": "msg.headers = {\n  Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n  'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = { channel: '#alerts', text: '\ud83d\udea8 *Court Email & Reports error*: ' + ((msg.error&&msg.error.message)||'unknown') };\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 390,
+    "y": 760,
+    "wires": [
+      [
+        "co_err_slack"
+      ]
+    ]
+  },
+  {
+    "id": "co_err_slack",
+    "type": "http request",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udce4 Slack Alerts",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 600,
+    "y": 760,
+    "wires": [
+      []
+    ]
+  }
+]

@@ -46,3 +46,21 @@ It **routes, schedules, and glues** GAS, Twilio, Slack, Telegram, SignNow, Eleve
 
 See `shamrock-leads/docs/ECOSYSTEM.md` (four-repo harmony).  
 Local docs: `docs/OVERVIEW.md`, `docs/SYSTEM.md`, `docs/INTEGRATIONS.md`, `docs/SCHEDULING.md`.
+
+---
+
+## Recent changes (July 2026)
+
+| Area | Status |
+|------|--------|
+| `docs/INTEGRATIONS.md` — Section 10: Shamrock Telegram App added | ✅ |
+| `docs/INTEGRATIONS.md` — Section 11: Surety-Aware Data Flow cross-repo reference added | ✅ |
+| Canonical `surety_id` routing documented (`osi` / `palmetto`) | ✅ |
+| Agent constants reference (Brendan O'Neal / P139768) documented | ✅ |
+| Super-admin identity: `admin@shamrockbailbonds.biz` full admin ecosystem-wide | ✅ |
+| Lead Qualification Engine + Bond Lifecycle Manager + Risk Mitigation Loop tabs | ✅ |
+| Leads `POST /api/automation/*` sweeps for Node-RED (GAS_API_KEY) | ✅ |
+| `deploy_lifecycle_automations.py` + `docs/SUPER_ADMIN.md` | ✅ |
+
+**Five-repo ecosystem** (was four): `shamrock-leads`, `shamrock-bail-portal-site`, `shamrock-bail-school`, `shamrock-node-red`, **`shamrock-telegram-app`**.  
+See `shamrock-telegram-app/STATUS.md` for Telegram mini-app data flows.
