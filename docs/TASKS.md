@@ -60,6 +60,20 @@ All 12 initial tasks are complete:
 
 ---
 
+## ✅ Phase 5 — July 2026 (Ecosystem automation)
+
+| ID | Task | Resolved |
+|----|------|----------|
+| T-029 | Super-admin identity (`admin@shamrockbailbonds.biz`) across portal/school/leads | ✅ Code + docs |
+| T-030 | Lead Qualification Engine tab (15m → GAS + leads API + Slack) | ✅ Merged flows.json |
+| T-031 | Bond Lifecycle Manager tab (30m stuck stages + closer) | ✅ Merged flows.json |
+| T-032 | Risk Mitigation Loop tab (risk loop + court + check-ins) | ✅ Merged flows.json |
+| T-033 | Leads `/api/automation/*` machine sweeps (GAS_API_KEY) | ✅ automation_sweeps.py |
+
+**Deploy reminder:** `python3 deploy_lifecycle_automations.py --deploy` on VPS after pull; set `LEADS_PUBLIC_URL` + `GAS_API_KEY` in Node-RED `.env`.
+
+---
+
 ## 🔴 Priority 1 — Critical (Do Now)
 
 ### T-013: Wire WhatsApp Campaigns tab to Twilio
@@ -78,7 +92,7 @@ All 12 initial tasks are complete:
 | 🔴 Critical | 1 | 1 (T-013) | 2-4 hours |
 | **Total** | **1** | **1** | **2-4 hours** |
 
-> All 27 tasks (T-001 through T-028, excluding T-013) are **COMPLETE**.  
+> Tasks T-001–T-028 (except T-013) and T-029–T-033 are **COMPLETE**.  
 > Only T-013 (WhatsApp) remains, blocked on Twilio approval.
 
 ---

@@ -210,6 +210,72 @@ IRB Deep Search → Find Relatives → Build ElevenLabs Call → 11Labs API POST
 
 ---
 
+## 10. Shamrock Telegram App (shamrock-telegram-app)
+
+| Field | Value |
+|---|---|
+| **Purpose** | Client-facing Telegram mini-apps: 5-step intake form, document review & signing, staff paperwork trigger |
+| **Protocol** | Netlify-hosted mini-apps → GAS (POST/GET) → SignNow → Drive |
+| **Auth** | Telegram WebApp `initData` validation; GAS API key for backend calls |
+| **Node-RED Role** | Receives `/webhook/telegram-miniapp` submissions; routes to GAS; monitors signing status |
+| **Flow Tabs Using** | Digital Workforce, SignNow Tracker |
+
+### Telegram Mini-App Data Flows
+
+| Mini-App | Entry Point | Data Captured | GAS Action | Output |
+|---|---|---|---|---|
+| **Intake** (`/intake/`) | Indemnitor self-serve | 5-step form: personal, defendant, bond, employment, references + **surety_id** | `telegram_intake_submit` → IntakeQueue sheet + MongoDB | Confirmation SMS; leads dashboard queued |
+| **Documents** (`/documents/`) | Indemnitor/defendant signing | Case lookup by case# or phone; **surety_id** from case record | `telegram_document_lookup` → `telegram_get_signing_url` (surety-routed template) | SignNow embedded signing link |
+| **Send Paperwork** (`/api/send-paperwork`) | Shannon AI mid-call tool | caller_name, email, phone, defendant_name, county, **surety_id** | `send_paperwork` → GAS → SignNow Phase 1 packet | Signing link SMS to indemnitor |
+
+### surety_id Routing (as of 2026-07 realignment)
+
+All three entry points now capture and forward `surety_id` (`'osi'` or `'palmetto'`).  
+GAS resolves the correct SignNow template via `_resolveTemplateId(docKey, surety_id)` in `Telegram_Documents.js`.  
+Completed packets are filed to Drive under `Completed Bonds / OSI` or `Completed Bonds / PALMETTO`.
+
+---
+
+## 11. Surety-Aware Data Flow (Cross-Repo)
+
+This section documents the **canonical surety routing** enforced across all five repos after the July 2026 realignment.
+
+### Canonical surety_id Values
+
+| Value | Surety Company | SignNow Template Prefix | Drive Subfolder |
+|---|---|---|---|
+| `osi` | Old Surety Insurance (default) | `osi_*` | `Completed Bonds/OSI/` |
+| `palmetto` | Palmetto Surety Corporation | `palmetto_*` | `Completed Bonds/PALMETTO/` |
+
+### surety_id Propagation Chain
+
+```
+Entry Point (Telegram Intake / Wix Portal / Leads Dashboard)
+    │  surety_id captured at intake
+    ▼
+GAS IntakeQueue Sheet  ←→  MongoDB intake_queue
+    │  surety_id stored in both
+    ▼
+SignNow_SendPaperwork.js / Telegram_Documents.js
+    │  _resolveTemplateId(docKey, surety_id) selects OSI or Palmetto template
+    ▼
+SignNow (correct surety-specific template)
+    │  signed documents
+    ▼
+Google Drive  →  Completed Bonds / OSI|PALMETTO / LastName, F_YYYYMMDD /
+```
+
+### Agent Constants (locked — never change)
+
+| Field | Value |
+|---|---|
+| Agent Name | Brendan O'Neal |
+| License # | P139768 |
+| Phone | (239) 332-2245 |
+| Source files | `signnow_packet_service.py`, `SignNow_SendPaperwork.js`, `bond_pdf_service.py` |
+
+---
+
 ## Integration Health Monitoring
 
 The **Watchdog** tab monitors integration health every 5 minutes:

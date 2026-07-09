@@ -135,6 +135,23 @@ cp .env.example .env
 | Weather Posting | ✅ Live | Weather-based social content |
 | Bond Renewal Reminders | ✅ Live | Daily 8AM bond renewal checks |
 | Scraper Control | ✅ Live | Scraper fleet orchestration |
+| Lead Qualification Engine | ✅ Live | Score + concierge + hot/warm Slack (15 min) |
+| Bond Lifecycle Manager | ✅ Live | Stuck stages, missing court, closer (30 min) |
+| Risk Mitigation Loop | ✅ Live | Flight risk, court proximity, check-ins, FTA |
+
+---
+
+## Super Admin
+
+`admin@shamrockbailbonds.biz` is full admin across portal, school, and leads.  
+See **[`docs/SUPER_ADMIN.md`](docs/SUPER_ADMIN.md)**.
+
+Lifecycle automation deploy:
+
+```bash
+python3 deploy_lifecycle_automations.py
+# or live: python3 deploy_lifecycle_automations.py --deploy
+```
 
 ---
 

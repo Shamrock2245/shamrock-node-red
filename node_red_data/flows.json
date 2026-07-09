@@ -17983,5 +17983,1525 @@
         "fa085d6b3a914501"
       ]
     ]
+  },
+  {
+    "id": "tab_lead_qual",
+    "type": "tab",
+    "label": "Lead Qualification Engine",
+    "disabled": false,
+    "info": "Automates lead scoring + hot/warm routing.\n\nEvery 15 min:\n1) GAS scoreAndSyncQualifiedRows + processConciergeQueue\n2) Leads POST /api/automation/lead-qualification\n3) Slack summary of Hot / Warm / High-value\n\nGoal: stop shopping \u2014 speed-to-contact on score \u2265 70."
+  },
+  {
+    "id": "tab_bond_life",
+    "type": "tab",
+    "label": "Bond Lifecycle Manager",
+    "disabled": false,
+    "info": "Relationship + bond lifecycle automation.\n\nStages: Arrest \u2192 Contact \u2192 Negotiate \u2192 Paperwork \u2192 Posted \u2192 Court \u2192 Discharge/Forfeit\n\nEvery 30 min:\n1) Leads POST /api/automation/bond-lifecycle\n2) GAS runTheCloser for abandoned intakes\n3) Slack stuck-stage + missing court-date alerts"
+  },
+  {
+    "id": "tab_risk_mit",
+    "type": "tab",
+    "label": "Risk Mitigation Loop",
+    "disabled": false,
+    "info": "Risk intelligence + mitigation actions.\n\nDaily 7:15 AM + every 2h daytime:\n1) GAS runRiskIntelligenceLoop\n2) GAS checkCourtDateProximity + sendAutomatedCheckIns\n3) Leads POST /api/automation/risk-mitigation\n4) Slack #alerts on high risk / FTA / forfeiture"
+  },
+  {
+    "id": "lq_comment",
+    "type": "comment",
+    "z": "tab_lead_qual",
+    "name": "\ud83c\udfaf LEAD QUALIFICATION ENGINE",
+    "info": "Node-RED is the router. Scoring rules live in GAS QualifiedTabRouter + leads lead_intelligence.\nHot \u226570 \u00b7 Warm \u226540 \u00b7 Released/Bond=0 = Disqualified.",
+    "x": 200,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "lq_inject_15m",
+    "type": "inject",
+    "z": "tab_lead_qual",
+    "name": "\u23f0 Every 15 Min",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "900",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "30",
+    "topic": "lead_qualification",
+    "payload": "",
+    "payloadType": "date",
+    "x": 160,
+    "y": 120,
+    "wires": [
+      [
+        "lq_prep_gas"
+      ]
+    ]
+  },
+  {
+    "id": "lq_inject_manual",
+    "type": "inject",
+    "z": "tab_lead_qual",
+    "name": "\u25b6 Manual Run",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 150,
+    "y": 180,
+    "wires": [
+      [
+        "lq_prep_gas"
+      ]
+    ]
+  },
+  {
+    "id": "lq_prep_gas",
+    "type": "function",
+    "z": "tab_lead_qual",
+    "name": "\ud83d\udd0d Prep GAS Score+Sync",
+    "func": "if (global.get('SYSTEM_SHUTDOWN')) {\n    node.status({fill:'red',shape:'ring',text:'SHUTDOWN'});\n    return null;\n}\nconst gasUrl = global.get('GAS_URL') || env.get('GAS_WEBHOOK_URL') || '';\nif (!gasUrl) {\n    node.error('GAS_URL not configured');\n    node.status({fill:'red',shape:'dot',text:'No GAS_URL'});\n    return null;\n}\nconst ts = new Date().toISOString();\nmsg._lq = { startedAt: ts, gasUrl: gasUrl.split('?')[0] };\nmsg.url = msg._lq.gasUrl + '?action=scoreAndSyncQualifiedRows';\nmsg.headers = { 'Content-Type': 'application/json' };\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nif (apiKey) {\n    msg.headers['X-API-Key'] = apiKey;\n    msg.headers['X-Api-Key'] = apiKey;\n}\nmsg.payload = {\n    action: 'scoreAndSyncQualifiedRows',\n    source: 'node-red-lead-qualification',\n    requestedAt: ts\n};\nmsg.method = 'POST';\nglobal.set('last_run_scoreAndSyncQualifiedRows', ts);\nnode.status({fill:'blue',shape:'dot',text:'Scoring leads\u2026'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 140,
+    "wires": [
+      [
+        "lq_gas_score"
+      ]
+    ]
+  },
+  {
+    "id": "lq_gas_score",
+    "type": "http request",
+    "z": "tab_lead_qual",
+    "name": "\ud83c\udfaf GAS: scoreAndSyncQualifiedRows",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 680,
+    "y": 140,
+    "wires": [
+      [
+        "lq_prep_concierge"
+      ]
+    ]
+  },
+  {
+    "id": "lq_prep_concierge",
+    "type": "function",
+    "z": "tab_lead_qual",
+    "name": "\ud83d\udce2 Prep Concierge Queue",
+    "func": "msg._lq = msg._lq || {};\nmsg._lq.scoreResult = msg.payload;\nconst gasUrl = (msg._lq.gasUrl) || (global.get('GAS_URL') || '').split('?')[0];\nmsg.url = gasUrl + '?action=processConciergeQueue';\nmsg.headers = { 'Content-Type': 'application/json' };\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nif (apiKey) {\n    msg.headers['X-API-Key'] = apiKey;\n    msg.headers['X-Api-Key'] = apiKey;\n}\nmsg.payload = {\n    action: 'processConciergeQueue',\n    source: 'node-red-lead-qualification',\n    requestedAt: new Date().toISOString()\n};\nmsg.method = 'POST';\nnode.status({fill:'blue',shape:'dot',text:'Concierge queue\u2026'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 390,
+    "y": 220,
+    "wires": [
+      [
+        "lq_gas_concierge"
+      ]
+    ]
+  },
+  {
+    "id": "lq_gas_concierge",
+    "type": "http request",
+    "z": "tab_lead_qual",
+    "name": "\ud83c\udfaf GAS: processConciergeQueue",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 670,
+    "y": 220,
+    "wires": [
+      [
+        "lq_prep_leads"
+      ]
+    ]
+  },
+  {
+    "id": "lq_prep_leads",
+    "type": "function",
+    "z": "tab_lead_qual",
+    "name": "\ud83d\udcca Prep Leads Sweep",
+    "func": "msg._lq = msg._lq || {};\nmsg._lq.conciergeResult = msg.payload;\nconst base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || env.get('DASHBOARD_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\nmsg.url = base + '/api/automation/lead-qualification';\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nmsg.headers = {\n    'Content-Type': 'application/json',\n    'X-API-Key': apiKey,\n    'X-Api-Key': apiKey\n};\nmsg.payload = {\n    hours_back: 24,\n    hot_threshold: 70,\n    warm_threshold: 40,\n    high_value_bond: 2500,\n    limit: 40\n};\nmsg.method = 'POST';\nnode.status({fill:'blue',shape:'dot',text:'Leads qualification\u2026'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 300,
+    "wires": [
+      [
+        "lq_http_leads"
+      ]
+    ]
+  },
+  {
+    "id": "lq_http_leads",
+    "type": "http request",
+    "z": "tab_lead_qual",
+    "name": "\ud83c\udf10 Leads: /lead-qualification",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 650,
+    "y": 300,
+    "wires": [
+      [
+        "lq_slack_fmt"
+      ]
+    ]
+  },
+  {
+    "id": "lq_slack_fmt",
+    "type": "function",
+    "z": "tab_lead_qual",
+    "name": "\ud83d\udce2 Slack: Qualification Report",
+    "func": "const data = msg.payload || {};\nconst c = data.counts || {};\nconst hot = data.hot || [];\nconst hv = data.high_value || [];\nlet lines = hot.slice(0, 5).map(h =>\n    `\u2022 *${h.name || 'Unknown'}* (${h.county || '?'}) score=${h.lead_score} bond=$${(h.bond_amount||0).toLocaleString()}`\n).join('\\n');\nif (!lines) lines = '_No hot leads in window_';\nconst hvLines = hv.slice(0, 3).map(h =>\n    `\u2022 ${h.name || '?'} $${(h.bond_amount||0).toLocaleString()} \u2014 ${h.county || ''}`\n).join('\\n') || '_None_';\n\nconst text = [\n    '\ud83c\udfaf *Lead Qualification Engine*',\n    `Scanned: ${c.scanned || 0} \u00b7 \ud83d\udd25 Hot: ${c.hot || 0} \u00b7 Warm: ${c.warm || 0} \u00b7 HV: ${c.high_value || 0}`,\n    '',\n    '*Top Hot*',\n    lines,\n    '',\n    '*High-Value Unposted (>$2.5k)*',\n    hvLines\n].join('\\n');\n\nmsg.headers = {\n    Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || global.get('SLACK_BOT_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n    'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = {\n    channel: global.get('SLACK_CHANNEL_LEADS') || '#leads',\n    text: text\n};\n// Only spam Slack when there is work\nif ((c.hot || 0) === 0 && (c.high_value || 0) === 0) {\n    node.status({fill:'green',shape:'ring',text:'Quiet \u2014 no hot/HV'});\n    msg._skipSlack = true;\n    return [null, msg];\n}\nnode.status({fill:'green',shape:'dot',text:`Hot ${c.hot||0} \u00b7 HV ${c.high_value||0}`});\nreturn [msg, null];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 380,
+    "wires": [
+      [
+        "lq_slack_post"
+      ],
+      [
+        "lq_debug"
+      ]
+    ]
+  },
+  {
+    "id": "lq_slack_post",
+    "type": "http request",
+    "z": "tab_lead_qual",
+    "name": "\ud83d\udce4 Slack Post",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 650,
+    "y": 360,
+    "wires": [
+      [
+        "lq_debug"
+      ]
+    ]
+  },
+  {
+    "id": "lq_debug",
+    "type": "debug",
+    "z": "tab_lead_qual",
+    "name": "\ud83d\udd0d LQ Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 850,
+    "y": 400,
+    "wires": []
+  },
+  {
+    "id": "lq_catch",
+    "type": "catch",
+    "z": "tab_lead_qual",
+    "name": "\ud83d\udea8 LQ Error Catch",
+    "scope": null,
+    "uncaught": false,
+    "x": 160,
+    "y": 460,
+    "wires": [
+      [
+        "lq_err_fmt"
+      ]
+    ]
+  },
+  {
+    "id": "lq_err_fmt",
+    "type": "function",
+    "z": "tab_lead_qual",
+    "name": "Format LQ Error",
+    "func": "const err = msg.error || {};\nmsg.headers = {\n    Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n    'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = {\n    channel: '#alerts',\n    text: '\ud83d\udea8 *Lead Qualification Engine error*: ' + (err.message || JSON.stringify(err).slice(0, 300))\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 460,
+    "wires": [
+      [
+        "lq_slack_err"
+      ]
+    ]
+  },
+  {
+    "id": "lq_slack_err",
+    "type": "http request",
+    "z": "tab_lead_qual",
+    "name": "\ud83d\udce4 Slack Alerts",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 600,
+    "y": 460,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "bl_comment",
+    "type": "comment",
+    "z": "tab_bond_life",
+    "name": "\u2618\ufe0f BOND LIFECYCLE MANAGER",
+    "info": "Keeps relationship + bond stages moving.\nArrest \u2192 Contact \u2192 Negotiate \u2192 Paperwork \u2192 Posted \u2192 Court \u2192 Discharge",
+    "x": 200,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "bl_inject_30m",
+    "type": "inject",
+    "z": "tab_bond_life",
+    "name": "\u23f0 Every 30 Min",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "1800",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "90",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 160,
+    "y": 120,
+    "wires": [
+      [
+        "bl_prep_leads"
+      ]
+    ]
+  },
+  {
+    "id": "bl_inject_manual",
+    "type": "inject",
+    "z": "tab_bond_life",
+    "name": "\u25b6 Manual Run",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 150,
+    "y": 180,
+    "wires": [
+      [
+        "bl_prep_leads"
+      ]
+    ]
+  },
+  {
+    "id": "bl_prep_leads",
+    "type": "function",
+    "z": "tab_bond_life",
+    "name": "\ud83d\udd0d Prep Lifecycle Sweep",
+    "func": "if (global.get('SYSTEM_SHUTDOWN')) {\n    node.status({fill:'red',shape:'ring',text:'SHUTDOWN'});\n    return null;\n}\nconst base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || env.get('DASHBOARD_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\nmsg.url = base + '/api/automation/bond-lifecycle';\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nmsg.headers = {\n    'Content-Type': 'application/json',\n    'X-API-Key': apiKey,\n    'X-Api-Key': apiKey\n};\nmsg.payload = { stuck_days: 3, limit: 40 };\nmsg.method = 'POST';\nmsg._bl = { startedAt: new Date().toISOString() };\nnode.status({fill:'blue',shape:'dot',text:'Lifecycle sweep\u2026'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 390,
+    "y": 140,
+    "wires": [
+      [
+        "bl_http_leads"
+      ]
+    ]
+  },
+  {
+    "id": "bl_http_leads",
+    "type": "http request",
+    "z": "tab_bond_life",
+    "name": "\ud83c\udf10 Leads: /bond-lifecycle",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 640,
+    "y": 140,
+    "wires": [
+      [
+        "bl_prep_closer"
+      ]
+    ]
+  },
+  {
+    "id": "bl_prep_closer",
+    "type": "function",
+    "z": "tab_bond_life",
+    "name": "\ud83d\udcf2 Prep Closer (abandoned)",
+    "func": "msg._bl = msg._bl || {};\nmsg._bl.lifecycle = msg.payload;\nconst gasUrl = (global.get('GAS_URL') || env.get('GAS_WEBHOOK_URL') || '').split('?')[0];\nif (!gasUrl) {\n    node.warn('No GAS_URL \u2014 skipping closer');\n    return [null, msg];\n}\nmsg.url = gasUrl + '?action=runTheCloser';\nmsg.headers = { 'Content-Type': 'application/json' };\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nif (apiKey) {\n    msg.headers['X-API-Key'] = apiKey;\n    msg.headers['X-Api-Key'] = apiKey;\n}\nmsg.payload = {\n    action: 'runTheCloser',\n    source: 'node-red-bond-lifecycle',\n    hoursBack: 72,\n    maxPerRun: 15\n};\nmsg.method = 'POST';\nreturn [msg, null];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 220,
+    "wires": [
+      [
+        "bl_gas_closer"
+      ],
+      [
+        "bl_slack_fmt"
+      ]
+    ]
+  },
+  {
+    "id": "bl_gas_closer",
+    "type": "http request",
+    "z": "tab_bond_life",
+    "name": "\ud83c\udfaf GAS: runTheCloser",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 640,
+    "y": 220,
+    "wires": [
+      [
+        "bl_slack_fmt"
+      ]
+    ]
+  },
+  {
+    "id": "bl_slack_fmt",
+    "type": "function",
+    "z": "tab_bond_life",
+    "name": "\ud83d\udce2 Slack: Lifecycle Report",
+    "func": "const life = (msg._bl && msg._bl.lifecycle) || msg.payload || {};\nconst c = life.counts || {};\nconst issues = life.issues || [];\nconst stuck = life.pipeline_stuck || [];\nif ((c.issues || 0) === 0 && (c.pipeline_stuck || 0) === 0) {\n    node.status({fill:'green',shape:'ring',text:'Lifecycle healthy'});\n    return null;\n}\nconst issueLines = issues.slice(0, 6).map(i =>\n    `\u2022 ${i.defendant || i.booking_number || '?'} [${(i.flags||[]).join(', ')}] stage=${i.stage||'?'}`\n).join('\\n') || '_None_';\nconst stuckLines = stuck.slice(0, 5).map(s =>\n    `\u2022 ${s.defendant || s.booking_number} @ ${s.stage}`\n).join('\\n') || '_None_';\nmsg.headers = {\n    Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n    'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = {\n    channel: global.get('SLACK_CHANNEL_BONDS') || '#bonds',\n    text: [\n        '\u2618\ufe0f *Bond Lifecycle Manager*',\n        `Active scanned: ${c.active_bonds_scanned || 0} \u00b7 Issues: ${c.issues || 0} \u00b7 Pipeline stuck: ${c.pipeline_stuck || 0}`,\n        '',\n        '*Bond issues*',\n        issueLines,\n        '',\n        '*Pipeline stuck >3d*',\n        stuckLines\n    ].join('\\n')\n};\nnode.status({fill:'yellow',shape:'dot',text:`${c.issues||0} issues`});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 320,
+    "wires": [
+      [
+        "bl_slack_post"
+      ]
+    ]
+  },
+  {
+    "id": "bl_slack_post",
+    "type": "http request",
+    "z": "tab_bond_life",
+    "name": "\ud83d\udce4 Slack Post",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 640,
+    "y": 320,
+    "wires": [
+      [
+        "bl_debug"
+      ]
+    ]
+  },
+  {
+    "id": "bl_debug",
+    "type": "debug",
+    "z": "tab_bond_life",
+    "name": "\ud83d\udd0d BL Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 840,
+    "y": 320,
+    "wires": []
+  },
+  {
+    "id": "bl_catch",
+    "type": "catch",
+    "z": "tab_bond_life",
+    "name": "\ud83d\udea8 BL Error Catch",
+    "scope": null,
+    "uncaught": false,
+    "x": 160,
+    "y": 400,
+    "wires": [
+      [
+        "bl_err_fmt"
+      ]
+    ]
+  },
+  {
+    "id": "bl_err_fmt",
+    "type": "function",
+    "z": "tab_bond_life",
+    "name": "Format BL Error",
+    "func": "const err = msg.error || {};\nmsg.headers = {\n    Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n    'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = {\n    channel: '#alerts',\n    text: '\ud83d\udea8 *Bond Lifecycle Manager error*: ' + (err.message || JSON.stringify(err).slice(0, 300))\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 400,
+    "wires": [
+      [
+        "bl_slack_err"
+      ]
+    ]
+  },
+  {
+    "id": "bl_slack_err",
+    "type": "http request",
+    "z": "tab_bond_life",
+    "name": "\ud83d\udce4 Slack Alerts",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 600,
+    "y": 400,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "rm_comment",
+    "type": "comment",
+    "z": "tab_risk_mit",
+    "name": "\ud83d\udee1 RISK MITIGATION LOOP",
+    "info": "Mitigate + manage risk: flight risk, court proximity, check-ins, forfeiture.\nHuman approval still required for high-risk financial actions.",
+    "x": 190,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "rm_inject_daily",
+    "type": "inject",
+    "z": "tab_risk_mit",
+    "name": "\u23f0 Daily 7:15 AM",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "15 7 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "daily",
+    "payload": "",
+    "payloadType": "date",
+    "x": 160,
+    "y": 120,
+    "wires": [
+      [
+        "rm_prep_risk_loop"
+      ]
+    ]
+  },
+  {
+    "id": "rm_inject_2h",
+    "type": "inject",
+    "z": "tab_risk_mit",
+    "name": "\u23f0 Every 2 Hours",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "7200",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "120",
+    "topic": "daytime",
+    "payload": "",
+    "payloadType": "date",
+    "x": 160,
+    "y": 180,
+    "wires": [
+      [
+        "rm_prep_risk_loop"
+      ]
+    ]
+  },
+  {
+    "id": "rm_inject_manual",
+    "type": "inject",
+    "z": "tab_risk_mit",
+    "name": "\u25b6 Manual Run",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 150,
+    "y": 240,
+    "wires": [
+      [
+        "rm_prep_risk_loop"
+      ]
+    ]
+  },
+  {
+    "id": "rm_prep_risk_loop",
+    "type": "function",
+    "z": "tab_risk_mit",
+    "name": "\ud83e\udde0 Prep Risk Intelligence",
+    "func": "if (global.get('SYSTEM_SHUTDOWN')) {\n    node.status({fill:'red',shape:'ring',text:'SHUTDOWN'});\n    return null;\n}\nconst gasUrl = (global.get('GAS_URL') || env.get('GAS_WEBHOOK_URL') || '').split('?')[0];\nif (!gasUrl) {\n    node.error('GAS_URL not configured');\n    return null;\n}\nmsg._rm = { gasUrl, startedAt: new Date().toISOString() };\nmsg.url = gasUrl + '?action=runRiskIntelligenceLoop';\nmsg.headers = { 'Content-Type': 'application/json' };\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nif (apiKey) {\n    msg.headers['X-API-Key'] = apiKey;\n    msg.headers['X-Api-Key'] = apiKey;\n}\nmsg.payload = { action: 'runRiskIntelligenceLoop', source: 'node-red-risk-mitigation' };\nmsg.method = 'POST';\nglobal.set('last_run_runRiskIntelligenceLoop', msg._rm.startedAt);\nnode.status({fill:'blue',shape:'dot',text:'Risk intelligence\u2026'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 160,
+    "wires": [
+      [
+        "rm_gas_risk"
+      ]
+    ]
+  },
+  {
+    "id": "rm_gas_risk",
+    "type": "http request",
+    "z": "tab_risk_mit",
+    "name": "\ud83c\udfaf GAS: runRiskIntelligenceLoop",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 680,
+    "y": 160,
+    "wires": [
+      [
+        "rm_prep_court"
+      ]
+    ]
+  },
+  {
+    "id": "rm_prep_court",
+    "type": "function",
+    "z": "tab_risk_mit",
+    "name": "\ud83d\udcc5 Prep Court Proximity",
+    "func": "msg._rm = msg._rm || {};\nmsg._rm.riskLoop = msg.payload;\nconst gasUrl = msg._rm.gasUrl;\nmsg.url = gasUrl + '?action=checkCourtDateProximity';\nmsg.headers = { 'Content-Type': 'application/json' };\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nif (apiKey) {\n    msg.headers['X-API-Key'] = apiKey;\n    msg.headers['X-Api-Key'] = apiKey;\n}\nmsg.payload = { action: 'checkCourtDateProximity', source: 'node-red-risk-mitigation' };\nmsg.method = 'POST';\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 240,
+    "wires": [
+      [
+        "rm_gas_court"
+      ]
+    ]
+  },
+  {
+    "id": "rm_gas_court",
+    "type": "http request",
+    "z": "tab_risk_mit",
+    "name": "\ud83c\udfaf GAS: checkCourtDateProximity",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 690,
+    "y": 240,
+    "wires": [
+      [
+        "rm_prep_checkins"
+      ]
+    ]
+  },
+  {
+    "id": "rm_prep_checkins",
+    "type": "function",
+    "z": "tab_risk_mit",
+    "name": "\ud83d\udccd Prep Check-Ins",
+    "func": "msg._rm = msg._rm || {};\nmsg._rm.court = msg.payload;\nconst gasUrl = msg._rm.gasUrl;\nmsg.url = gasUrl + '?action=sendAutomatedCheckIns';\nmsg.headers = { 'Content-Type': 'application/json' };\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nif (apiKey) {\n    msg.headers['X-API-Key'] = apiKey;\n    msg.headers['X-Api-Key'] = apiKey;\n}\nmsg.payload = { action: 'sendAutomatedCheckIns', source: 'node-red-risk-mitigation' };\nmsg.method = 'POST';\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 320,
+    "wires": [
+      [
+        "rm_gas_checkins"
+      ]
+    ]
+  },
+  {
+    "id": "rm_gas_checkins",
+    "type": "http request",
+    "z": "tab_risk_mit",
+    "name": "\ud83c\udfaf GAS: sendAutomatedCheckIns",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 680,
+    "y": 320,
+    "wires": [
+      [
+        "rm_prep_leads"
+      ]
+    ]
+  },
+  {
+    "id": "rm_prep_leads",
+    "type": "function",
+    "z": "tab_risk_mit",
+    "name": "\ud83d\udee1 Prep Leads Risk Sweep",
+    "func": "msg._rm = msg._rm || {};\nmsg._rm.checkins = msg.payload;\nconst base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || env.get('DASHBOARD_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\nmsg.url = base + '/api/automation/risk-mitigation';\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nmsg.headers = {\n    'Content-Type': 'application/json',\n    'X-API-Key': apiKey,\n    'X-Api-Key': apiKey\n};\nmsg.payload = {\n    high_risk_threshold: 70,\n    court_hours: 48,\n    limit: 40\n};\nmsg.method = 'POST';\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 400,
+    "y": 400,
+    "wires": [
+      [
+        "rm_http_leads"
+      ]
+    ]
+  },
+  {
+    "id": "rm_http_leads",
+    "type": "http request",
+    "z": "tab_risk_mit",
+    "name": "\ud83c\udf10 Leads: /risk-mitigation",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 660,
+    "y": 400,
+    "wires": [
+      [
+        "rm_slack_fmt"
+      ]
+    ]
+  },
+  {
+    "id": "rm_slack_fmt",
+    "type": "function",
+    "z": "tab_risk_mit",
+    "name": "\ud83d\udce2 Slack: Risk Report",
+    "func": "const data = msg.payload || {};\nconst c = data.counts || {};\nconst actions = data.recommended_actions || [];\nconst fort = data.forfeiture || [];\nconst high = data.high_risk || [];\nconst urgent = (c.forfeiture || 0) > 0 || (c.high_risk || 0) > 0;\nif (!urgent && (c.court_soon || 0) === 0 && (c.missed_checkins || 0) === 0) {\n    node.status({fill:'green',shape:'ring',text:'Risk quiet'});\n    return null;\n}\nconst fortLines = fort.slice(0, 5).map(f =>\n    `\u2022 \u26a0\ufe0f ${f.name || f.booking_number} \u2014 ${f.status}`\n).join('\\n') || '_None_';\nconst highLines = high.slice(0, 5).map(h =>\n    `\u2022 \ud83d\udd34 ${h.name || h.booking_number} risk=${h.risk_score}`\n).join('\\n') || '_None_';\nmsg.headers = {\n    Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n    'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = {\n    channel: (c.forfeiture || 0) > 0 ? '#alerts' : (global.get('SLACK_CHANNEL_ALERTS') || '#alerts'),\n    text: [\n        '\ud83d\udee1 *Risk Mitigation Loop*',\n        `High risk: ${c.high_risk || 0} \u00b7 Court 48h: ${c.court_soon || 0} \u00b7 Forfeiture: ${c.forfeiture || 0} \u00b7 Missed check-ins: ${c.missed_checkins || 0}`,\n        '',\n        '*Recommended*',\n        (actions.map(a => '\u2022 ' + a).join('\\n') || '_None_'),\n        '',\n        '*Forfeiture / FTA*',\n        fortLines,\n        '',\n        '*High flight risk*',\n        highLines\n    ].join('\\n')\n};\nnode.status({fill: urgent ? 'red' : 'yellow', shape:'dot', text: urgent ? 'URGENT risk' : 'Monitor'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 390,
+    "y": 480,
+    "wires": [
+      [
+        "rm_slack_post"
+      ]
+    ]
+  },
+  {
+    "id": "rm_slack_post",
+    "type": "http request",
+    "z": "tab_risk_mit",
+    "name": "\ud83d\udce4 Slack Post",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 630,
+    "y": 480,
+    "wires": [
+      [
+        "rm_debug"
+      ]
+    ]
+  },
+  {
+    "id": "rm_debug",
+    "type": "debug",
+    "z": "tab_risk_mit",
+    "name": "\ud83d\udd0d RM Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 830,
+    "y": 480,
+    "wires": []
+  },
+  {
+    "id": "rm_catch",
+    "type": "catch",
+    "z": "tab_risk_mit",
+    "name": "\ud83d\udea8 RM Error Catch",
+    "scope": null,
+    "uncaught": false,
+    "x": 160,
+    "y": 560,
+    "wires": [
+      [
+        "rm_err_fmt"
+      ]
+    ]
+  },
+  {
+    "id": "rm_err_fmt",
+    "type": "function",
+    "z": "tab_risk_mit",
+    "name": "Format RM Error",
+    "func": "const err = msg.error || {};\nmsg.headers = {\n    Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n    'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = {\n    channel: '#alerts',\n    text: '\ud83d\udea8 *Risk Mitigation Loop error*: ' + (err.message || JSON.stringify(err).slice(0, 300))\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 560,
+    "wires": [
+      [
+        "rm_slack_err"
+      ]
+    ]
+  },
+  {
+    "id": "rm_slack_err",
+    "type": "http request",
+    "z": "tab_risk_mit",
+    "name": "\ud83d\udce4 Slack Alerts",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 600,
+    "y": 560,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "tab_court_ops",
+    "type": "tab",
+    "label": "Court Email & Reports",
+    "disabled": false,
+    "info": "Gmail court scan (dates/forfeitures/discharges) \u2192 Calendar + email + BlueBubbles.\nOfficial OSI/Palmetto bond & discharge XLSX reports."
+  },
+  {
+    "id": "6c54cb2015ee4172",
+    "type": "comment",
+    "z": "tab_court_ops",
+    "name": "\u2696\ufe0f COURT EMAIL + OFFICIAL REPORTS",
+    "info": "1) Scan Gmail every 15m\n2) Calendar + client email + BB\n3) Weekly OSI/Palmetto bond reports\n4) Daily discharge report",
+    "x": 220,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "ce_inject_15",
+    "type": "inject",
+    "z": "tab_court_ops",
+    "name": "\u23f0 Court Email Every 15m",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "900",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "45",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 180,
+    "y": 120,
+    "wires": [
+      [
+        "ce_prep"
+      ]
+    ]
+  },
+  {
+    "id": "ce_inject_manual",
+    "type": "inject",
+    "z": "tab_court_ops",
+    "name": "\u25b6 Scan Court Email Now",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 190,
+    "y": 180,
+    "wires": [
+      [
+        "ce_prep"
+      ]
+    ]
+  },
+  {
+    "id": "ce_prep",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udd0d Prep Court Email Scan",
+    "func": "if (global.get('SYSTEM_SHUTDOWN')) {\n    node.status({fill:'red',shape:'ring',text:'SHUTDOWN'});\n    return null;\n}\nconst base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || env.get('DASHBOARD_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\nmsg.url = base + '/api/automation/court-email-scan';\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nmsg.headers = {'Content-Type':'application/json','X-API-Key':apiKey,'X-Api-Key':apiKey};\nmsg.payload = { since_hours: 24 };\nmsg.method = 'POST';\nnode.status({fill:'blue',shape:'dot',text:'Scanning court email\u2026'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 430,
+    "y": 140,
+    "wires": [
+      [
+        "ce_http"
+      ]
+    ]
+  },
+  {
+    "id": "ce_http",
+    "type": "http request",
+    "z": "tab_court_ops",
+    "name": "\ud83c\udf10 Leads: /court-email-scan",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 700,
+    "y": 140,
+    "wires": [
+      [
+        "ce_slack_fmt"
+      ]
+    ]
+  },
+  {
+    "id": "ce_slack_fmt",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udce2 Slack Court Email Summary",
+    "func": "const r = (msg.payload && msg.payload.result) || msg.payload || {};\nconst by = r.by_type || {};\nconst processed = r.processed || 0;\nif (processed === 0 && !r.error) {\n  node.status({fill:'green',shape:'ring',text:'No new court mail'});\n  return null;\n}\nmsg.headers = {\n  Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n  'Content-Type': 'application/json; charset=utf-8'\n};\nconst fort = by.forfeiture || 0;\nmsg.payload = {\n  channel: fort > 0 ? '#alerts' : (global.get('SLACK_CHANNEL_BONDS') || '#bonds'),\n  text: [\n    '\u2696\ufe0f *Court Email Scanner*',\n    `Processed: ${processed} \u00b7 Calendar: ${r.calendar_events_created||0} \u00b7 Emails: ${r.emails_sent||0} \u00b7 BB: ${r.messages_sent||0}`,\n    `Types \u2014 Court: ${by.courtDate||0} \u00b7 Forfeiture: ${fort} \u00b7 Discharge: ${by.discharge||0} \u00b7 Other: ${by.unknown||0}`,\n    r.error ? ('\u26a0\ufe0f ' + r.error) : ''\n  ].filter(Boolean).join('\\n')\n};\nnode.status({fill: fort>0?'red':'green', shape:'dot', text: processed + ' processed'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 440,
+    "y": 240,
+    "wires": [
+      [
+        "ce_slack"
+      ]
+    ]
+  },
+  {
+    "id": "ce_slack",
+    "type": "http request",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udce4 Slack Post",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 700,
+    "y": 240,
+    "wires": [
+      [
+        "ce_debug"
+      ]
+    ]
+  },
+  {
+    "id": "ce_debug",
+    "type": "debug",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udd0d Court Ops Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 900,
+    "y": 240,
+    "wires": []
+  },
+  {
+    "id": "br_inject_osi",
+    "type": "inject",
+    "z": "tab_court_ops",
+    "name": "\u23f0 Mon 8:00 OSI Bond Report",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "surety",
+        "v": "OSI",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "00 8 * * 1",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "osi",
+    "payload": "",
+    "payloadType": "date",
+    "x": 200,
+    "y": 340,
+    "wires": [
+      [
+        "br_prep"
+      ]
+    ]
+  },
+  {
+    "id": "br_inject_pal",
+    "type": "inject",
+    "z": "tab_court_ops",
+    "name": "\u23f0 Mon 8:15 Palmetto Report",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "surety",
+        "v": "PALMETTO",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "15 8 * * 1",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "palmetto",
+    "payload": "",
+    "payloadType": "date",
+    "x": 210,
+    "y": 400,
+    "wires": [
+      [
+        "br_prep"
+      ]
+    ]
+  },
+  {
+    "id": "br_inject_manual",
+    "type": "inject",
+    "z": "tab_court_ops",
+    "name": "\u25b6 Generate Both Reports",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "both",
+    "payload": "",
+    "payloadType": "date",
+    "x": 200,
+    "y": 460,
+    "wires": [
+      [
+        "br_prep_both"
+      ]
+    ]
+  },
+  {
+    "id": "br_prep",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udcca Prep Bond Report",
+    "func": "if (global.get('SYSTEM_SHUTDOWN')) return null;\nconst base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\nconst surety = msg.surety || msg.topic || 'OSI';\nmsg.url = base + '/api/automation/bond-report';\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nmsg.headers = {'Content-Type':'application/json','X-API-Key':apiKey,'X-Api-Key':apiKey};\nmsg.payload = { surety: String(surety).toUpperCase(), include_discharges: true, store: true };\nmsg.method = 'POST';\nmsg._reportSurety = String(surety).toUpperCase();\nnode.status({fill:'blue',shape:'dot',text:'Building '+msg._reportSurety+' report\u2026'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 450,
+    "y": 360,
+    "wires": [
+      [
+        "br_http"
+      ]
+    ]
+  },
+  {
+    "id": "br_prep_both",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udcca Queue OSI then Palmetto",
+    "func": "const base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nconst headers = {'Content-Type':'application/json','X-API-Key':apiKey,'X-Api-Key':apiKey};\nreturn [\n  { ...msg, url: base+'/api/automation/bond-report', method:'POST', headers, payload:{surety:'OSI',include_discharges:true,store:true}, _reportSurety:'OSI' },\n  { ...msg, url: base+'/api/automation/bond-report', method:'POST', headers, payload:{surety:'PALMETTO',include_discharges:true,store:true}, _reportSurety:'PALMETTO' }\n];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 460,
+    "y": 460,
+    "wires": [
+      [
+        "br_http"
+      ],
+      [
+        "br_http"
+      ]
+    ]
+  },
+  {
+    "id": "br_http",
+    "type": "http request",
+    "z": "tab_court_ops",
+    "name": "\ud83c\udf10 Leads: /bond-report",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 700,
+    "y": 400,
+    "wires": [
+      [
+        "br_slack_fmt"
+      ]
+    ]
+  },
+  {
+    "id": "br_slack_fmt",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udce2 Slack Bond Report Ready",
+    "func": "const p = msg.payload || {};\nif (!p.ok && !p.filename) {\n  node.status({fill:'red',shape:'dot',text:'Report failed'});\n  node.error(p.error || 'bond report failed', msg);\n  return null;\n}\nmsg.headers = {\n  Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n  'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = {\n  channel: global.get('SLACK_CHANNEL_BONDS') || '#bonds',\n  text: `\ud83d\udcd1 *Official ${p.surety || msg._reportSurety || ''} Bond Report* ready\\nFile: \\`${p.filename}\\` \u00b7 ${p.size_bytes||0} bytes \u00b7 Active scanned: ${p.active_rows_scanned||0} \u00b7 Discharges: ${p.discharges||0}`\n};\n// Keep base64 off Slack text \u2014 stored in leads generated_reports\nnode.status({fill:'green',shape:'dot',text:(p.surety||'')+' report OK'});\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 460,
+    "y": 520,
+    "wires": [
+      [
+        "br_slack"
+      ]
+    ]
+  },
+  {
+    "id": "br_slack",
+    "type": "http request",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udce4 Slack Bonds",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 700,
+    "y": 520,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "dr_inject",
+    "type": "inject",
+    "z": "tab_court_ops",
+    "name": "\u23f0 Daily 9:00 Discharge Report",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "00 9 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 210,
+    "y": 600,
+    "wires": [
+      [
+        "dr_prep"
+      ]
+    ]
+  },
+  {
+    "id": "dr_prep",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udccb Prep Discharge Report",
+    "func": "if (global.get('SYSTEM_SHUTDOWN')) return null;\nconst base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\nmsg.url = base + '/api/automation/discharge-report';\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nmsg.headers = {'Content-Type':'application/json','X-API-Key':apiKey,'X-Api-Key':apiKey};\nmsg.payload = { surety: 'ALL', days_back: 90 };\nmsg.method = 'POST';\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 450,
+    "y": 600,
+    "wires": [
+      [
+        "dr_http"
+      ]
+    ]
+  },
+  {
+    "id": "dr_http",
+    "type": "http request",
+    "z": "tab_court_ops",
+    "name": "\ud83c\udf10 Leads: /discharge-report",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 700,
+    "y": 600,
+    "wires": [
+      [
+        "dr_slack_fmt"
+      ]
+    ]
+  },
+  {
+    "id": "dr_slack_fmt",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udce2 Slack Discharge Report",
+    "func": "const p = msg.payload || {};\nif (!p.ok) return null;\nmsg.headers = {\n  Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n  'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = {\n  channel: global.get('SLACK_CHANNEL_BONDS') || '#bonds',\n  text: `\ud83d\udfe2 *Official Discharge Report*\\nFile: \\`${p.filename}\\` \u00b7 Rows: ${p.discharge_rows||0} \u00b7 Window: ${p.days_back||90}d`\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 460,
+    "y": 680,
+    "wires": [
+      [
+        "dr_slack"
+      ]
+    ]
+  },
+  {
+    "id": "dr_slack",
+    "type": "http request",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udce4 Slack Discharges",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 700,
+    "y": 680,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "co_catch",
+    "type": "catch",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udea8 Court Ops Catch",
+    "scope": null,
+    "uncaught": false,
+    "x": 170,
+    "y": 760,
+    "wires": [
+      [
+        "co_err"
+      ]
+    ]
+  },
+  {
+    "id": "co_err",
+    "type": "function",
+    "z": "tab_court_ops",
+    "name": "Format Error",
+    "func": "msg.headers = {\n  Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n  'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = { channel: '#alerts', text: '\ud83d\udea8 *Court Email & Reports error*: ' + ((msg.error&&msg.error.message)||'unknown') };\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 390,
+    "y": 760,
+    "wires": [
+      [
+        "co_err_slack"
+      ]
+    ]
+  },
+  {
+    "id": "co_err_slack",
+    "type": "http request",
+    "z": "tab_court_ops",
+    "name": "\ud83d\udce4 Slack Alerts",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 600,
+    "y": 760,
+    "wires": [
+      []
+    ]
   }
 ]
