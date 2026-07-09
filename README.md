@@ -8,6 +8,12 @@
 
 ---
 
+## True status
+
+See **[`STATUS.md`](./STATUS.md)**. In the Shamrock stack this repo is our **open-source Zapier / n8n**: visual flows, crons, and webhooks that glue GAS, leads, Twilio, Slack, Telegram, SignNow, and health checks. It is **not** the Super CRM UI (`shamrock-leads`) and **not** the Bail School LMS (`shamrock-bail-school`).
+
+---
+
 ## What This Is
 
 This is the **Node-RED instance** for Shamrock Bail Bonds. It acts as the central orchestration layer that:
