@@ -197,55 +197,18 @@ SITE_CSS = r"""
   filter: saturate(1.1);
 }
 
-/* Custom brand helpers used inside templates */
-.sb-hero {
-  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-  padding: 8px 4px 4px;
+/* Widget content: prevent Vuetify absolute/stacking glitches */
+.nrdb-ui-template, .nrdb-ui-template > div, .v-card-text {
+  overflow: visible !important;
+  position: relative !important;
+  line-height: 1.4 !important;
 }
-.sb-hero img {
-  width: 56px; height: 56px; object-fit: contain;
-  filter: drop-shadow(0 0 12px rgba(16,185,129,0.45));
+.nrdb-ui-group .v-card {
+  overflow: visible !important;
 }
-.sb-hero h1 {
-  margin: 0; font-size: 1.35rem; font-weight: 800; color: var(--sb-text);
-  letter-spacing: -0.02em;
-}
-.sb-hero p {
-  margin: 2px 0 0; color: var(--sb-muted); font-size: 0.85rem;
-}
-.sb-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 700;
-  border: 1px solid var(--sb-border); background: rgba(16,185,129,0.1); color: var(--sb-accent);
-  text-transform: uppercase; letter-spacing: 0.04em;
-}
-.sb-pill.warn { border-color: rgba(245,158,11,0.4); color: var(--sb-amber); background: rgba(245,158,11,0.1); }
-.sb-pill.bad { border-color: rgba(239,68,68,0.4); color: var(--sb-danger); background: rgba(239,68,68,0.1); }
-.sb-kpi-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;
-}
-.sb-kpi {
-  padding: 14px 12px; border-radius: 12px;
-  background: linear-gradient(145deg, rgba(15,23,42,0.9), rgba(30,41,59,0.7));
-  border: 1px solid rgba(16,185,129,0.18);
-}
-.sb-kpi .label { color: var(--sb-muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; }
-.sb-kpi .value { color: var(--sb-text); font-size: 1.45rem; font-weight: 800; margin-top: 4px; }
-.sb-kpi .sub { color: var(--sb-accent); font-size: 0.72rem; margin-top: 2px; }
-.sb-row {
-  display: flex; justify-content: space-between; align-items: center; gap: 8px;
-  padding: 10px 12px; margin: 6px 0; border-radius: 10px;
-  background: rgba(15,23,42,0.55); border-left: 3px solid var(--sb-accent);
-}
-.sb-row .name { font-weight: 600; color: var(--sb-text); font-size: 0.88rem; }
-.sb-row .meta { color: var(--sb-muted); font-size: 0.72rem; }
-.sb-link {
-  color: var(--sb-accent); text-decoration: none; font-size: 0.8rem; font-weight: 600;
-}
-.sb-link:hover { text-decoration: underline; }
-.sb-footer {
-  margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(148,163,184,0.15);
-  color: var(--sb-muted); font-size: 0.72rem;
+/* Keep group body from clipping stacked text */
+.nrdb-ui-group-body, .v-card-text {
+  min-height: auto !important;
 }
 """
 
@@ -289,115 +252,148 @@ export default {{
 """
 
 
-# FlowFuse ui-template uses Vue SFC-ish format in `format` field - many existing ones use inline Vue in format without script.
-# Looking at existing templates - they use pure HTML with Vue mustache {{}} and v-if, not script export default.
-# I'll stick to pure HTML + Vue directives pattern used in inject_premium_styles.js
+# FlowFuse ui-template: pure HTML + simple Vue. Prefer INLINE styles (site CSS is flaky
+# inside Vuetify cards). Avoid optional chaining edge-cases; keep each status on its own row.
 
 HERO_TEMPLATE = """
-<div class="sb-hero">
-  <img v-if="msg?.payload?.logo" :src="msg.payload.logo" alt="Shamrock" />
-  <div v-else style="width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,#10b981,#064e3b);display:flex;align-items:center;justify-content:center;font-size:28px;">🍀</div>
-  <div style="flex:1;min-width:200px">
-    <h1>Shamrock Command Center</h1>
-    <p>Bail Ops · Automation Fabric · Statewide Intelligence</p>
+<div style="display:flex;flex-direction:column;gap:14px;padding:4px 2px 8px;font-family:system-ui,sans-serif;color:#f1f5f9;">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <img v-if="msg && msg.payload && msg.payload.logo" :src="msg.payload.logo" alt="Shamrock"
+         style="width:72px;height:72px;object-fit:contain;flex-shrink:0;display:block;" />
+    <div v-else style="width:72px;height:72px;border-radius:14px;background:linear-gradient(135deg,#10b981,#064e3b);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;">🍀</div>
+    <div style="flex:1;min-width:220px;">
+      <div style="font-size:1.45rem;font-weight:800;letter-spacing:-0.02em;line-height:1.2;margin:0 0 6px 0;">Shamrock Command Center</div>
+      <div style="color:#94a3b8;font-size:0.9rem;line-height:1.35;margin:0;">Bail Ops · Automation Fabric · Statewide Intelligence</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+      <span style="display:inline-block;padding:5px 12px;border-radius:999px;font-size:0.72rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;border:1px solid rgba(16,185,129,0.35);background:rgba(16,185,129,0.12);color:#10b981;">
+        {{ (msg && msg.payload && msg.payload.ready===false) ? 'DEGRADED' : 'OPERATIONAL' }}
+      </span>
+      <span style="display:inline-block;padding:5px 12px;border-radius:999px;font-size:0.72rem;font-weight:600;border:1px solid #334155;color:#94a3b8;background:rgba(15,23,42,0.6);">
+        {{ (msg && msg.payload && msg.payload.ts) ? msg.payload.ts : 'Live' }}
+      </span>
+    </div>
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:8px">
-    <span class="sb-pill" :class="(msg?.payload?.ready===false)?'warn':''">{{ msg?.payload?.ready===false ? 'DEGRADED' : 'OPERATIONAL' }}</span>
-    <span class="sb-pill" :class="(msg?.payload?.failed_runs>0)?'bad':''" v-if="msg?.payload?.failed_runs">{{ msg.payload.failed_runs }} failed runs</span>
-    <span class="sb-pill">{{ msg?.payload?.ts || 'Live' }}</span>
+  <div style="border-top:1px solid rgba(148,163,184,0.18);padding-top:10px;color:#94a3b8;font-size:0.8rem;line-height:1.45;">
+    Super CRM:
+    <a href="https://leads.shamrockbailbonds.biz" target="_blank" rel="noopener"
+       style="color:#10b981;font-weight:600;text-decoration:none;">leads.shamrockbailbonds.biz</a>
+    <span style="margin:0 6px;opacity:0.5;">·</span>
+    OSINT worker · Node-RED crons · 50+ county scrapers
   </div>
-</div>
-<div class="sb-footer">
-  Super CRM:
-  <a class="sb-link" href="https://leads.shamrockbailbonds.biz" target="_blank" rel="noopener">leads.shamrockbailbonds.biz</a>
-  · OSINT worker · Node-RED crons · 50+ county scrapers
 </div>
 """
 
 ECO_TEMPLATE = """
-<div class="sb-kpi-grid">
-  <div class="sb-kpi">
-    <div class="label">Leads API</div>
-    <div class="value" :style="{color: msg?.payload?.leads_ok ? '#10b981' : '#ef4444'}">{{ msg?.payload?.leads_ok ? 'UP' : 'DOWN' }}</div>
-    <div class="sub">automation health</div>
-  </div>
-  <div class="sb-kpi">
-    <div class="label">OSINT Worker</div>
-    <div class="value" :style="{color: msg?.payload?.osint_ready ? '#10b981' : '#f59e0b'}">{{ msg?.payload?.osint_ready ? 'READY' : 'OFF' }}</div>
-    <div class="sub">Maigret · Blackbird</div>
-  </div>
-  <div class="sb-kpi">
-    <div class="label">Schedule Jobs</div>
-    <div class="value">{{ msg?.payload?.job_count ?? '—' }}</div>
-    <div class="sub">Node-RED pack</div>
-  </div>
-  <div class="sb-kpi">
-    <div class="label">Maigret</div>
-    <div class="value" style="font-size:1.1rem">{{ msg?.payload?.maigret ? '✓' : '✗' }}</div>
-    <div class="sub">username recon</div>
-  </div>
-  <div class="sb-kpi">
-    <div class="label">Blackbird</div>
-    <div class="value" style="font-size:1.1rem">{{ msg?.payload?.blackbird ? '✓' : '✗' }}</div>
-    <div class="sub">email / 2nd opinion</div>
-  </div>
-  <div class="sb-kpi">
-    <div class="label">Policy</div>
-    <div class="value" style="font-size:0.95rem;line-height:1.2">Maigret-first</div>
-    <div class="sub">risk advisory only</div>
-  </div>
+<div style="font-family:system-ui,sans-serif;color:#f1f5f9;padding:2px;">
+  <table style="width:100%;border-collapse:separate;border-spacing:0 8px;">
+    <tr>
+      <td style="width:50%;padding:10px 12px;background:#0f172a;border:1px solid rgba(16,185,129,0.2);border-radius:10px;vertical-align:top;">
+        <div style="color:#94a3b8;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;">Leads API</div>
+        <div :style="{color: (msg && msg.payload && msg.payload.leads_ok) ? '#10b981' : '#ef4444', fontSize:'1.35rem', fontWeight:800, marginTop:'4px'}">
+          {{ (msg && msg.payload && msg.payload.leads_ok) ? 'UP' : 'DOWN' }}
+        </div>
+        <div style="color:#10b981;font-size:0.72rem;margin-top:2px;">automation health</div>
+      </td>
+      <td style="width:8px;"></td>
+      <td style="width:50%;padding:10px 12px;background:#0f172a;border:1px solid rgba(16,185,129,0.2);border-radius:10px;vertical-align:top;">
+        <div style="color:#94a3b8;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;">OSINT Worker</div>
+        <div :style="{color: (msg && msg.payload && msg.payload.osint_ready) ? '#10b981' : '#f59e0b', fontSize:'1.35rem', fontWeight:800, marginTop:'4px'}">
+          {{ (msg && msg.payload && msg.payload.osint_ready) ? 'READY' : 'OFF' }}
+        </div>
+        <div style="color:#10b981;font-size:0.72rem;margin-top:2px;">Maigret · Blackbird</div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:10px 12px;background:#0f172a;border:1px solid rgba(16,185,129,0.2);border-radius:10px;vertical-align:top;">
+        <div style="color:#94a3b8;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;">Schedule Jobs</div>
+        <div style="color:#f1f5f9;font-size:1.35rem;font-weight:800;margin-top:4px;">{{ (msg && msg.payload && msg.payload.job_count != null) ? msg.payload.job_count : '—' }}</div>
+        <div style="color:#10b981;font-size:0.72rem;margin-top:2px;">Node-RED pack</div>
+      </td>
+      <td></td>
+      <td style="padding:10px 12px;background:#0f172a;border:1px solid rgba(16,185,129,0.2);border-radius:10px;vertical-align:top;">
+        <div style="color:#94a3b8;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;">Tools</div>
+        <div style="margin-top:6px;font-size:0.85rem;line-height:1.5;">
+          <span style="color:#94a3b8;">Maigret</span>
+          <strong :style="{color: (msg && msg.payload && msg.payload.maigret) ? '#10b981' : '#ef4444', marginLeft:'6px'}">{{ (msg && msg.payload && msg.payload.maigret) ? '✓' : '✗' }}</strong>
+          <span style="margin:0 8px;opacity:0.35;">|</span>
+          <span style="color:#94a3b8;">Blackbird</span>
+          <strong :style="{color: (msg && msg.payload && msg.payload.blackbird) ? '#10b981' : '#ef4444', marginLeft:'6px'}">{{ (msg && msg.payload && msg.payload.blackbird) ? '✓' : '✗' }}</strong>
+        </div>
+        <div style="color:#10b981;font-size:0.72rem;margin-top:4px;">Maigret-first · risk advisory only</div>
+      </td>
+    </tr>
+  </table>
 </div>
 """
 
 AUTO_TEMPLATE = """
-<div v-if="msg?.payload?.jobs?.length">
-  <div class="sb-row" v-for="(j,i) in msg.payload.jobs" :key="i">
-    <div>
-      <div class="name">{{ j.id }}</div>
-      <div class="meta">{{ j.desc || j.path }} · {{ j.cron }} {{ j.tz || '' }}</div>
+<div style="font-family:system-ui,sans-serif;color:#f1f5f9;padding:2px;max-height:420px;overflow-y:auto;">
+  <div v-if="msg && msg.payload && msg.payload.jobs && msg.payload.jobs.length">
+    <div v-for="(j,i) in msg.payload.jobs" :key="i"
+         style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:10px 12px;margin:0 0 8px 0;border-radius:10px;background:#0f172a;border-left:3px solid #10b981;">
+      <div style="min-width:0;flex:1;">
+        <div style="font-weight:700;font-size:0.9rem;color:#f1f5f9;word-break:break-word;">{{ j.id }}</div>
+        <div style="color:#94a3b8;font-size:0.75rem;margin-top:3px;line-height:1.35;">{{ j.desc || j.path }}</div>
+        <div style="color:#64748b;font-size:0.7rem;margin-top:2px;">{{ j.cron }} {{ j.tz || '' }}</div>
+      </div>
+      <span style="flex-shrink:0;padding:3px 10px;border-radius:999px;font-size:0.68rem;font-weight:700;border:1px solid rgba(16,185,129,0.35);color:#10b981;background:rgba(16,185,129,0.1);">
+        {{ j.method || 'POST' }}
+      </span>
     </div>
-    <span class="sb-pill">{{ j.method || 'POST' }}</span>
   </div>
-</div>
-<div v-else style="color:#94a3b8;text-align:center;padding:16px;font-style:italic">
-  Loading schedule pack…
+  <div v-else style="color:#94a3b8;text-align:center;padding:20px;font-style:italic;">Loading schedule pack…</div>
 </div>
 """
 
 OSINT_TEMPLATE = """
-<div class="sb-kpi-grid" style="margin-bottom:10px">
-  <div class="sb-kpi">
-    <div class="label">Worker</div>
-    <div class="value" style="font-size:1.1rem">{{ msg?.payload?.worker_reachable ? 'Online' : 'Offline' }}</div>
-    <div class="sub">{{ msg?.payload?.worker_url || 'osint-worker:5065' }}</div>
-  </div>
-  <div class="sb-kpi">
-    <div class="label">Ready</div>
-    <div class="value" :style="{color: msg?.payload?.ready_for_scans ? '#10b981' : '#ef4444'}">{{ msg?.payload?.ready_for_scans ? 'YES' : 'NO' }}</div>
-    <div class="sub">scans enabled</div>
+<div style="font-family:system-ui,sans-serif;color:#f1f5f9;padding:2px;">
+  <table style="width:100%;border-collapse:collapse;">
+    <tr style="border-bottom:1px solid rgba(148,163,184,0.12);">
+      <td style="padding:10px 8px;color:#94a3b8;font-size:0.8rem;width:36%;">Worker</td>
+      <td style="padding:10px 8px;">
+        <div style="font-weight:800;font-size:1.05rem;" :style="{color: (msg && msg.payload && msg.payload.worker_reachable) ? '#10b981' : '#ef4444'}">
+          {{ (msg && msg.payload && msg.payload.worker_reachable) ? 'Online' : 'Offline' }}
+        </div>
+        <div style="color:#64748b;font-size:0.72rem;margin-top:2px;word-break:break-all;">{{ (msg && msg.payload && msg.payload.worker_url) ? msg.payload.worker_url : 'osint-worker:5065' }}</div>
+      </td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(148,163,184,0.12);">
+      <td style="padding:10px 8px;color:#94a3b8;font-size:0.8rem;">Ready for scans</td>
+      <td style="padding:10px 8px;font-weight:800;font-size:1.05rem;" :style="{color: (msg && msg.payload && msg.payload.ready_for_scans) ? '#10b981' : '#ef4444'}">
+        {{ (msg && msg.payload && msg.payload.ready_for_scans) ? 'YES' : 'NO' }}
+      </td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(148,163,184,0.12);">
+      <td style="padding:10px 8px;color:#94a3b8;font-size:0.8rem;">Maigret</td>
+      <td style="padding:10px 8px;">
+        <span style="font-weight:700;" :style="{color: (msg && msg.payload && msg.payload.maigret) ? '#10b981' : '#ef4444'}">
+          {{ (msg && msg.payload && msg.payload.maigret) ? 'available' : 'missing' }}
+        </span>
+        <div style="color:#64748b;font-size:0.72rem;margin-top:2px;">default ON · no recursion</div>
+      </td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(148,163,184,0.12);">
+      <td style="padding:10px 8px;color:#94a3b8;font-size:0.8rem;">Blackbird</td>
+      <td style="padding:10px 8px;">
+        <span style="font-weight:700;" :style="{color: (msg && msg.payload && msg.payload.blackbird) ? '#f59e0b' : '#ef4444'}">
+          {{ (msg && msg.payload && msg.payload.blackbird) ? 'available' : 'missing' }}
+        </span>
+        <div style="color:#64748b;font-size:0.72rem;margin-top:2px;">email-focused · second opinion only</div>
+      </td>
+    </tr>
+  </table>
+  <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(148,163,184,0.15);color:#94a3b8;font-size:0.75rem;line-height:1.4;">
+    Hot-lead auto-queue: daily 9:00 AM ET · health every 6h · Super CRM OSINT tab for ad-hoc
   </div>
 </div>
-<div class="sb-row">
-  <div>
-    <div class="name">Maigret</div>
-    <div class="meta">{{ msg?.payload?.maigret_path || 'default ON · no recursion' }}</div>
-  </div>
-  <span class="sb-pill" :class="msg?.payload?.maigret ? '' : 'bad'">{{ msg?.payload?.maigret ? 'available' : 'missing' }}</span>
-</div>
-<div class="sb-row" style="border-color:#f59e0b">
-  <div>
-    <div class="name">Blackbird</div>
-    <div class="meta">email-focused · second opinion only</div>
-  </div>
-  <span class="sb-pill" :class="msg?.payload?.blackbird ? 'warn' : 'bad'">{{ msg?.payload?.blackbird ? 'available' : 'missing' }}</span>
-</div>
-<div class="sb-footer">Hot-lead auto-queue: daily 9:00 AM ET · health every 6h · Super CRM OSINT tab for ad-hoc</div>
 """
 
 ACTIONS_HELP = """
-<div style="color:#94a3b8;font-size:0.82rem;line-height:1.5;padding:4px 2px">
+<div style="font-family:system-ui,sans-serif;color:#94a3b8;font-size:0.82rem;line-height:1.5;padding:6px 2px;">
   Use the buttons below to fire machine sweeps (auth via GAS_API_KEY). Results post to Slack when configured.
-  For full CRM, open <a class="sb-link" href="https://leads.shamrockbailbonds.biz" target="_blank">Super CRM</a>.
+  For full CRM, open
+  <a href="https://leads.shamrockbailbonds.biz" target="_blank" rel="noopener" style="color:#10b981;font-weight:600;text-decoration:none;">Super CRM</a>.
 </div>
 """
 
@@ -527,11 +523,12 @@ def build_command_center_nodes(logo_uri: str) -> list:
             "wires": [[]],
         }
 
-    nodes.append(tmpl("ui_cc_hero", "Hero Banner", GROUP_HERO_ID, 1, HERO_TEMPLATE, 3))
-    nodes.append(tmpl("ui_cc_eco", "Ecosystem KPIs", GROUP_ECO_ID, 1, ECO_TEMPLATE, 5))
-    nodes.append(tmpl("ui_cc_osint", "OSINT Panel", GROUP_OSINT_ID, 1, OSINT_TEMPLATE, 5))
-    nodes.append(tmpl("ui_cc_auto", "Schedule List", GROUP_AUTO_ID, 1, AUTO_TEMPLATE, 8))
-    nodes.append(tmpl("ui_cc_actions_help", "Actions Help", GROUP_ACTIONS_ID, 1, ACTIONS_HELP, 2))
+    # height: larger units so FlowFuse does not clip/stack widget content
+    nodes.append(tmpl("ui_cc_hero", "Hero Banner", GROUP_HERO_ID, 1, HERO_TEMPLATE, 4))
+    nodes.append(tmpl("ui_cc_eco", "Ecosystem KPIs", GROUP_ECO_ID, 1, ECO_TEMPLATE, 6))
+    nodes.append(tmpl("ui_cc_osint", "OSINT Panel", GROUP_OSINT_ID, 1, OSINT_TEMPLATE, 7))
+    nodes.append(tmpl("ui_cc_auto", "Schedule List", GROUP_AUTO_ID, 1, AUTO_TEMPLATE, 10))
+    nodes.append(tmpl("ui_cc_actions_help", "Actions Help", GROUP_ACTIONS_ID, 1, ACTIONS_HELP, 3))
 
     # Refresh injectors
     nodes.append({
@@ -1011,52 +1008,67 @@ def build_workflows_page_nodes() -> list:
     ]
 
     help_html = """
-<div style="color:#f1f5f9;font-size:0.88rem;line-height:1.55;padding:4px">
-  <strong style="color:#10b981">Workflow Kit</strong> — palette category <em>Shamrock</em><br/>
-  1. <code>Safe Cron Gate</code> → 2. set <code>msg.leadsPath</code> → 3. <code>Leads API Call</code> → 4. <code>Slack Notify</code> on fail<br/>
-  Scaffold: <code>python3 scaffold_flow.py --type sweep --name "My Job" --path /api/automation/ops-digest</code><br/>
-  Docs: <code>docs/WORKFLOW_KIT.md</code> · Super CRM: <a class="sb-link" href="https://leads.shamrockbailbonds.biz" target="_blank">leads.shamrockbailbonds.biz</a>
+<div style="font-family:system-ui,sans-serif;color:#f1f5f9;font-size:0.88rem;line-height:1.55;padding:6px 4px;">
+  <div style="color:#10b981;font-weight:700;margin-bottom:8px;">Workflow Kit — palette category Shamrock</div>
+  <div style="color:#cbd5e1;margin-bottom:6px;">1. Safe Cron Gate → 2. set msg.leadsPath → 3. Leads API Call → 4. Slack Notify on fail</div>
+  <div style="color:#94a3b8;font-size:0.8rem;margin-bottom:6px;"><code style="color:#10b981;">python3 scaffold_flow.py --type sweep --name "My Job" --path /api/automation/ops-digest</code></div>
+  <div style="color:#94a3b8;font-size:0.8rem;">Docs: docs/WORKFLOW_KIT.md ·
+    <a href="https://leads.shamrockbailbonds.biz" target="_blank" style="color:#10b981;font-weight:600;text-decoration:none;">Super CRM</a>
+  </div>
 </div>
 """
     env_html = """
-<div class="sb-kpi-grid">
-  <div class="sb-kpi" v-for="(ok, key) in (msg?.payload?.checks||{})" :key="key">
-    <div class="label">{{ key }}</div>
-    <div class="value" :style="{color: ok?'#10b981':'#ef4444', fontSize:'1.1rem'}">{{ ok ? 'OK' : 'NO' }}</div>
+<div style="font-family:system-ui,sans-serif;color:#f1f5f9;padding:2px;">
+  <div v-if="msg && msg.payload && msg.payload.checks">
+    <div v-for="(ok, key) in msg.payload.checks" :key="key"
+         style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;margin-bottom:6px;background:#0f172a;border-radius:8px;border:1px solid rgba(16,185,129,0.15);">
+      <span style="color:#94a3b8;font-size:0.8rem;">{{ key }}</span>
+      <strong :style="{color: ok ? '#10b981' : '#ef4444'}">{{ ok ? 'OK' : 'NO' }}</strong>
+    </div>
   </div>
+  <div style="color:#64748b;font-size:0.75rem;margin-top:8px;">{{ (msg && msg.payload && msg.payload.ts) || '—' }}</div>
 </div>
-<div class="sb-footer">{{ msg?.payload?.ts || '—' }} · ready={{ msg?.payload?.ready }}</div>
 """
     catalog_html = """
-<div v-if="msg?.payload?.jobs?.length">
-  <div class="sb-row" v-for="(j,i) in msg.payload.jobs" :key="i">
-    <div>
-      <div class="name">{{ j.id }}</div>
-      <div class="meta">{{ j.method }} {{ j.path }} · {{ j.cron }} {{ j.tz }}</div>
-      <div class="meta">{{ j.desc }}</div>
+<div style="font-family:system-ui,sans-serif;color:#f1f5f9;max-height:380px;overflow-y:auto;padding:2px;">
+  <div v-if="msg && msg.payload && msg.payload.jobs && msg.payload.jobs.length">
+    <div v-for="(j,i) in msg.payload.jobs" :key="i"
+         style="padding:10px 12px;margin-bottom:8px;background:#0f172a;border-radius:10px;border-left:3px solid #10b981;">
+      <div style="font-weight:700;font-size:0.9rem;">{{ j.id }}</div>
+      <div style="color:#94a3b8;font-size:0.75rem;margin-top:3px;">{{ j.method }} {{ j.path }} · {{ j.cron }}</div>
+      <div style="color:#64748b;font-size:0.72rem;margin-top:2px;">{{ j.desc }}</div>
     </div>
-    <span class="sb-pill">{{ j.slack || 'no slack' }}</span>
   </div>
+  <div v-else style="color:#94a3b8;text-align:center;padding:16px;">Waiting for schedule…</div>
 </div>
-<div v-else class="sb-footer">Waiting for schedule…</div>
 """
     runs_html = """
-<div class="sb-kpi-grid" style="margin-bottom:10px">
-  <div class="sb-kpi"><div class="label">Logged</div><div class="value">{{ msg?.payload?.stats?.total ?? 0 }}</div></div>
-  <div class="sb-kpi"><div class="label">OK</div><div class="value" style="color:#10b981">{{ msg?.payload?.stats?.ok ?? 0 }}</div></div>
-  <div class="sb-kpi"><div class="label">Fail</div><div class="value" style="color:#ef4444">{{ msg?.payload?.stats?.fail ?? 0 }}</div></div>
-</div>
-<div v-if="msg?.payload?.run_log?.length">
-  <div class="sb-row" v-for="(r,i) in msg.payload.run_log" :key="i" :style="{borderColor: r.ok?'#10b981':'#ef4444'}">
-    <div>
-      <div class="name">{{ r.action }}</div>
-      <div class="meta">{{ r.ts }} · {{ r.duration_ms }}ms · HTTP {{ r.statusCode || '—' }}</div>
-      <div class="meta" v-if="r.error" style="color:#fca5a5">{{ r.error }}</div>
+<div style="font-family:system-ui,sans-serif;color:#f1f5f9;padding:2px;">
+  <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:80px;padding:10px;background:#0f172a;border-radius:10px;text-align:center;">
+      <div style="color:#94a3b8;font-size:0.68rem;text-transform:uppercase;">Logged</div>
+      <div style="font-size:1.3rem;font-weight:800;">{{ (msg && msg.payload && msg.payload.stats && msg.payload.stats.total) || 0 }}</div>
     </div>
-    <span class="sb-pill" :class="r.ok?'':'bad'">{{ r.ok ? 'ok' : 'fail' }}</span>
+    <div style="flex:1;min-width:80px;padding:10px;background:#0f172a;border-radius:10px;text-align:center;">
+      <div style="color:#94a3b8;font-size:0.68rem;text-transform:uppercase;">OK</div>
+      <div style="font-size:1.3rem;font-weight:800;color:#10b981;">{{ (msg && msg.payload && msg.payload.stats && msg.payload.stats.ok) || 0 }}</div>
+    </div>
+    <div style="flex:1;min-width:80px;padding:10px;background:#0f172a;border-radius:10px;text-align:center;">
+      <div style="color:#94a3b8;font-size:0.68rem;text-transform:uppercase;">Fail</div>
+      <div style="font-size:1.3rem;font-weight:800;color:#ef4444;">{{ (msg && msg.payload && msg.payload.stats && msg.payload.stats.fail) || 0 }}</div>
+    </div>
   </div>
+  <div v-if="msg && msg.payload && msg.payload.run_log && msg.payload.run_log.length" style="max-height:280px;overflow-y:auto;">
+    <div v-for="(r,i) in msg.payload.run_log" :key="i"
+         style="padding:8px 10px;margin-bottom:6px;background:#0f172a;border-radius:8px;border-left:3px solid #10b981;"
+         :style="{borderLeftColor: r.ok ? '#10b981' : '#ef4444'}">
+      <div style="font-weight:600;font-size:0.85rem;word-break:break-word;">{{ r.action }}</div>
+      <div style="color:#64748b;font-size:0.72rem;margin-top:2px;">{{ r.ts }} · {{ r.duration_ms }}ms · HTTP {{ r.statusCode || '—' }}</div>
+      <div v-if="r.error" style="color:#fca5a5;font-size:0.72rem;margin-top:2px;">{{ r.error }}</div>
+    </div>
+  </div>
+  <div v-else style="color:#94a3b8;text-align:center;padding:16px;">No runs yet — trigger a kit smoke or schedule job.</div>
 </div>
-<div v-else class="sb-footer">No runs yet — trigger a kit smoke or schedule job.</div>
 """
 
     def tmpl(tid, name, gid, order, fmt, h=5):
