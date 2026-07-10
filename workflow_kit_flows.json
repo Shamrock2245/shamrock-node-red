@@ -1,6 +1,6 @@
 [
   {
-    "id": "sf_safe_cron",
+    "id": "subflow-safe-cron",
     "type": "subflow",
     "name": "\ud83d\udee1 Safe Cron Gate",
     "info": "Blocks when SYSTEM_SHUTDOWN is set, during quiet hours (ET), or duplicate window.\n\nInput: any msg\nEnv: QUIET_START (21:00), QUIET_END (08:00), DEDUPE_KEY, DEDUPE_SEC\nOut 1: allowed\nOut 2: blocked",
@@ -71,7 +71,7 @@
   {
     "id": "sf_safe_fn",
     "type": "function",
-    "z": "sf_safe_cron",
+    "z": "subflow-safe-cron",
     "name": "Gate",
     "func": "if (global.get('SYSTEM_SHUTDOWN')) {\n    node.status({fill:'red',shape:'ring',text:'SHUTDOWN'});\n    msg._gate = 'shutdown';\n    return [null, msg];\n}\nconst respectQuiet = String(env.get('RESPECT_QUIET')||'false').toLowerCase()==='true';\nif (respectQuiet) {\n  const now = new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));\n  const hm = now.getHours()*60 + now.getMinutes();\n  const parse = s => { const [h,m]=(s||'0:0').split(':').map(Number); return h*60+(m||0); };\n  const qs = parse(env.get('QUIET_START')||'21:00');\n  const qe = parse(env.get('QUIET_END')||'08:00');\n  let quiet = false;\n  if (qs > qe) quiet = hm >= qs || hm < qe; else quiet = hm >= qs && hm < qe;\n  if (quiet) {\n    node.status({fill:'yellow',shape:'ring',text:'quiet hours'});\n    msg._gate = 'quiet';\n    return [null, msg];\n  }\n}\nconst key = env.get('DEDUPE_KEY') || msg.topic || '';\nconst sec = parseInt(env.get('DEDUPE_SEC')||'0',10) || 0;\nif (key && sec > 0) {\n  const last = global.get('dedupe_'+key) || 0;\n  const now = Date.now();\n  if (now - last < sec*1000) {\n    node.status({fill:'grey',shape:'ring',text:'deduped'});\n    msg._gate = 'dedupe';\n    return [null, msg];\n  }\n  global.set('dedupe_'+key, now);\n}\nnode.status({fill:'green',shape:'dot',text:'ok'});\nreturn [msg, null];\n",
     "outputs": 2,
@@ -84,7 +84,7 @@
     ]
   },
   {
-    "id": "sf_leads_api",
+    "id": "subflow-leads-api",
     "type": "subflow",
     "name": "\ud83c\udf10 Leads API Call",
     "info": "Calls ShamrockLeads automation/API with GAS_API_KEY.\n\nInput:\n  msg.leadsPath e.g. /api/automation/health\n  msg.method GET|POST (default GET)\n  msg.payload body for POST\n\nOut 1: success (status < 400)\nOut 2: error",
@@ -140,7 +140,7 @@
   {
     "id": "sf_leads_prep",
     "type": "function",
-    "z": "sf_leads_api",
+    "z": "subflow-leads-api",
     "name": "Prep request",
     "func": "const base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || env.get('DASHBOARD_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\nconst path = msg.leadsPath || env.get('DEFAULT_PATH') || '/api/automation/health';\nconst method = (msg.method || (msg.payload && Object.keys(msg.payload||{}).length ? 'POST' : 'GET')).toUpperCase();\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nmsg._wk = msg._wk || {};\nmsg._wk.started = Date.now();\nmsg._wk.action = path;\nmsg.url = base + (path.startsWith('/') ? path : '/' + path);\nmsg.method = method;\nmsg.headers = Object.assign({}, msg.headers || {}, {\n  'Content-Type': 'application/json',\n  'X-API-Key': apiKey,\n  'X-Api-Key': apiKey\n});\nif (method === 'GET') msg.payload = msg.payload || {};\nnode.status({fill:'blue',shape:'dot',text: method + ' ' + path});\nreturn msg;\n",
     "outputs": 1,
@@ -156,7 +156,7 @@
   {
     "id": "sf_leads_http",
     "type": "http request",
-    "z": "sf_leads_api",
+    "z": "subflow-leads-api",
     "name": "HTTP",
     "method": "use",
     "ret": "obj",
@@ -179,7 +179,7 @@
   {
     "id": "sf_leads_check",
     "type": "function",
-    "z": "sf_leads_api",
+    "z": "subflow-leads-api",
     "name": "Validate",
     "func": "const code = msg.statusCode || 0;\nconst ok = code > 0 && code < 400 && (msg.payload === undefined || msg.payload === null || msg.payload.ok !== false);\nconst dur = msg._wk ? (Date.now() - (msg._wk.started||Date.now())) : 0;\nmsg._wk = msg._wk || {};\nmsg._wk.ok = ok;\nmsg._wk.duration_ms = dur;\nmsg._wk.statusCode = code;\n// emit to run log bus via global\ntry {\n  const log = global.get('automation_run_log') || [];\n  log.unshift({\n    id: (msg._msgid||'').slice(-8),\n    action: msg._wk.action || 'leads',\n    ok: ok,\n    duration_ms: dur,\n    statusCode: code,\n    ts: new Date().toISOString(),\n    error: ok ? null : String((msg.payload && (msg.payload.error||msg.payload.detail)) || code).slice(0,160)\n  });\n  if (log.length > 100) log.length = 100;\n  global.set('automation_run_log', log);\n} catch(e) {}\nif (ok) {\n  node.status({fill:'green',shape:'dot',text: code + ' ' + dur + 'ms'});\n  return [msg, null];\n}\nnode.status({fill:'red',shape:'dot',text: 'fail ' + code});\nreturn [null, msg];\n",
     "outputs": 2,
@@ -192,7 +192,7 @@
     ]
   },
   {
-    "id": "sf_slack_notify",
+    "id": "subflow-slack-notify",
     "type": "subflow",
     "name": "\ud83d\udce2 Slack Notify",
     "info": "Posts to Slack chat.postMessage.\nmsg.payload = text or {text, channel, blocks}\nmsg.skipSlack = true to skip\nOut 1: posted\nOut 2: skipped/error",
@@ -243,7 +243,7 @@
   {
     "id": "sf_slack_prep",
     "type": "function",
-    "z": "sf_slack_notify",
+    "z": "subflow-slack-notify",
     "name": "Prep Slack",
     "func": "if (msg.skipSlack || msg._skipSlack) {\n  node.status({fill:'grey',shape:'ring',text:'skipped'});\n  return [null, msg];\n}\nconst token = global.get('SLACK_TOKEN') || global.get('SLACK_BOT_TOKEN') || env.get('SLACK_BOT_TOKEN') || '';\nif (!token) {\n  node.status({fill:'yellow',shape:'ring',text:'no token'});\n  msg._slack_error = 'no token';\n  return [null, msg];\n}\nlet text = '';\nlet channel = env.get('DEFAULT_CHANNEL') || '#leads';\nlet blocks = null;\nconst p = msg.payload;\nif (typeof p === 'string') text = p;\nelse if (p && typeof p === 'object') {\n  text = p.text || p.message || JSON.stringify(p).slice(0,500);\n  channel = p.channel || msg.channel || channel;\n  blocks = p.blocks || null;\n}\nmsg.url = 'https://slack.com/api/chat.postMessage';\nmsg.method = 'POST';\nmsg.headers = {\n  Authorization: 'Bearer ' + token,\n  'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = { channel, text };\nif (blocks) msg.payload.blocks = blocks;\nmsg._slack_ok = true;\nreturn [msg, null];\n",
     "outputs": 2,
@@ -260,7 +260,7 @@
   {
     "id": "sf_slack_http",
     "type": "http request",
-    "z": "sf_slack_notify",
+    "z": "subflow-slack-notify",
     "name": "Slack API",
     "method": "POST",
     "ret": "obj",
@@ -283,7 +283,7 @@
   {
     "id": "sf_slack_route",
     "type": "function",
-    "z": "sf_slack_notify",
+    "z": "subflow-slack-notify",
     "name": "Route result",
     "func": "const ok = msg.payload && msg.payload.ok === true;\nif (ok) {\n  node.status({fill:'green',shape:'dot',text:'sent'});\n  return [msg, null];\n}\nnode.status({fill:'red',shape:'dot',text:(msg.payload&&msg.payload.error)||'fail'});\nreturn [null, msg];\n",
     "outputs": 2,
@@ -296,7 +296,7 @@
     ]
   },
   {
-    "id": "sf_hmac_guard",
+    "id": "subflow-hmac-guard",
     "type": "subflow",
     "name": "\ud83d\udd12 HMAC Webhook Guard",
     "info": "Validates X-Shamrock-Signature HMAC-SHA256.\nOut 1: ok\nOut 2: reject (sets statusCode 403)",
@@ -341,9 +341,9 @@
   {
     "id": "sf_hmac_fn",
     "type": "function",
-    "z": "sf_hmac_guard",
+    "z": "subflow-hmac-guard",
     "name": "Verify",
-    "func": "const crypto = require('crypto');\nconst secret = (global.get('env') && global.get('env').WEBHOOK_HMAC_SECRET) || env.get('WEBHOOK_HMAC_SECRET') || '';\nif (!secret) {\n  node.warn('WEBHOOK_HMAC_SECRET not set \u2014 allowing');\n  return [msg, null];\n}\nconst signature = (msg.req && msg.req.headers && (msg.req.headers['x-shamrock-signature'] || msg.req.headers['x-webhook-secret'])) || '';\nconst body = typeof msg.payload === 'string' ? msg.payload : JSON.stringify(msg.payload||{});\nconst expected = crypto.createHmac('sha256', secret).update(body).digest('hex');\nif (signature === expected || signature === secret) {\n  node.status({fill:'green',shape:'dot',text:'auth ok'});\n  return [msg, null];\n}\nmsg.statusCode = 403;\nmsg.payload = { error: 'Invalid signature' };\nnode.status({fill:'red',shape:'dot',text:'reject'});\nreturn [null, msg];\n",
+    "func": "let crypto; try { crypto = require('crypto'); } catch(e) { crypto = null; }\nconst secret = (global.get('env') && global.get('env').WEBHOOK_HMAC_SECRET) || env.get('WEBHOOK_HMAC_SECRET') || '';\nif (!secret) {\n  node.warn('WEBHOOK_HMAC_SECRET not set \u2014 allowing');\n  return [msg, null];\n}\nconst signature = (msg.req && msg.req.headers && (msg.req.headers['x-shamrock-signature'] || msg.req.headers['x-webhook-secret'])) || '';\nconst body = typeof msg.payload === 'string' ? msg.payload : JSON.stringify(msg.payload||{});\nif (!crypto) { node.warn('crypto unavailable \u2014 allowing'); return [msg,null]; }\nconst expected = crypto.createHmac('sha256', secret).update(body).digest('hex');\nif (signature === expected || signature === secret) {\n  node.status({fill:'green',shape:'dot',text:'auth ok'});\n  return [msg, null];\n}\nmsg.statusCode = 403;\nmsg.payload = { error: 'Invalid signature' };\nnode.status({fill:'red',shape:'dot',text:'reject'});\nreturn [null, msg];\n",
     "outputs": 2,
     "noerr": 0,
     "x": 250,
@@ -354,7 +354,7 @@
     ]
   },
   {
-    "id": "sf_pii_redact",
+    "id": "subflow-pii-redact",
     "type": "subflow",
     "name": "\ud83e\uddf9 PII Redact Log",
     "info": "Redacts phones/emails/SSN-like strings in msg.payload for safe logging.\nSets msg.logSafe. Passes original on out 1.",
@@ -389,9 +389,9 @@
   {
     "id": "sf_pii_fn",
     "type": "function",
-    "z": "sf_pii_redact",
+    "z": "subflow-pii-redact",
     "name": "Redact",
-    "func": "const crypto = require('crypto');\nfunction redact(s) {\n  if (s == null) return s;\n  if (typeof s !== 'string') s = JSON.stringify(s);\n  s = s.replace(/\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b/gi, m => '[email:'+crypto.createHash('sha256').update(m.toLowerCase()).digest('hex').slice(0,8)+']');\n  s = s.replace(/\\b(?:\\+?1[-. ]?)?(?:\\(?\\d{3}\\)?[-. ]?)\\d{3}[-. ]?\\d{4}\\b/g, m => '[phone:'+crypto.createHash('sha256').update(m).digest('hex').slice(0,8)+']');\n  s = s.replace(/\\b\\d{3}-\\d{2}-\\d{4}\\b/g, '[ssn-redacted]');\n  return s;\n}\nmsg.logSafe = redact(msg.payload);\nif (msg.error) msg.errorSafe = redact(msg.error);\nnode.status({fill:'green',shape:'dot',text:'redacted'});\nreturn msg;\n",
+    "func": "function redact(s) {\n  if (s == null) return s;\n  if (typeof s !== 'string') s = JSON.stringify(s);\n  s = s.replace(/\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b/gi, '[email-redacted]');\n  s = s.replace(/\\b(?:\\+?1[-. ]?)?(?:\\(?\\d{3}\\)?[-. ]?)\\d{3}[-. ]?\\d{4}\\b/g, '[phone-redacted]');\n  s = s.replace(/\\b\\d{3}-\\d{2}-\\d{4}\\b/g, '[ssn-redacted]');\n  return s;\n}\nmsg.logSafe = redact(msg.payload);\nif (msg.error) msg.errorSafe = redact(msg.error);\nnode.status({fill:'green',shape:'dot',text:'redacted'});\nreturn msg;\n",
     "outputs": 1,
     "noerr": 0,
     "x": 220,
@@ -401,7 +401,7 @@
     ]
   },
   {
-    "id": "sf_gas_action",
+    "id": "subflow-gas-action",
     "type": "subflow",
     "name": "\ud83d\udcdc GAS Action Call",
     "info": "POST to GAS web app.\nmsg.payload.action required (or msg.gasAction)\nOut 1 success / Out 2 error",
@@ -446,7 +446,7 @@
   {
     "id": "sf_gas_prep",
     "type": "function",
-    "z": "sf_gas_action",
+    "z": "subflow-gas-action",
     "name": "Prep GAS",
     "func": "if (global.get('SYSTEM_SHUTDOWN')) {\n  node.status({fill:'red',shape:'ring',text:'SHUTDOWN'});\n  return null;\n}\nconst gasUrl = (global.get('GAS_URL') || global.get('GAS_URL_OPS') || env.get('GAS_WEBHOOK_URL') || '').split('?')[0];\nif (!gasUrl) {\n  node.error('GAS_URL not configured');\n  node.status({fill:'red',shape:'dot',text:'no GAS_URL'});\n  msg.payload = { error: 'GAS_URL missing' };\n  return msg; // will fail check\n}\nconst action = msg.gasAction || (msg.payload && msg.payload.action) || 'unknown';\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nmsg._wk = { started: Date.now(), action: 'gas:'+action };\nmsg.url = gasUrl + (gasUrl.includes('?') ? '&' : '?') + 'action=' + encodeURIComponent(action);\nmsg.method = 'POST';\nmsg.headers = { 'Content-Type': 'application/json', 'X-API-Key': apiKey, 'X-Api-Key': apiKey };\nif (!msg.payload || typeof msg.payload !== 'object') msg.payload = {};\nmsg.payload.action = action;\nmsg.payload.source = msg.payload.source || 'node-red-workflow-kit';\nmsg.payload.requestedAt = new Date().toISOString();\nnode.status({fill:'blue',shape:'dot',text: action});\nreturn msg;\n",
     "outputs": 1,
@@ -462,7 +462,7 @@
   {
     "id": "sf_gas_http",
     "type": "http request",
-    "z": "sf_gas_action",
+    "z": "subflow-gas-action",
     "name": "GAS HTTP",
     "method": "use",
     "ret": "obj",
@@ -485,7 +485,7 @@
   {
     "id": "sf_gas_check",
     "type": "function",
-    "z": "sf_gas_action",
+    "z": "subflow-gas-action",
     "name": "Validate GAS",
     "func": "const code = msg.statusCode || 0;\nconst ok = code > 0 && code < 400;\nconst dur = msg._wk ? Date.now() - msg._wk.started : 0;\ntry {\n  const log = global.get('automation_run_log') || [];\n  log.unshift({ id:(msg._msgid||'').slice(-8), action: (msg._wk&&msg._wk.action)||'gas', ok, duration_ms: dur, statusCode: code, ts: new Date().toISOString() });\n  if (log.length > 100) log.length = 100;\n  global.set('automation_run_log', log);\n} catch(e) {}\nif (ok) { node.status({fill:'green',shape:'dot',text:'ok '+dur+'ms'}); return [msg,null]; }\nnode.status({fill:'red',shape:'dot',text:'fail '+code});\nreturn [null,msg];\n",
     "outputs": 2,
@@ -530,7 +530,7 @@
   },
   {
     "id": "bus_leads_inst",
-    "type": "sf_leads_api",
+    "type": "subflow-leads-api",
     "z": "tab_workflow_kit",
     "name": "Leads API",
     "x": 360,
@@ -560,7 +560,7 @@
   },
   {
     "id": "bus_slack_inst",
-    "type": "sf_slack_notify",
+    "type": "subflow-slack-notify",
     "z": "tab_workflow_kit",
     "name": "Slack",
     "x": 340,
@@ -685,7 +685,7 @@
   },
   {
     "id": "wk_smoke_gate",
-    "type": "sf_safe_cron",
+    "type": "subflow-safe-cron",
     "z": "tab_workflow_kit",
     "name": "Gate",
     "x": 360,
@@ -699,7 +699,7 @@
   },
   {
     "id": "wk_smoke_leads",
-    "type": "sf_leads_api",
+    "type": "subflow-leads-api",
     "z": "tab_workflow_kit",
     "name": "Health",
     "x": 540,

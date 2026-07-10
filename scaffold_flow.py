@@ -74,7 +74,7 @@ def sweep_tab(name: str, path: str, cron: str) -> list:
         },
         {
             "id": f"{sid}_gate",
-            "type": "sf_safe_cron",
+            "type": "subflow-safe-cron",
             "z": tab,
             "name": "Safe Gate",
             "x": 360,
@@ -83,7 +83,7 @@ def sweep_tab(name: str, path: str, cron: str) -> list:
         },
         {
             "id": f"{sid}_leads",
-            "type": "sf_leads_api",
+            "type": "subflow-leads-api",
             "z": tab,
             "name": "Leads Call",
             "x": 560,
@@ -115,7 +115,7 @@ def sweep_tab(name: str, path: str, cron: str) -> list:
         },
         {
             "id": f"{sid}_slack",
-            "type": "sf_slack_notify",
+            "type": "subflow-slack-notify",
             "z": tab,
             "name": "Slack",
             "x": 960,
@@ -151,7 +151,7 @@ def webhook_tab(name: str, url: str) -> list:
         },
         {
             "id": f"{sid}_hmac",
-            "type": "sf_hmac_guard",
+            "type": "subflow-hmac-guard",
             "z": tab,
             "name": "HMAC",
             "x": 360,
@@ -223,7 +223,7 @@ def dual_tab(name: str, gas_action: str, path: str) -> list:
         },
         {
             "id": f"{sid}_gate",
-            "type": "sf_safe_cron",
+            "type": "subflow-safe-cron",
             "z": tab,
             "name": "Gate",
             "x": 320,
@@ -232,7 +232,7 @@ def dual_tab(name: str, gas_action: str, path: str) -> list:
         },
         {
             "id": f"{sid}_gas",
-            "type": "sf_gas_action",
+            "type": "subflow-gas-action",
             "z": tab,
             "name": "GAS",
             "x": 500,
@@ -252,7 +252,7 @@ def dual_tab(name: str, gas_action: str, path: str) -> list:
         },
         {
             "id": f"{sid}_leads",
-            "type": "sf_leads_api",
+            "type": "subflow-leads-api",
             "z": tab,
             "name": "Leads",
             "x": 900,
@@ -283,7 +283,7 @@ def dual_tab(name: str, gas_action: str, path: str) -> list:
         },
         {
             "id": f"{sid}_slack",
-            "type": "sf_slack_notify",
+            "type": "subflow-slack-notify",
             "z": tab,
             "name": "Slack",
             "x": 1100,

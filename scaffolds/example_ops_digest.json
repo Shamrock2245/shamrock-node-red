@@ -76,7 +76,7 @@
   },
   {
     "id": "example_ops_digest_gate",
-    "type": "sf_safe_cron",
+    "type": "subflow-safe-cron",
     "z": "tab_scaf_example_ops_digest",
     "name": "Safe Gate",
     "x": 360,
@@ -90,7 +90,7 @@
   },
   {
     "id": "example_ops_digest_leads",
-    "type": "sf_leads_api",
+    "type": "subflow-leads-api",
     "z": "tab_scaf_example_ops_digest",
     "name": "Leads Call",
     "x": 560,
@@ -133,7 +133,7 @@
   },
   {
     "id": "example_ops_digest_slack",
-    "type": "sf_slack_notify",
+    "type": "subflow-slack-notify",
     "z": "tab_scaf_example_ops_digest",
     "name": "Slack",
     "x": 960,
