@@ -1019,13 +1019,17 @@ def build_workflows_page_nodes() -> list:
 """
     env_html = """
 <div style="font-family:system-ui,sans-serif;color:#f1f5f9;padding:2px;">
-  <div v-if="msg && msg.payload && msg.payload.checks">
-    <div v-for="(ok, key) in msg.payload.checks" :key="key"
-         style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;margin-bottom:6px;background:#0f172a;border-radius:8px;border:1px solid rgba(16,185,129,0.15);">
-      <span style="color:#94a3b8;font-size:0.8rem;">{{ key }}</span>
-      <strong :style="{color: ok ? '#10b981' : '#ef4444'}">{{ ok ? 'OK' : 'NO' }}</strong>
+  <div v-if="msg && msg.payload && msg.payload.items && msg.payload.items.length">
+    <div v-for="(it, i) in msg.payload.items" :key="i"
+         style="padding:10px 12px;margin-bottom:8px;background:#0f172a;border-radius:8px;border:1px solid rgba(16,185,129,0.15);">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <span style="color:#e2e8f0;font-size:0.85rem;font-weight:600;">{{ it.label }}</span>
+        <strong :style="{color: it.ok ? '#10b981' : (it.warn ? '#f59e0b' : '#ef4444'), flexShrink:0}">{{ it.status }}</strong>
+      </div>
+      <div v-if="it.detail" style="color:#64748b;font-size:0.72rem;margin-top:4px;line-height:1.35;word-break:break-word;">{{ it.detail }}</div>
     </div>
   </div>
+  <div v-else style="color:#94a3b8;padding:12px;text-align:center;">Loading env status…</div>
   <div style="color:#64748b;font-size:0.75rem;margin-top:8px;">{{ (msg && msg.payload && msg.payload.ts) || '—' }}</div>
 </div>
 """
@@ -1182,20 +1186,38 @@ def build_workflows_page_nodes() -> list:
             "const kit = global.get('workflow_kit_status') || {};\n"
             "const log = global.get('automation_run_log') || kit.run_log || [];\n"
             "const jobs = sched.jobs || [];\n"
-            "const checks = kit.checks || {\n"
-            "  GAS_API_KEY: !!(global.get('GAS_API_KEY') || env.get('GAS_API_KEY')),\n"
-            "  LEADS_URL: !!(global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL')),\n"
-            "  SLACK_TOKEN: !!(global.get('SLACK_TOKEN') || global.get('SLACK_BOT_TOKEN')),\n"
-            "  GAS_URL: !!(global.get('GAS_URL') || env.get('GAS_WEBHOOK_URL')),\n"
-            "  MONGODB_URI: !!env.get('MONGODB_URI'),\n"
-            "  SYSTEM_SHUTDOWN: !!global.get('SYSTEM_SHUTDOWN')\n"
-            "};\n"
+            "const g = (k) => global.get(k) || env.get(k) || (global.get('env')||{})[k] || '';\n"
+            "// Prefer explicit globals, then process env, then the live Super CRM default\n"
+            "const leadsUrl = (\n"
+            "  global.get('LEADS_URL') || env.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') ||\n"
+            "  env.get('DASHBOARD_PUBLIC_URL') || env.get('SHAMROCK_DASHBOARD_URL') ||\n"
+            "  (global.get('env')||{}).LEADS_PUBLIC_URL || (global.get('env')||{}).DASHBOARD_PUBLIC_URL ||\n"
+            "  'https://leads.shamrockbailbonds.biz'\n"
+            ").replace(/\\/$/, '');\n"
+            "if (!global.get('LEADS_URL')) global.set('LEADS_URL', leadsUrl);\n"
+            "const gasKey = !!(global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || global.get('gas_api_key'));\n"
+            "const slackOk = !!(global.get('SLACK_TOKEN') || global.get('SLACK_BOT_TOKEN') || env.get('SLACK_BOT_TOKEN'));\n"
+            "const gasUrl = !!(global.get('GAS_URL') || env.get('GAS_WEBHOOK_URL') || env.get('GAS_WEB_APP_URL'));\n"
+            "const mongoUri = g('MONGODB_URI');\n"
+            "const shutdown = !!global.get('SYSTEM_SHUTDOWN');\n"
+            "// Human-readable checklist (not raw env var names)\n"
+            "const items = [\n"
+            "  { label: 'Automation API key', status: gasKey ? 'OK' : 'MISSING', ok: gasKey, detail: 'GAS_API_KEY for /api/automation/*' },\n"
+            "  { label: 'Leads Super CRM', status: 'OK', ok: true, detail: leadsUrl },\n"
+            "  { label: 'Slack bot', status: slackOk ? 'OK' : 'MISSING', ok: slackOk, detail: 'SLACK_BOT_TOKEN' },\n"
+            "  { label: 'GAS webhook', status: gasUrl ? 'OK' : 'MISSING', ok: gasUrl, detail: 'Google Apps Script bridge' },\n"
+            "  { label: 'MongoDB (optional)', status: mongoUri ? 'OK' : 'N/A', ok: true, warn: !mongoUri,\n"
+            "    detail: mongoUri ? 'Configured for Node-RED Mongo nodes' : 'Not required here — Super CRM (leads) owns Atlas' },\n"
+            "  { label: 'Emergency stop', status: shutdown ? 'ACTIVE' : 'OFF', ok: !shutdown, warn: false,\n"
+            "    detail: shutdown ? 'SYSTEM_SHUTDOWN is on — crons blocked' : 'Normal — automations allowed' }\n"
+            "];\n"
             "const ok = log.filter(e => e.ok).length;\n"
             "const envPayload = {\n"
-            "  checks,\n"
-            "  ready: !!(checks.GAS_API_KEY && checks.LEADS_URL && !checks.SYSTEM_SHUTDOWN),\n"
+            "  items,\n"
+            "  ready: gasKey && !shutdown,\n"
             "  ts: new Date().toLocaleString('en-US',{timeZone:'America/New_York'}) + ' ET'\n"
             "};\n"
+            "global.set('workflow_kit_status', Object.assign({}, kit, envPayload));\n"
             "const cat = { jobs };\n"
             "const runs = {\n"
             "  run_log: log.slice(0, 25),\n"
