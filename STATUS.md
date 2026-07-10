@@ -64,3 +64,5 @@ Local docs: `docs/OVERVIEW.md`, `docs/SYSTEM.md`, `docs/INTEGRATIONS.md`, `docs/
 
 **Five-repo ecosystem** (was four): `shamrock-leads`, `shamrock-bail-portal-site`, `shamrock-bail-school`, `shamrock-node-red`, **`shamrock-telegram-app`**.  
 See `shamrock-telegram-app/STATUS.md` for Telegram mini-app data flows.
+
+| OSINT Intelligence + Ops Digest Node-RED tabs (`osint_ops_flows.json`) | ✅ |
