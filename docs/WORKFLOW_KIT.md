@@ -74,3 +74,7 @@ No phones/emails — only paths and status.
 | Leads cron sweep | `--type sweep --path /api/...` |
 | HMAC webhook | `--type webhook --url /webhook/foo` |
 | GAS then Leads | `--type dual --gas-action X --path /api/...` |
+
+## Note on first deploy
+
+Kit ships **subflow definitions** for the palette. After Deploy, drag them from **Shamrock** onto a tab (definitions-first). Bus uses inline HTTP so startup never blocks on instance registration.

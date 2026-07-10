@@ -524,23 +524,7 @@
     "y": 120,
     "wires": [
       [
-        "bus_leads_inst"
-      ]
-    ]
-  },
-  {
-    "id": "bus_leads_inst",
-    "type": "subflow-leads-api",
-    "z": "tab_workflow_kit",
-    "name": "Leads API",
-    "x": 360,
-    "y": 120,
-    "wires": [
-      [
-        "bus_result_ok"
-      ],
-      [
-        "bus_result_fail"
+        "bus_leads_fn"
       ]
     ]
   },
@@ -554,20 +538,8 @@
     "y": 200,
     "wires": [
       [
-        "bus_slack_inst"
+        "bus_slack_fn"
       ]
-    ]
-  },
-  {
-    "id": "bus_slack_inst",
-    "type": "subflow-slack-notify",
-    "z": "tab_workflow_kit",
-    "name": "Slack",
-    "x": 340,
-    "y": 200,
-    "wires": [
-      [],
-      []
     ]
   },
   {
@@ -679,37 +651,7 @@
     "y": 400,
     "wires": [
       [
-        "wk_smoke_gate"
-      ]
-    ]
-  },
-  {
-    "id": "wk_smoke_gate",
-    "type": "subflow-safe-cron",
-    "z": "tab_workflow_kit",
-    "name": "Gate",
-    "x": 360,
-    "y": 400,
-    "wires": [
-      [
-        "wk_smoke_leads"
-      ],
-      []
-    ]
-  },
-  {
-    "id": "wk_smoke_leads",
-    "type": "subflow-leads-api",
-    "z": "tab_workflow_kit",
-    "name": "Health",
-    "x": 540,
-    "y": 400,
-    "wires": [
-      [
-        "wk_debug"
-      ],
-      [
-        "wk_debug"
+        "wk_smoke_fn"
       ]
     ]
   },
@@ -762,5 +704,117 @@
     "links": [],
     "x": 560,
     "y": 480
+  },
+  {
+    "id": "wk_smoke_fn",
+    "type": "function",
+    "z": "tab_workflow_kit",
+    "name": "Inline Leads Health (no subflow inst)",
+    "func": "const base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nmsg.url = base + '/api/automation/health';\nmsg.method = 'GET';\nmsg.headers = {'X-API-Key': apiKey, 'X-Api-Key': apiKey};\nmsg.payload = {};\nreturn msg;\n",
+    "outputs": 1,
+    "x": 420,
+    "y": 400,
+    "wires": [
+      [
+        "wk_smoke_http"
+      ]
+    ]
+  },
+  {
+    "id": "wk_smoke_http",
+    "type": "http request",
+    "z": "tab_workflow_kit",
+    "name": "Health HTTP",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 640,
+    "y": 400,
+    "wires": [
+      [
+        "wk_debug"
+      ]
+    ]
+  },
+  {
+    "id": "bus_leads_fn",
+    "type": "function",
+    "z": "tab_workflow_kit",
+    "name": "Bus Leads Prep",
+    "func": "const base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\nconst path = msg.leadsPath || '/api/automation/health';\nconst method = (msg.method || 'GET').toUpperCase();\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nmsg._wk = { started: Date.now(), action: path };\nmsg.url = base + (path.startsWith('/')?path:'/'+path);\nmsg.method = method;\nmsg.headers = {'Content-Type':'application/json','X-API-Key':apiKey,'X-Api-Key':apiKey};\nreturn msg;\n",
+    "outputs": 1,
+    "x": 340,
+    "y": 120,
+    "wires": [
+      [
+        "bus_leads_http"
+      ]
+    ]
+  },
+  {
+    "id": "bus_leads_http",
+    "type": "http request",
+    "z": "tab_workflow_kit",
+    "name": "Bus Leads HTTP",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 560,
+    "y": 120,
+    "wires": [
+      [
+        "bus_result_ok"
+      ]
+    ]
+  },
+  {
+    "id": "bus_slack_fn",
+    "type": "function",
+    "z": "tab_workflow_kit",
+    "name": "Bus Slack Prep",
+    "func": "if (msg.skipSlack) return null;\nconst token = global.get('SLACK_TOKEN') || global.get('SLACK_BOT_TOKEN') || env.get('SLACK_BOT_TOKEN') || '';\nif (!token) { node.status({fill:'yellow',shape:'ring',text:'no token'}); return null; }\nlet text = typeof msg.payload==='string' ? msg.payload : (msg.payload&&msg.payload.text) || JSON.stringify(msg.payload||{}).slice(0,400);\nconst channel = (msg.payload&&msg.payload.channel) || msg.channel || '#leads';\nmsg.url='https://slack.com/api/chat.postMessage';\nmsg.method='POST';\nmsg.headers={Authorization:'Bearer '+token,'Content-Type':'application/json; charset=utf-8'};\nmsg.payload={channel,text};\nreturn msg;\n",
+    "outputs": 1,
+    "x": 340,
+    "y": 200,
+    "wires": [
+      [
+        "bus_slack_http"
+      ]
+    ]
+  },
+  {
+    "id": "bus_slack_http",
+    "type": "http request",
+    "z": "tab_workflow_kit",
+    "name": "Bus Slack HTTP",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 560,
+    "y": 200,
+    "wires": [
+      []
+    ]
   }
 ]
