@@ -70,6 +70,21 @@ OWNED_IDS = {
     "cc_action_prep",
     "cc_action_http",
     "cc_action_status",
+    "page_workflows",
+    "grp_wf_catalog",
+    "grp_wf_runs",
+    "grp_wf_env",
+    "grp_wf_help",
+    "ui_wf_catalog",
+    "ui_wf_runs",
+    "ui_wf_env",
+    "ui_wf_help",
+    "wf_inject",
+    "wf_inject_manual",
+    "wf_prep",
+    "wf_http_sched",
+    "wf_merge",
+    "wf_btn_refresh",
 }
 
 
@@ -288,6 +303,7 @@ HERO_TEMPLATE = """
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:8px">
     <span class="sb-pill" :class="(msg?.payload?.ready===false)?'warn':''">{{ msg?.payload?.ready===false ? 'DEGRADED' : 'OPERATIONAL' }}</span>
+    <span class="sb-pill" :class="(msg?.payload?.failed_runs>0)?'bad':''" v-if="msg?.payload?.failed_runs">{{ msg.payload.failed_runs }} failed runs</span>
     <span class="sb-pill">{{ msg?.payload?.ts || 'Live' }}</span>
   </div>
 </div>
@@ -722,7 +738,11 @@ def build_command_center_nodes(logo_uri: str) -> list:
             "const autoPanel = { jobs: jobs.map(j => ({\n"
             "  id: j.id, cron: j.cron, tz: j.tz, path: j.path, method: j.method, desc: j.desc\n"
             "})) };\n"
-            "node.status({fill:'green',shape:'dot',text:'updated ' + ts});\n"
+            "const runLog = global.get('automation_run_log') || [];\n"
+            "const fails = runLog.filter(e => !e.ok).length;\n"
+            "eco.failed_runs = fails;\n"
+            "hero.failed_runs = fails;\n"
+            "node.status({fill:'green',shape:'dot',text:'updated ' + ts + (fails?(' · fails '+fails):'')});\n"
             "return [\n"
             "  { payload: hero },\n"
             "  { payload: eco },\n"
@@ -869,16 +889,25 @@ def restyle_existing_templates(flows: list) -> int:
     """Light touch: wrap older templates aren't rewritten wholesale; ensure theme colors."""
     # Update all ui-page theme + rename for clarity
     page_meta = {
-        "Operations Radar": ("Booking Radar", "mdi-radar", 1),
-        "The Concierge (Ops)": ("Concierge & Inbox", "mdi-message-text", 2),
-        "Ops Center": ("Ops Tools", "mdi-toolbox", 3),
-        "Operations": ("Reporting Ops", "mdi-file-chart", 4),
-        "The Analyst (Risk Ops)": ("Risk & Underwriting", "mdi-shield-account", 5),
-        "Revenue & Closing Ops": ("Revenue & Closing", "mdi-cash-multiple", 6),
-        "Agency Management": ("Agency Mgmt", "mdi-briefcase-account", 7),
-        "DevOps & Infrastructure": ("Infrastructure", "mdi-server", 8),
-        "Error Dashboard": ("Errors", "mdi-alert-circle", 9),
-        "Scraper Control": ("Scraper Control", "mdi-spider-web", 10),
+        "Operations Radar": ("Booking Radar", "mdi-radar", 2),
+        "Booking Radar": ("Booking Radar", "mdi-radar", 2),
+        "The Concierge (Ops)": ("Concierge & Inbox", "mdi-message-text", 3),
+        "Concierge & Inbox": ("Concierge & Inbox", "mdi-message-text", 3),
+        "Ops Center": ("Ops Tools", "mdi-toolbox", 4),
+        "Ops Tools": ("Ops Tools", "mdi-toolbox", 4),
+        "Operations": ("Reporting Ops", "mdi-file-chart", 5),
+        "Reporting Ops": ("Reporting Ops", "mdi-file-chart", 5),
+        "The Analyst (Risk Ops)": ("Risk & Underwriting", "mdi-shield-account", 6),
+        "Risk & Underwriting": ("Risk & Underwriting", "mdi-shield-account", 6),
+        "Revenue & Closing Ops": ("Revenue & Closing", "mdi-cash-multiple", 7),
+        "Revenue & Closing": ("Revenue & Closing", "mdi-cash-multiple", 7),
+        "Agency Management": ("Agency Mgmt", "mdi-briefcase-account", 8),
+        "Agency Mgmt": ("Agency Mgmt", "mdi-briefcase-account", 8),
+        "DevOps & Infrastructure": ("Infrastructure", "mdi-server", 9),
+        "Infrastructure": ("Infrastructure", "mdi-server", 9),
+        "Error Dashboard": ("Errors", "mdi-alert-circle", 10),
+        "Errors": ("Errors", "mdi-alert-circle", 10),
+        "Scraper Control": ("Scraper Control", "mdi-spider-web", 11),
     }
     n = 0
     for node in flows:
@@ -938,6 +967,243 @@ def merge(flows: list, new_nodes: list) -> list:
     return kept2 + new_nodes
 
 
+def build_workflows_page_nodes() -> list:
+    """Automation Builder dashboard page — schedule catalog + run log + env."""
+    nodes = []
+    page = "page_workflows"
+    nodes.append({
+        "id": page,
+        "type": "ui-page",
+        "name": "Automation Builder",
+        "ui": UI_BASE_ID,
+        "path": "/workflows",
+        "icon": "mdi-sitemap",
+        "layout": "grid",
+        "theme": UI_THEME_ID,
+        "order": 1,
+        "className": "",
+        "visible": True,
+        "disabled": False,
+    })
+    # Command Center = 0; Automation Builder = 1; other pages start at 2 via restyle
+
+    def grp(gid, name, order, w=6):
+        return {
+            "id": gid,
+            "type": "ui-group",
+            "name": name,
+            "page": page,
+            "width": w,
+            "height": 1,
+            "order": order,
+            "showTitle": True,
+            "className": "",
+            "visible": True,
+            "disabled": False,
+            "groupType": "default",
+        }
+
+    nodes += [
+        grp("grp_wf_help", "How to build a flow", 1, 12),
+        grp("grp_wf_env", "Env checklist", 2, 4),
+        grp("grp_wf_catalog", "Schedule catalog", 3, 8),
+        grp("grp_wf_runs", "Recent runs (no PII)", 4, 12),
+    ]
+
+    help_html = """
+<div style="color:#f1f5f9;font-size:0.88rem;line-height:1.55;padding:4px">
+  <strong style="color:#10b981">Workflow Kit</strong> — palette category <em>Shamrock</em><br/>
+  1. <code>Safe Cron Gate</code> → 2. set <code>msg.leadsPath</code> → 3. <code>Leads API Call</code> → 4. <code>Slack Notify</code> on fail<br/>
+  Scaffold: <code>python3 scaffold_flow.py --type sweep --name "My Job" --path /api/automation/ops-digest</code><br/>
+  Docs: <code>docs/WORKFLOW_KIT.md</code> · Super CRM: <a class="sb-link" href="https://leads.shamrockbailbonds.biz" target="_blank">leads.shamrockbailbonds.biz</a>
+</div>
+"""
+    env_html = """
+<div class="sb-kpi-grid">
+  <div class="sb-kpi" v-for="(ok, key) in (msg?.payload?.checks||{})" :key="key">
+    <div class="label">{{ key }}</div>
+    <div class="value" :style="{color: ok?'#10b981':'#ef4444', fontSize:'1.1rem'}">{{ ok ? 'OK' : 'NO' }}</div>
+  </div>
+</div>
+<div class="sb-footer">{{ msg?.payload?.ts || '—' }} · ready={{ msg?.payload?.ready }}</div>
+"""
+    catalog_html = """
+<div v-if="msg?.payload?.jobs?.length">
+  <div class="sb-row" v-for="(j,i) in msg.payload.jobs" :key="i">
+    <div>
+      <div class="name">{{ j.id }}</div>
+      <div class="meta">{{ j.method }} {{ j.path }} · {{ j.cron }} {{ j.tz }}</div>
+      <div class="meta">{{ j.desc }}</div>
+    </div>
+    <span class="sb-pill">{{ j.slack || 'no slack' }}</span>
+  </div>
+</div>
+<div v-else class="sb-footer">Waiting for schedule…</div>
+"""
+    runs_html = """
+<div class="sb-kpi-grid" style="margin-bottom:10px">
+  <div class="sb-kpi"><div class="label">Logged</div><div class="value">{{ msg?.payload?.stats?.total ?? 0 }}</div></div>
+  <div class="sb-kpi"><div class="label">OK</div><div class="value" style="color:#10b981">{{ msg?.payload?.stats?.ok ?? 0 }}</div></div>
+  <div class="sb-kpi"><div class="label">Fail</div><div class="value" style="color:#ef4444">{{ msg?.payload?.stats?.fail ?? 0 }}</div></div>
+</div>
+<div v-if="msg?.payload?.run_log?.length">
+  <div class="sb-row" v-for="(r,i) in msg.payload.run_log" :key="i" :style="{borderColor: r.ok?'#10b981':'#ef4444'}">
+    <div>
+      <div class="name">{{ r.action }}</div>
+      <div class="meta">{{ r.ts }} · {{ r.duration_ms }}ms · HTTP {{ r.statusCode || '—' }}</div>
+      <div class="meta" v-if="r.error" style="color:#fca5a5">{{ r.error }}</div>
+    </div>
+    <span class="sb-pill" :class="r.ok?'':'bad'">{{ r.ok ? 'ok' : 'fail' }}</span>
+  </div>
+</div>
+<div v-else class="sb-footer">No runs yet — trigger a kit smoke or schedule job.</div>
+"""
+
+    def tmpl(tid, name, gid, order, fmt, h=5):
+        return {
+            "id": tid,
+            "type": "ui-template",
+            "z": TAB_ID,
+            "group": gid,
+            "name": name,
+            "order": order,
+            "width": 0,
+            "height": h,
+            "format": fmt,
+            "storeOutMessages": True,
+            "passthru": False,
+            "resendOnRefresh": True,
+            "templateScope": "local",
+            "className": "",
+            "x": 900,
+            "y": 100 + order * 50,
+            "wires": [[]],
+        }
+
+    nodes += [
+        tmpl("ui_wf_help", "Help", "grp_wf_help", 1, help_html, 3),
+        tmpl("ui_wf_env", "Env", "grp_wf_env", 1, env_html, 5),
+        tmpl("ui_wf_catalog", "Catalog", "grp_wf_catalog", 1, catalog_html, 8),
+        tmpl("ui_wf_runs", "Runs", "grp_wf_runs", 1, runs_html, 8),
+    ]
+
+    nodes.append({
+        "id": "wf_inject",
+        "type": "inject",
+        "z": TAB_ID,
+        "name": "⏰ WF refresh 60s",
+        "props": [{"p": "payload"}],
+        "repeat": "60",
+        "crontab": "",
+        "once": True,
+        "onceDelay": "6",
+        "topic": "wf",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 800,
+        "wires": [["wf_prep"]],
+    })
+    nodes.append({
+        "id": "wf_inject_manual",
+        "type": "inject",
+        "z": TAB_ID,
+        "name": "▶ Refresh workflows",
+        "props": [{"p": "payload"}],
+        "repeat": "",
+        "crontab": "",
+        "once": False,
+        "topic": "wf",
+        "payload": "",
+        "payloadType": "date",
+        "x": 150,
+        "y": 860,
+        "wires": [["wf_prep"]],
+    })
+    nodes.append({
+        "id": "wf_prep",
+        "type": "function",
+        "z": TAB_ID,
+        "name": "Prep schedule for builder",
+        "func": (
+            "const base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || "
+            "env.get('DASHBOARD_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\n"
+            "const apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\n"
+            "msg._wf = {};\n"
+            "msg.url = base + '/api/automation/schedule';\n"
+            "msg.method = 'GET';\n"
+            "msg.headers = { 'X-API-Key': apiKey, 'X-Api-Key': apiKey };\n"
+            "msg.payload = {};\n"
+            "return msg;"
+        ),
+        "outputs": 1,
+        "x": 380,
+        "y": 820,
+        "wires": [["wf_http_sched"]],
+    })
+    nodes.append({
+        "id": "wf_http_sched",
+        "type": "http request",
+        "z": TAB_ID,
+        "name": "GET schedule",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": False,
+        "proxy": "",
+        "authType": "",
+        "senderr": True,
+        "headers": [],
+        "x": 600,
+        "y": 820,
+        "wires": [["wf_merge"]],
+    })
+    nodes.append({
+        "id": "wf_merge",
+        "type": "function",
+        "z": TAB_ID,
+        "name": "Merge kit status + schedule",
+        "func": (
+            "const sched = msg.payload || {};\n"
+            "const kit = global.get('workflow_kit_status') || {};\n"
+            "const log = global.get('automation_run_log') || kit.run_log || [];\n"
+            "const jobs = sched.jobs || [];\n"
+            "const checks = kit.checks || {\n"
+            "  GAS_API_KEY: !!(global.get('GAS_API_KEY') || env.get('GAS_API_KEY')),\n"
+            "  LEADS_URL: !!(global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL')),\n"
+            "  SLACK_TOKEN: !!(global.get('SLACK_TOKEN') || global.get('SLACK_BOT_TOKEN')),\n"
+            "  GAS_URL: !!(global.get('GAS_URL') || env.get('GAS_WEBHOOK_URL')),\n"
+            "  MONGODB_URI: !!env.get('MONGODB_URI'),\n"
+            "  SYSTEM_SHUTDOWN: !!global.get('SYSTEM_SHUTDOWN')\n"
+            "};\n"
+            "const ok = log.filter(e => e.ok).length;\n"
+            "const envPayload = {\n"
+            "  checks,\n"
+            "  ready: !!(checks.GAS_API_KEY && checks.LEADS_URL && !checks.SYSTEM_SHUTDOWN),\n"
+            "  ts: new Date().toLocaleString('en-US',{timeZone:'America/New_York'}) + ' ET'\n"
+            "};\n"
+            "const cat = { jobs };\n"
+            "const runs = {\n"
+            "  run_log: log.slice(0, 25),\n"
+            "  stats: { total: log.length, ok: ok, fail: log.length - ok }\n"
+            "};\n"
+            "node.status({fill:'green',shape:'dot',text: jobs.length + ' jobs / ' + log.length + ' runs'});\n"
+            "return [\n"
+            "  { payload: envPayload },\n"
+            "  { payload: cat },\n"
+            "  { payload: runs }\n"
+            "];"
+        ),
+        "outputs": 3,
+        "x": 380,
+        "y": 900,
+        "wires": [["ui_wf_env"], ["ui_wf_catalog"], ["ui_wf_runs"]],
+    })
+    return nodes
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--deploy", action="store_true")
@@ -961,7 +1227,7 @@ def main():
     restyled = restyle_existing_templates(flows)
     print(f"Restyled pages/buttons: {restyled}")
 
-    new_nodes = build_command_center_nodes(logo_uri)
+    new_nodes = build_command_center_nodes(logo_uri) + build_workflows_page_nodes()
     merged = merge(flows, new_nodes)
 
     with FLOWS_PATH.open("w") as f:

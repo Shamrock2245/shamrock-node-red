@@ -1,0 +1,766 @@
+[
+  {
+    "id": "sf_safe_cron",
+    "type": "subflow",
+    "name": "\ud83d\udee1 Safe Cron Gate",
+    "info": "Blocks when SYSTEM_SHUTDOWN is set, during quiet hours (ET), or duplicate window.\n\nInput: any msg\nEnv: QUIET_START (21:00), QUIET_END (08:00), DEDUPE_KEY, DEDUPE_SEC\nOut 1: allowed\nOut 2: blocked",
+    "category": "Shamrock",
+    "in": [
+      {
+        "x": 50,
+        "y": 80,
+        "wires": [
+          {
+            "id": "sf_safe_fn"
+          }
+        ]
+      }
+    ],
+    "out": [
+      {
+        "x": 480,
+        "y": 40,
+        "wires": [
+          {
+            "id": "sf_safe_fn",
+            "port": 0
+          }
+        ]
+      },
+      {
+        "x": 480,
+        "y": 120,
+        "wires": [
+          {
+            "id": "sf_safe_fn",
+            "port": 1
+          }
+        ]
+      }
+    ],
+    "env": [
+      {
+        "name": "QUIET_START",
+        "type": "str",
+        "value": "21:00"
+      },
+      {
+        "name": "QUIET_END",
+        "type": "str",
+        "value": "08:00"
+      },
+      {
+        "name": "DEDUPE_KEY",
+        "type": "str",
+        "value": ""
+      },
+      {
+        "name": "DEDUPE_SEC",
+        "type": "str",
+        "value": "0"
+      },
+      {
+        "name": "RESPECT_QUIET",
+        "type": "str",
+        "value": "false"
+      }
+    ],
+    "color": "#10b981",
+    "icon": "font-awesome/fa-shield"
+  },
+  {
+    "id": "sf_safe_fn",
+    "type": "function",
+    "z": "sf_safe_cron",
+    "name": "Gate",
+    "func": "if (global.get('SYSTEM_SHUTDOWN')) {\n    node.status({fill:'red',shape:'ring',text:'SHUTDOWN'});\n    msg._gate = 'shutdown';\n    return [null, msg];\n}\nconst respectQuiet = String(env.get('RESPECT_QUIET')||'false').toLowerCase()==='true';\nif (respectQuiet) {\n  const now = new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));\n  const hm = now.getHours()*60 + now.getMinutes();\n  const parse = s => { const [h,m]=(s||'0:0').split(':').map(Number); return h*60+(m||0); };\n  const qs = parse(env.get('QUIET_START')||'21:00');\n  const qe = parse(env.get('QUIET_END')||'08:00');\n  let quiet = false;\n  if (qs > qe) quiet = hm >= qs || hm < qe; else quiet = hm >= qs && hm < qe;\n  if (quiet) {\n    node.status({fill:'yellow',shape:'ring',text:'quiet hours'});\n    msg._gate = 'quiet';\n    return [null, msg];\n  }\n}\nconst key = env.get('DEDUPE_KEY') || msg.topic || '';\nconst sec = parseInt(env.get('DEDUPE_SEC')||'0',10) || 0;\nif (key && sec > 0) {\n  const last = global.get('dedupe_'+key) || 0;\n  const now = Date.now();\n  if (now - last < sec*1000) {\n    node.status({fill:'grey',shape:'ring',text:'deduped'});\n    msg._gate = 'dedupe';\n    return [null, msg];\n  }\n  global.set('dedupe_'+key, now);\n}\nnode.status({fill:'green',shape:'dot',text:'ok'});\nreturn [msg, null];\n",
+    "outputs": 2,
+    "noerr": 0,
+    "x": 250,
+    "y": 80,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "sf_leads_api",
+    "type": "subflow",
+    "name": "\ud83c\udf10 Leads API Call",
+    "info": "Calls ShamrockLeads automation/API with GAS_API_KEY.\n\nInput:\n  msg.leadsPath e.g. /api/automation/health\n  msg.method GET|POST (default GET)\n  msg.payload body for POST\n\nOut 1: success (status < 400)\nOut 2: error",
+    "category": "Shamrock",
+    "in": [
+      {
+        "x": 40,
+        "y": 80,
+        "wires": [
+          {
+            "id": "sf_leads_prep"
+          }
+        ]
+      }
+    ],
+    "out": [
+      {
+        "x": 900,
+        "y": 40,
+        "wires": [
+          {
+            "id": "sf_leads_check",
+            "port": 0
+          }
+        ]
+      },
+      {
+        "x": 900,
+        "y": 120,
+        "wires": [
+          {
+            "id": "sf_leads_check",
+            "port": 1
+          }
+        ]
+      }
+    ],
+    "env": [
+      {
+        "name": "DEFAULT_PATH",
+        "type": "str",
+        "value": "/api/automation/health"
+      },
+      {
+        "name": "TIMEOUT_MS",
+        "type": "str",
+        "value": "60000"
+      }
+    ],
+    "color": "#10b981",
+    "icon": "font-awesome/fa-cloud"
+  },
+  {
+    "id": "sf_leads_prep",
+    "type": "function",
+    "z": "sf_leads_api",
+    "name": "Prep request",
+    "func": "const base = (global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || env.get('DASHBOARD_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\nconst path = msg.leadsPath || env.get('DEFAULT_PATH') || '/api/automation/health';\nconst method = (msg.method || (msg.payload && Object.keys(msg.payload||{}).length ? 'POST' : 'GET')).toUpperCase();\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nmsg._wk = msg._wk || {};\nmsg._wk.started = Date.now();\nmsg._wk.action = path;\nmsg.url = base + (path.startsWith('/') ? path : '/' + path);\nmsg.method = method;\nmsg.headers = Object.assign({}, msg.headers || {}, {\n  'Content-Type': 'application/json',\n  'X-API-Key': apiKey,\n  'X-Api-Key': apiKey\n});\nif (method === 'GET') msg.payload = msg.payload || {};\nnode.status({fill:'blue',shape:'dot',text: method + ' ' + path});\nreturn msg;\n",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 200,
+    "y": 80,
+    "wires": [
+      [
+        "sf_leads_http"
+      ]
+    ]
+  },
+  {
+    "id": "sf_leads_http",
+    "type": "http request",
+    "z": "sf_leads_api",
+    "name": "HTTP",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 400,
+    "y": 80,
+    "wires": [
+      [
+        "sf_leads_check"
+      ]
+    ]
+  },
+  {
+    "id": "sf_leads_check",
+    "type": "function",
+    "z": "sf_leads_api",
+    "name": "Validate",
+    "func": "const code = msg.statusCode || 0;\nconst ok = code > 0 && code < 400 && (msg.payload === undefined || msg.payload === null || msg.payload.ok !== false);\nconst dur = msg._wk ? (Date.now() - (msg._wk.started||Date.now())) : 0;\nmsg._wk = msg._wk || {};\nmsg._wk.ok = ok;\nmsg._wk.duration_ms = dur;\nmsg._wk.statusCode = code;\n// emit to run log bus via global\ntry {\n  const log = global.get('automation_run_log') || [];\n  log.unshift({\n    id: (msg._msgid||'').slice(-8),\n    action: msg._wk.action || 'leads',\n    ok: ok,\n    duration_ms: dur,\n    statusCode: code,\n    ts: new Date().toISOString(),\n    error: ok ? null : String((msg.payload && (msg.payload.error||msg.payload.detail)) || code).slice(0,160)\n  });\n  if (log.length > 100) log.length = 100;\n  global.set('automation_run_log', log);\n} catch(e) {}\nif (ok) {\n  node.status({fill:'green',shape:'dot',text: code + ' ' + dur + 'ms'});\n  return [msg, null];\n}\nnode.status({fill:'red',shape:'dot',text: 'fail ' + code});\nreturn [null, msg];\n",
+    "outputs": 2,
+    "noerr": 0,
+    "x": 600,
+    "y": 80,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "sf_slack_notify",
+    "type": "subflow",
+    "name": "\ud83d\udce2 Slack Notify",
+    "info": "Posts to Slack chat.postMessage.\nmsg.payload = text or {text, channel, blocks}\nmsg.skipSlack = true to skip\nOut 1: posted\nOut 2: skipped/error",
+    "category": "Shamrock",
+    "in": [
+      {
+        "x": 40,
+        "y": 80,
+        "wires": [
+          {
+            "id": "sf_slack_prep"
+          }
+        ]
+      }
+    ],
+    "out": [
+      {
+        "x": 800,
+        "y": 40,
+        "wires": [
+          {
+            "id": "sf_slack_route",
+            "port": 0
+          }
+        ]
+      },
+      {
+        "x": 800,
+        "y": 120,
+        "wires": [
+          {
+            "id": "sf_slack_route",
+            "port": 1
+          }
+        ]
+      }
+    ],
+    "env": [
+      {
+        "name": "DEFAULT_CHANNEL",
+        "type": "str",
+        "value": "#leads"
+      }
+    ],
+    "color": "#10b981",
+    "icon": "font-awesome/fa-slack"
+  },
+  {
+    "id": "sf_slack_prep",
+    "type": "function",
+    "z": "sf_slack_notify",
+    "name": "Prep Slack",
+    "func": "if (msg.skipSlack || msg._skipSlack) {\n  node.status({fill:'grey',shape:'ring',text:'skipped'});\n  return [null, msg];\n}\nconst token = global.get('SLACK_TOKEN') || global.get('SLACK_BOT_TOKEN') || env.get('SLACK_BOT_TOKEN') || '';\nif (!token) {\n  node.status({fill:'yellow',shape:'ring',text:'no token'});\n  msg._slack_error = 'no token';\n  return [null, msg];\n}\nlet text = '';\nlet channel = env.get('DEFAULT_CHANNEL') || '#leads';\nlet blocks = null;\nconst p = msg.payload;\nif (typeof p === 'string') text = p;\nelse if (p && typeof p === 'object') {\n  text = p.text || p.message || JSON.stringify(p).slice(0,500);\n  channel = p.channel || msg.channel || channel;\n  blocks = p.blocks || null;\n}\nmsg.url = 'https://slack.com/api/chat.postMessage';\nmsg.method = 'POST';\nmsg.headers = {\n  Authorization: 'Bearer ' + token,\n  'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = { channel, text };\nif (blocks) msg.payload.blocks = blocks;\nmsg._slack_ok = true;\nreturn [msg, null];\n",
+    "outputs": 2,
+    "noerr": 0,
+    "x": 200,
+    "y": 80,
+    "wires": [
+      [
+        "sf_slack_http"
+      ],
+      []
+    ]
+  },
+  {
+    "id": "sf_slack_http",
+    "type": "http request",
+    "z": "sf_slack_notify",
+    "name": "Slack API",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://slack.com/api/chat.postMessage",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 400,
+    "y": 60,
+    "wires": [
+      [
+        "sf_slack_route"
+      ]
+    ]
+  },
+  {
+    "id": "sf_slack_route",
+    "type": "function",
+    "z": "sf_slack_notify",
+    "name": "Route result",
+    "func": "const ok = msg.payload && msg.payload.ok === true;\nif (ok) {\n  node.status({fill:'green',shape:'dot',text:'sent'});\n  return [msg, null];\n}\nnode.status({fill:'red',shape:'dot',text:(msg.payload&&msg.payload.error)||'fail'});\nreturn [null, msg];\n",
+    "outputs": 2,
+    "noerr": 0,
+    "x": 600,
+    "y": 80,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "sf_hmac_guard",
+    "type": "subflow",
+    "name": "\ud83d\udd12 HMAC Webhook Guard",
+    "info": "Validates X-Shamrock-Signature HMAC-SHA256.\nOut 1: ok\nOut 2: reject (sets statusCode 403)",
+    "category": "Shamrock",
+    "in": [
+      {
+        "x": 40,
+        "y": 80,
+        "wires": [
+          {
+            "id": "sf_hmac_fn"
+          }
+        ]
+      }
+    ],
+    "out": [
+      {
+        "x": 500,
+        "y": 40,
+        "wires": [
+          {
+            "id": "sf_hmac_fn",
+            "port": 0
+          }
+        ]
+      },
+      {
+        "x": 500,
+        "y": 120,
+        "wires": [
+          {
+            "id": "sf_hmac_fn",
+            "port": 1
+          }
+        ]
+      }
+    ],
+    "env": [],
+    "color": "#87A980",
+    "icon": "font-awesome/fa-lock"
+  },
+  {
+    "id": "sf_hmac_fn",
+    "type": "function",
+    "z": "sf_hmac_guard",
+    "name": "Verify",
+    "func": "const crypto = require('crypto');\nconst secret = (global.get('env') && global.get('env').WEBHOOK_HMAC_SECRET) || env.get('WEBHOOK_HMAC_SECRET') || '';\nif (!secret) {\n  node.warn('WEBHOOK_HMAC_SECRET not set \u2014 allowing');\n  return [msg, null];\n}\nconst signature = (msg.req && msg.req.headers && (msg.req.headers['x-shamrock-signature'] || msg.req.headers['x-webhook-secret'])) || '';\nconst body = typeof msg.payload === 'string' ? msg.payload : JSON.stringify(msg.payload||{});\nconst expected = crypto.createHmac('sha256', secret).update(body).digest('hex');\nif (signature === expected || signature === secret) {\n  node.status({fill:'green',shape:'dot',text:'auth ok'});\n  return [msg, null];\n}\nmsg.statusCode = 403;\nmsg.payload = { error: 'Invalid signature' };\nnode.status({fill:'red',shape:'dot',text:'reject'});\nreturn [null, msg];\n",
+    "outputs": 2,
+    "noerr": 0,
+    "x": 250,
+    "y": 80,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "sf_pii_redact",
+    "type": "subflow",
+    "name": "\ud83e\uddf9 PII Redact Log",
+    "info": "Redacts phones/emails/SSN-like strings in msg.payload for safe logging.\nSets msg.logSafe. Passes original on out 1.",
+    "category": "Shamrock",
+    "in": [
+      {
+        "x": 40,
+        "y": 80,
+        "wires": [
+          {
+            "id": "sf_pii_fn"
+          }
+        ]
+      }
+    ],
+    "out": [
+      {
+        "x": 450,
+        "y": 80,
+        "wires": [
+          {
+            "id": "sf_pii_fn",
+            "port": 0
+          }
+        ]
+      }
+    ],
+    "env": [],
+    "color": "#64748b",
+    "icon": "font-awesome/fa-user-secret"
+  },
+  {
+    "id": "sf_pii_fn",
+    "type": "function",
+    "z": "sf_pii_redact",
+    "name": "Redact",
+    "func": "const crypto = require('crypto');\nfunction redact(s) {\n  if (s == null) return s;\n  if (typeof s !== 'string') s = JSON.stringify(s);\n  s = s.replace(/\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b/gi, m => '[email:'+crypto.createHash('sha256').update(m.toLowerCase()).digest('hex').slice(0,8)+']');\n  s = s.replace(/\\b(?:\\+?1[-. ]?)?(?:\\(?\\d{3}\\)?[-. ]?)\\d{3}[-. ]?\\d{4}\\b/g, m => '[phone:'+crypto.createHash('sha256').update(m).digest('hex').slice(0,8)+']');\n  s = s.replace(/\\b\\d{3}-\\d{2}-\\d{4}\\b/g, '[ssn-redacted]');\n  return s;\n}\nmsg.logSafe = redact(msg.payload);\nif (msg.error) msg.errorSafe = redact(msg.error);\nnode.status({fill:'green',shape:'dot',text:'redacted'});\nreturn msg;\n",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 220,
+    "y": 80,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "sf_gas_action",
+    "type": "subflow",
+    "name": "\ud83d\udcdc GAS Action Call",
+    "info": "POST to GAS web app.\nmsg.payload.action required (or msg.gasAction)\nOut 1 success / Out 2 error",
+    "category": "Shamrock",
+    "in": [
+      {
+        "x": 40,
+        "y": 80,
+        "wires": [
+          {
+            "id": "sf_gas_prep"
+          }
+        ]
+      }
+    ],
+    "out": [
+      {
+        "x": 900,
+        "y": 40,
+        "wires": [
+          {
+            "id": "sf_gas_check",
+            "port": 0
+          }
+        ]
+      },
+      {
+        "x": 900,
+        "y": 120,
+        "wires": [
+          {
+            "id": "sf_gas_check",
+            "port": 1
+          }
+        ]
+      }
+    ],
+    "env": [],
+    "color": "#f59e0b",
+    "icon": "font-awesome/fa-google"
+  },
+  {
+    "id": "sf_gas_prep",
+    "type": "function",
+    "z": "sf_gas_action",
+    "name": "Prep GAS",
+    "func": "if (global.get('SYSTEM_SHUTDOWN')) {\n  node.status({fill:'red',shape:'ring',text:'SHUTDOWN'});\n  return null;\n}\nconst gasUrl = (global.get('GAS_URL') || global.get('GAS_URL_OPS') || env.get('GAS_WEBHOOK_URL') || '').split('?')[0];\nif (!gasUrl) {\n  node.error('GAS_URL not configured');\n  node.status({fill:'red',shape:'dot',text:'no GAS_URL'});\n  msg.payload = { error: 'GAS_URL missing' };\n  return msg; // will fail check\n}\nconst action = msg.gasAction || (msg.payload && msg.payload.action) || 'unknown';\nconst apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || '';\nmsg._wk = { started: Date.now(), action: 'gas:'+action };\nmsg.url = gasUrl + (gasUrl.includes('?') ? '&' : '?') + 'action=' + encodeURIComponent(action);\nmsg.method = 'POST';\nmsg.headers = { 'Content-Type': 'application/json', 'X-API-Key': apiKey, 'X-Api-Key': apiKey };\nif (!msg.payload || typeof msg.payload !== 'object') msg.payload = {};\nmsg.payload.action = action;\nmsg.payload.source = msg.payload.source || 'node-red-workflow-kit';\nmsg.payload.requestedAt = new Date().toISOString();\nnode.status({fill:'blue',shape:'dot',text: action});\nreturn msg;\n",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 200,
+    "y": 80,
+    "wires": [
+      [
+        "sf_gas_http"
+      ]
+    ]
+  },
+  {
+    "id": "sf_gas_http",
+    "type": "http request",
+    "z": "sf_gas_action",
+    "name": "GAS HTTP",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 400,
+    "y": 80,
+    "wires": [
+      [
+        "sf_gas_check"
+      ]
+    ]
+  },
+  {
+    "id": "sf_gas_check",
+    "type": "function",
+    "z": "sf_gas_action",
+    "name": "Validate GAS",
+    "func": "const code = msg.statusCode || 0;\nconst ok = code > 0 && code < 400;\nconst dur = msg._wk ? Date.now() - msg._wk.started : 0;\ntry {\n  const log = global.get('automation_run_log') || [];\n  log.unshift({ id:(msg._msgid||'').slice(-8), action: (msg._wk&&msg._wk.action)||'gas', ok, duration_ms: dur, statusCode: code, ts: new Date().toISOString() });\n  if (log.length > 100) log.length = 100;\n  global.set('automation_run_log', log);\n} catch(e) {}\nif (ok) { node.status({fill:'green',shape:'dot',text:'ok '+dur+'ms'}); return [msg,null]; }\nnode.status({fill:'red',shape:'dot',text:'fail '+code});\nreturn [null,msg];\n",
+    "outputs": 2,
+    "noerr": 0,
+    "x": 600,
+    "y": 80,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "tab_workflow_kit",
+    "type": "tab",
+    "label": "Workflow Kit (Bus & Log)",
+    "disabled": false,
+    "info": "Shared link bus + automation run log for Shamrock Workflow Kit subflows."
+  },
+  {
+    "id": "wk_comment",
+    "type": "comment",
+    "z": "tab_workflow_kit",
+    "name": "\ud83e\uddf0 WORKFLOW KIT",
+    "info": "Palette \u2192 Shamrock category for subflows.\nLink bus: bus/leads-request, bus/slack-alert, bus/automation-result",
+    "x": 180,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "bus_leads_in",
+    "type": "link in",
+    "z": "tab_workflow_kit",
+    "name": "bus/leads-request",
+    "links": [],
+    "x": 140,
+    "y": 120,
+    "wires": [
+      [
+        "bus_leads_inst"
+      ]
+    ]
+  },
+  {
+    "id": "bus_leads_inst",
+    "type": "sf_leads_api",
+    "z": "tab_workflow_kit",
+    "name": "Leads API",
+    "x": 360,
+    "y": 120,
+    "wires": [
+      [
+        "bus_result_ok"
+      ],
+      [
+        "bus_result_fail"
+      ]
+    ]
+  },
+  {
+    "id": "bus_slack_in",
+    "type": "link in",
+    "z": "tab_workflow_kit",
+    "name": "bus/slack-alert",
+    "links": [],
+    "x": 140,
+    "y": 200,
+    "wires": [
+      [
+        "bus_slack_inst"
+      ]
+    ]
+  },
+  {
+    "id": "bus_slack_inst",
+    "type": "sf_slack_notify",
+    "z": "tab_workflow_kit",
+    "name": "Slack",
+    "x": 340,
+    "y": 200,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "bus_result_in",
+    "type": "link in",
+    "z": "tab_workflow_kit",
+    "name": "bus/automation-result",
+    "links": [],
+    "x": 160,
+    "y": 280,
+    "wires": [
+      [
+        "bus_result_fn"
+      ]
+    ]
+  },
+  {
+    "id": "bus_result_ok",
+    "type": "function",
+    "z": "tab_workflow_kit",
+    "name": "Tag ok",
+    "func": "msg._result_ok=true; return msg;",
+    "outputs": 1,
+    "x": 560,
+    "y": 100,
+    "wires": [
+      [
+        "bus_result_fn"
+      ]
+    ]
+  },
+  {
+    "id": "bus_result_fail",
+    "type": "function",
+    "z": "tab_workflow_kit",
+    "name": "Tag fail",
+    "func": "msg._result_ok=false; return msg;",
+    "outputs": 1,
+    "x": 560,
+    "y": 160,
+    "wires": [
+      [
+        "bus_result_fn"
+      ]
+    ]
+  },
+  {
+    "id": "bus_result_fn",
+    "type": "function",
+    "z": "tab_workflow_kit",
+    "name": "Append Run Log",
+    "func": "const log = global.get('automation_run_log') || [];\nconst entry = {\n  id: (msg._msgid||'').slice(-8),\n  action: (msg._wk && msg._wk.action) || msg.topic || msg.leadsPath || 'unknown',\n  ok: msg._result_ok !== false && (msg._wk ? msg._wk.ok !== false : true),\n  duration_ms: (msg._wk && msg._wk.duration_ms) || 0,\n  statusCode: msg.statusCode || (msg._wk && msg._wk.statusCode) || 0,\n  ts: new Date().toISOString(),\n  error: null\n};\nif (!entry.ok) {\n  const p = msg.payload;\n  entry.error = String((p && (p.error || p.detail)) || msg.statusCode || 'error').slice(0,160);\n}\n// avoid dup if already logged by subflow\nif (!(msg._wk && msg._wk.logged)) {\n  log.unshift(entry);\n  if (log.length > 100) log.length = 100;\n  global.set('automation_run_log', log);\n}\nmsg.payload = { run_log: log.slice(0, 20), last: entry };\nnode.status({fill: entry.ok?'green':'red', shape:'dot', text: entry.action});\nreturn msg;\n",
+    "outputs": 1,
+    "x": 400,
+    "y": 280,
+    "wires": [
+      [
+        "bus_result_out",
+        "wk_debug"
+      ]
+    ]
+  },
+  {
+    "id": "bus_result_out",
+    "type": "link out",
+    "z": "tab_workflow_kit",
+    "name": "bus/run-log-updated",
+    "mode": "link",
+    "links": [],
+    "x": 620,
+    "y": 280
+  },
+  {
+    "id": "wk_debug",
+    "type": "debug",
+    "z": "tab_workflow_kit",
+    "name": "Kit Debug",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "complete": "payload",
+    "x": 620,
+    "y": 340,
+    "wires": []
+  },
+  {
+    "id": "wk_smoke_inject",
+    "type": "inject",
+    "z": "tab_workflow_kit",
+    "name": "\u25b6 Smoke: Leads Health",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "leadsPath",
+        "v": "/api/automation/health",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "smoke-health",
+    "payload": "",
+    "payloadType": "date",
+    "x": 160,
+    "y": 400,
+    "wires": [
+      [
+        "wk_smoke_gate"
+      ]
+    ]
+  },
+  {
+    "id": "wk_smoke_gate",
+    "type": "sf_safe_cron",
+    "z": "tab_workflow_kit",
+    "name": "Gate",
+    "x": 360,
+    "y": 400,
+    "wires": [
+      [
+        "wk_smoke_leads"
+      ],
+      []
+    ]
+  },
+  {
+    "id": "wk_smoke_leads",
+    "type": "sf_leads_api",
+    "z": "tab_workflow_kit",
+    "name": "Health",
+    "x": 540,
+    "y": 400,
+    "wires": [
+      [
+        "wk_debug"
+      ],
+      [
+        "wk_debug"
+      ]
+    ]
+  },
+  {
+    "id": "wk_env_inject",
+    "type": "inject",
+    "z": "tab_workflow_kit",
+    "name": "\u23f0 Env Check 5m",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "300",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "5",
+    "topic": "env-check",
+    "payload": "",
+    "payloadType": "date",
+    "x": 150,
+    "y": 480,
+    "wires": [
+      [
+        "wk_env_fn"
+      ]
+    ]
+  },
+  {
+    "id": "wk_env_fn",
+    "type": "function",
+    "z": "tab_workflow_kit",
+    "name": "Env Checklist",
+    "func": "const g = (k) => global.get(k) || env.get(k) || (global.get('env')||{})[k] || '';\nconst checks = {\n  GAS_API_KEY: !!(global.get('GAS_API_KEY') || env.get('GAS_API_KEY')),\n  LEADS_URL: !!(global.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || env.get('DASHBOARD_PUBLIC_URL')),\n  SLACK_TOKEN: !!(global.get('SLACK_TOKEN') || global.get('SLACK_BOT_TOKEN') || env.get('SLACK_BOT_TOKEN')),\n  GAS_URL: !!(global.get('GAS_URL') || env.get('GAS_WEBHOOK_URL')),\n  MONGODB_URI: !!(env.get('MONGODB_URI') || global.get('MONGODB_URI')),\n  SYSTEM_SHUTDOWN: !!global.get('SYSTEM_SHUTDOWN'),\n};\nconst log = global.get('automation_run_log') || [];\nconst fails = log.filter(e => e.ok === false).slice(0, 10);\nconst okCount = log.filter(e => e.ok).length;\nmsg.payload = {\n  checks,\n  ready: checks.GAS_API_KEY && checks.LEADS_URL,\n  run_log: log.slice(0, 25),\n  failed_24h: fails,\n  stats: { total: log.length, ok: okCount, fail: log.length - okCount },\n  ts: new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }) + ' ET'\n};\nglobal.set('workflow_kit_status', msg.payload);\nnode.status({fill: msg.payload.ready?'green':'yellow', shape:'dot', text: msg.payload.ready?'env ok':'env gaps'});\nreturn msg;\n",
+    "outputs": 1,
+    "x": 360,
+    "y": 480,
+    "wires": [
+      [
+        "wk_env_out"
+      ]
+    ]
+  },
+  {
+    "id": "wk_env_out",
+    "type": "link out",
+    "z": "tab_workflow_kit",
+    "name": "bus/kit-status",
+    "mode": "link",
+    "links": [],
+    "x": 560,
+    "y": 480
+  }
+]
