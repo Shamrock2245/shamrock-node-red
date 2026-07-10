@@ -15221,7 +15221,7 @@
   },
   {
     "id": "mongo_config_001",
-    "type": "mongodb4",
+    "type": "mongodb4-client",
     "z": "",
     "name": "Shamrock MongoDB Atlas",
     "protocol": "mongodb+srv",
@@ -15300,7 +15300,7 @@
   },
   {
     "id": "mongo_in_bounty",
-    "type": "mongodb4 in",
+    "type": "mongodb4",
     "z": "da825df237884267",
     "name": "\ud83d\uddc3\ufe0f MongoDB: Arrests",
     "collection": "",
@@ -15312,7 +15312,8 @@
       [
         "mongo_format_bounty"
       ]
-    ]
+    ],
+    "clientNode": "mongo_config_001"
   },
   {
     "id": "mongo_format_bounty",
@@ -15427,7 +15428,7 @@
   },
   {
     "id": "mongo_in_analytics",
-    "type": "mongodb4 in",
+    "type": "mongodb4",
     "z": "da825df237884267",
     "name": "\ud83d\uddc3\ufe0f MongoDB: Aggregate",
     "collection": "",
@@ -15439,7 +15440,8 @@
       [
         "mongo_analytics_format"
       ]
-    ]
+    ],
+    "clientNode": "mongo_config_001"
   },
   {
     "id": "mongo_analytics_format",
