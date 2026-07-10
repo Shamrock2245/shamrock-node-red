@@ -73,6 +73,13 @@ msg.url = env.get("GAS_INVESTIGATOR_URL");
 // process.env.GAS_INVESTIGATOR_URL = "https://script.google.com/macros/s/AKfycb.../exec"
 ```
 
+### GAS Web App URL stability
+
+Keep `GAS_WEBHOOK_URL` (and any `GAS_*_URL`) pointing at the **same** portal factory `/exec` path.
+Re-deploy GAS with `clasp deploy -i <EXISTING_ID>` — do **not** mint a new Web App URL for routine fixes.
+If a URL change is unavoidable: **notify the human** so they update **Wix Secrets Manager** (and this env).
+Policy: `shamrock-leads/docs/policies/gas-url-policy.md`.
+
 ---
 
 ## Webhook Security
