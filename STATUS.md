@@ -1,9 +1,10 @@
 # Shamrock Node-RED — True Status
 
-> **Last verified:** 2026-07-08  
+> **Last verified:** 2026-07-10  
 > **Repo:** `Shamrock2245/shamrock-node-red`  
-> **Role:** Open-source automation fabric (internal n8n / Zapier) for Shamrock  
-> **Runtime:** typically Hetzner Docker `node-red` service (profile `ops`) on the leads VPS, editor `:1880`
+> **Role:** Automation fabric of **Shamrock’s Platform** (internal n8n / Zapier)  
+> **Runtime:** typically Hetzner Docker `node-red` service (profile `ops`) on the leads VPS, editor `:1880`  
+> **Prod checklist:** `shamrock-leads/docs/ECOSYSTEM_PROD_CHECKLIST.md` §P1.5
 
 ---
 
