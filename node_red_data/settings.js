@@ -95,7 +95,10 @@ module.exports = {
             
             // Misc
             NODE_ENV: process.env.NODE_ENV || "production",
-            TZ: process.env.TZ || "America/New_York"
+            TZ: process.env.TZ || "America/New_York",
+            // Super CRM / automation fabric
+            LEADS_PUBLIC_URL: process.env.LEADS_PUBLIC_URL || process.env.DASHBOARD_PUBLIC_URL || "https://leads.shamrockbailbonds.biz",
+            DASHBOARD_PUBLIC_URL: process.env.DASHBOARD_PUBLIC_URL || "https://leads.shamrockbailbonds.biz"
         }
     },
 
@@ -108,12 +111,13 @@ module.exports = {
         },
         theme: "dark",
         page: {
-            title: "🍀 Shamrock Node-RED",
-            favicon: "",
+            title: "Shamrock Ops · Node-RED",
+            favicon: "/static/shamrock-logo.png",
             css: ""
         },
         header: {
             title: "🍀 Shamrock Ops",
+            image: "/static/shamrock-logo.png",
         },
         deployButton: {
             type: "simple",
@@ -121,8 +125,15 @@ module.exports = {
         },
         palette: {
             editable: true
+        },
+        menu: {
+            "menu-item-keyboard-shortcuts": true
         }
     },
+
+    // Brand assets (logo) for Dashboard + editor
+    httpStatic: require("path").join(__dirname, "static"),
+    httpStaticRoot: "/static/",
 
     // ═══════════════════════════════════════
     // LOGGING (Production)

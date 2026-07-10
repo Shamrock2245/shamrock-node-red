@@ -66,3 +66,5 @@ Local docs: `docs/OVERVIEW.md`, `docs/SYSTEM.md`, `docs/INTEGRATIONS.md`, `docs/
 See `shamrock-telegram-app/STATUS.md` for Telegram mini-app data flows.
 
 | OSINT Intelligence + Ops Digest Node-RED tabs (`osint_ops_flows.json`) | ✅ |
+
+| FlowFuse Dashboard Command Center (Shamrock emerald theme + logo) | ✅ |
