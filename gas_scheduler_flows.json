@@ -1,15 +1,15 @@
 [
   {
-    "id": "47a279345d2c43f7",
+    "id": "2cf73d0e7cc34650",
     "type": "tab",
     "label": "GAS Scheduler",
     "disabled": false,
     "info": "CENTRALIZED SCHEDULER \u2014 Node-RED is the single control plane.\nAll GAS time-driven triggers have been migrated here.\nRun migrateTriggersToNodeRED() in GAS to remove old triggers."
   },
   {
-    "id": "69340ef44bd94ffe",
+    "id": "050d3b35766a4b75",
     "type": "comment",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a1 GAS SCHEDULER \u2014 Node-RED is the Single Control Plane",
     "info": "This tab replaces ALL GAS time-driven triggers.\n\nHOW IT WORKS:\n  1. Cron inject fires at the scheduled time\n  2. Function node preps the GAS action payload\n  3. HTTP request calls GAS web app\n  4. Result handler checks success/failure\n  5. On failure \u2192 alerts Slack #alerts\n\nTO DISABLE: Click the inject node \u2192 set to disabled\nTO RE-SCHEDULE: Click inject \u2192 change cron expression",
     "x": 360,
@@ -17,9 +17,9 @@
     "wires": []
   },
   {
-    "id": "22022bff8918461d",
+    "id": "dc621bf2448943f6",
     "type": "comment",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2501\u2501\u2501 HIGH-FREQUENCY (every 5-30 min) \u2501\u2501\u2501",
     "info": "",
     "x": 300,
@@ -27,9 +27,9 @@
     "wires": []
   },
   {
-    "id": "e8cd9ab1fec34c81",
+    "id": "50aff11e52e4416a",
     "type": "comment",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2501\u2501\u2501 HOURLY / MULTI-HOUR \u2501\u2501\u2501",
     "info": "",
     "x": 260,
@@ -37,9 +37,9 @@
     "wires": []
   },
   {
-    "id": "69502bd4ff8d422d",
+    "id": "f981417d6d1b4e4f",
     "type": "comment",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2501\u2501\u2501 DAILY \u2501\u2501\u2501",
     "info": "",
     "x": 220,
@@ -47,9 +47,9 @@
     "wires": []
   },
   {
-    "id": "0700701f28574cb7",
+    "id": "8ca32e4a9ca44ad3",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 Every 5 min",
     "props": [
       {
@@ -71,14 +71,14 @@
     "y": 120,
     "wires": [
       [
-        "ac6f6151346a4276"
+        "07d544187ce948ac"
       ]
     ]
   },
   {
-    "id": "ac6f6151346a4276",
+    "id": "07d544187ce948ac",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 runAutoPostingEngine",
     "func": "msg.payload = { action: 'runAutoPostingEngine' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=runAutoPostingEngine';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"runAutoPostingEngine...\"});\nreturn msg;",
     "outputs": 1,
@@ -91,14 +91,14 @@
     "y": 120,
     "wires": [
       [
-        "832eeace5660458d"
+        "8b5f98e165864a32"
       ]
     ]
   },
   {
-    "id": "832eeace5660458d",
+    "id": "8b5f98e165864a32",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -115,14 +115,14 @@
     "y": 120,
     "wires": [
       [
-        "5bfc3985a7c841f3"
+        "ada028d5c5a04afd"
       ]
     ]
   },
   {
-    "id": "5bfc3985a7c841f3",
+    "id": "ada028d5c5a04afd",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -135,14 +135,14 @@
     "y": 120,
     "wires": [
       [
-        "8ffb18537a304c21"
+        "b7ca04a8379147d5"
       ]
     ]
   },
   {
-    "id": "8ffb18537a304c21",
+    "id": "b7ca04a8379147d5",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
@@ -162,9 +162,9 @@
     ]
   },
   {
-    "id": "c2f35535e3cc4fb9",
+    "id": "8472ec9d28f34458",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 Every 10 min",
     "props": [
       {
@@ -186,14 +186,14 @@
     "y": 180,
     "wires": [
       [
-        "e4946af6757e4e97"
+        "f293e9356f0a4591"
       ]
     ]
   },
   {
-    "id": "e4946af6757e4e97",
+    "id": "f293e9356f0a4591",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 processConciergeQueue",
     "func": "msg.payload = { action: 'processConciergeQueue' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=processConciergeQueue';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"processConciergeQueue...\"});\nreturn msg;",
     "outputs": 1,
@@ -206,14 +206,14 @@
     "y": 180,
     "wires": [
       [
-        "65ad696e83b34ca2"
+        "b1931979fc874da4"
       ]
     ]
   },
   {
-    "id": "65ad696e83b34ca2",
+    "id": "b1931979fc874da4",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -230,14 +230,14 @@
     "y": 180,
     "wires": [
       [
-        "22dc3a7245274a64"
+        "2217e2e46b4040ae"
       ]
     ]
   },
   {
-    "id": "22dc3a7245274a64",
+    "id": "2217e2e46b4040ae",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -250,14 +250,14 @@
     "y": 180,
     "wires": [
       [
-        "8fdcfb0faab644ec"
+        "de0f70be1700432f"
       ]
     ]
   },
   {
-    "id": "8fdcfb0faab644ec",
+    "id": "de0f70be1700432f",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
@@ -277,9 +277,9 @@
     ]
   },
   {
-    "id": "786b8de0367b447e",
+    "id": "de73740fb90c4eed",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 Every 15 min",
     "props": [
       {
@@ -301,14 +301,14 @@
     "y": 240,
     "wires": [
       [
-        "fc0793fa9f254d4a"
+        "db43454b35024c44"
       ]
     ]
   },
   {
-    "id": "fc0793fa9f254d4a",
+    "id": "db43454b35024c44",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 scoreAndSyncQualifiedRows",
     "func": "msg.payload = { action: 'scoreAndSyncQualifiedRows' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=scoreAndSyncQualifiedRows';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"scoreAndSyncQualifiedRows...\"});\nreturn msg;",
     "outputs": 1,
@@ -321,14 +321,14 @@
     "y": 240,
     "wires": [
       [
-        "d1d562f107b94b64"
+        "4837c43d459d4056"
       ]
     ]
   },
   {
-    "id": "d1d562f107b94b64",
+    "id": "4837c43d459d4056",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -345,14 +345,14 @@
     "y": 240,
     "wires": [
       [
-        "2f08fa3e7e6c4000"
+        "e50e6496e63a4d1b"
       ]
     ]
   },
   {
-    "id": "2f08fa3e7e6c4000",
+    "id": "e50e6496e63a4d1b",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -365,14 +365,14 @@
     "y": 240,
     "wires": [
       [
-        "12dd9fbc8460485b"
+        "46848213d5874b62"
       ]
     ]
   },
   {
-    "id": "12dd9fbc8460485b",
+    "id": "46848213d5874b62",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
@@ -392,9 +392,9 @@
     ]
   },
   {
-    "id": "9813c94555a048a5",
+    "id": "8f8425b0105a48b1",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 Every 30 min",
     "props": [
       {
@@ -416,14 +416,14 @@
     "y": 300,
     "wires": [
       [
-        "73c2310d054f452b"
+        "76e484014850486c"
       ]
     ]
   },
   {
-    "id": "73c2310d054f452b",
+    "id": "76e484014850486c",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 pollWixIntakeQueue",
     "func": "msg.payload = { action: 'pollWixIntakeQueue' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=pollWixIntakeQueue';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"pollWixIntakeQueue...\"});\nreturn msg;",
     "outputs": 1,
@@ -436,14 +436,14 @@
     "y": 300,
     "wires": [
       [
-        "a48231d1e5de4d42"
+        "f0236d7f0e164708"
       ]
     ]
   },
   {
-    "id": "a48231d1e5de4d42",
+    "id": "f0236d7f0e164708",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -460,14 +460,14 @@
     "y": 300,
     "wires": [
       [
-        "dbce8bcf62d74642"
+        "5fda2e0963fd4843"
       ]
     ]
   },
   {
-    "id": "dbce8bcf62d74642",
+    "id": "5fda2e0963fd4843",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -480,14 +480,14 @@
     "y": 300,
     "wires": [
       [
-        "a772f117f98c4181"
+        "7edc9586eca147ae"
       ]
     ]
   },
   {
-    "id": "a772f117f98c4181",
+    "id": "7edc9586eca147ae",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
@@ -507,9 +507,9 @@
     ]
   },
   {
-    "id": "7734c9f1ecd44537",
+    "id": "39a963cb1f674aa8",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 Every 30 min",
     "props": [
       {
@@ -531,14 +531,14 @@
     "y": 360,
     "wires": [
       [
-        "4ed08d5409cb443b"
+        "227d54fe8524485a"
       ]
     ]
   },
   {
-    "id": "4ed08d5409cb443b",
+    "id": "227d54fe8524485a",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 refreshGoogleTokens",
     "func": "msg.payload = { action: 'refreshGoogleTokens' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=refreshGoogleTokens';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"refreshGoogleTokens...\"});\nreturn msg;",
     "outputs": 1,
@@ -551,14 +551,14 @@
     "y": 360,
     "wires": [
       [
-        "67d80ecc8d7048d8"
+        "d30a4db7b17d4d56"
       ]
     ]
   },
   {
-    "id": "67d80ecc8d7048d8",
+    "id": "d30a4db7b17d4d56",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -575,14 +575,14 @@
     "y": 360,
     "wires": [
       [
-        "6d85f16c68b8450a"
+        "b963087529c54a12"
       ]
     ]
   },
   {
-    "id": "6d85f16c68b8450a",
+    "id": "b963087529c54a12",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -595,14 +595,14 @@
     "y": 360,
     "wires": [
       [
-        "88a169c0761c4bd7"
+        "d16bad2145b74689"
       ]
     ]
   },
   {
-    "id": "88a169c0761c4bd7",
+    "id": "d16bad2145b74689",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
@@ -622,9 +622,9 @@
     ]
   },
   {
-    "id": "b0a8b7e707314dc0",
+    "id": "56e322444cc449c8",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 Every 30 min",
     "props": [
       {
@@ -646,14 +646,14 @@
     "y": 420,
     "wires": [
       [
-        "143851ef455441be"
+        "35b7384043874192"
       ]
     ]
   },
   {
-    "id": "143851ef455441be",
+    "id": "35b7384043874192",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 TG_processCourtDateReminders",
     "func": "msg.payload = { action: 'TG_processCourtDateReminders' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=TG_processCourtDateReminders';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"TG_processCourtDateReminders...\"});\nreturn msg;",
     "outputs": 1,
@@ -666,14 +666,14 @@
     "y": 420,
     "wires": [
       [
-        "0c207d04edf4428e"
+        "1f9f13fb3a5a4193"
       ]
     ]
   },
   {
-    "id": "0c207d04edf4428e",
+    "id": "1f9f13fb3a5a4193",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -690,14 +690,14 @@
     "y": 420,
     "wires": [
       [
-        "b1a70079a54645a5"
+        "7bc76f70edcf4621"
       ]
     ]
   },
   {
-    "id": "b1a70079a54645a5",
+    "id": "7bc76f70edcf4621",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -710,14 +710,14 @@
     "y": 420,
     "wires": [
       [
-        "242181ebcd5d4ace"
+        "37647c7d7b6b4692"
       ]
     ]
   },
   {
-    "id": "242181ebcd5d4ace",
+    "id": "37647c7d7b6b4692",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
@@ -737,9 +737,9 @@
     ]
   },
   {
-    "id": "7e931f955c534fd4",
+    "id": "1bfdc37d5c5e45ba",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 Every 6 hours",
     "props": [
       {
@@ -761,14 +761,14 @@
     "y": 480,
     "wires": [
       [
-        "c7097ad228754507"
+        "affc8a97fe984e33"
       ]
     ]
   },
   {
-    "id": "c7097ad228754507",
+    "id": "affc8a97fe984e33",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 checkForChanges",
     "func": "msg.payload = { action: 'checkForChanges' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=checkForChanges';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"checkForChanges...\"});\nreturn msg;",
     "outputs": 1,
@@ -781,14 +781,14 @@
     "y": 480,
     "wires": [
       [
-        "d440e8f113264752"
+        "41e80a5ac4aa4fed"
       ]
     ]
   },
   {
-    "id": "d440e8f113264752",
+    "id": "41e80a5ac4aa4fed",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -805,14 +805,14 @@
     "y": 480,
     "wires": [
       [
-        "6a75baa88fd34bbc"
+        "6c5ddb1fb61049d9"
       ]
     ]
   },
   {
-    "id": "6a75baa88fd34bbc",
+    "id": "6c5ddb1fb61049d9",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -825,14 +825,14 @@
     "y": 480,
     "wires": [
       [
-        "dc223a5d573f4db6"
+        "23943b4e47f94e8d"
       ]
     ]
   },
   {
-    "id": "dc223a5d573f4db6",
+    "id": "23943b4e47f94e8d",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
@@ -852,9 +852,9 @@
     ]
   },
   {
-    "id": "2d626dfd126c4332",
+    "id": "b3f1ccaddedb4823",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 3:00 AM (Tokens)",
     "props": [
       {
@@ -876,14 +876,14 @@
     "y": 560,
     "wires": [
       [
-        "85b3a2f8f5c34319"
+        "463f8b706c584204"
       ]
     ]
   },
   {
-    "id": "85b3a2f8f5c34319",
+    "id": "463f8b706c584204",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 refreshLongLivedTokens",
     "func": "msg.payload = { action: 'refreshLongLivedTokens' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=refreshLongLivedTokens';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"refreshLongLivedTokens...\"});\nreturn msg;",
     "outputs": 1,
@@ -896,14 +896,14 @@
     "y": 560,
     "wires": [
       [
-        "60bf2aa96efa48a6"
+        "e9070a3ad67d4485"
       ]
     ]
   },
   {
-    "id": "60bf2aa96efa48a6",
+    "id": "e9070a3ad67d4485",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -920,14 +920,14 @@
     "y": 560,
     "wires": [
       [
-        "a37f060b7e424bbf"
+        "7ca6c20dd7fc4ae6"
       ]
     ]
   },
   {
-    "id": "a37f060b7e424bbf",
+    "id": "7ca6c20dd7fc4ae6",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -940,14 +940,14 @@
     "y": 560,
     "wires": [
       [
-        "f8b93305ba944d9d"
+        "e116bceee15e4539"
       ]
     ]
   },
   {
-    "id": "f8b93305ba944d9d",
+    "id": "e116bceee15e4539",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
@@ -967,9 +967,9 @@
     ]
   },
   {
-    "id": "e902263901fb43a0",
+    "id": "04173be5a6e04d29",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 6:00 AM (Offenders)",
     "props": [
       {
@@ -991,14 +991,14 @@
     "y": 620,
     "wires": [
       [
-        "ecf89f1cf0b04fa6"
+        "18394b3d3d4843af"
       ]
     ]
   },
   {
-    "id": "ecf89f1cf0b04fa6",
+    "id": "18394b3d3d4843af",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 runDailyRepeatOffenderScan",
     "func": "msg.payload = { action: 'runDailyRepeatOffenderScan' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=runDailyRepeatOffenderScan';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"runDailyRepeatOffenderScan...\"});\nreturn msg;",
     "outputs": 1,
@@ -1011,14 +1011,14 @@
     "y": 620,
     "wires": [
       [
-        "99323c4ea0e848c7"
+        "f69e8880b85c4539"
       ]
     ]
   },
   {
-    "id": "99323c4ea0e848c7",
+    "id": "f69e8880b85c4539",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -1035,14 +1035,14 @@
     "y": 620,
     "wires": [
       [
-        "a33cb2720ab34313"
+        "b6e4ff8ba72d45a7"
       ]
     ]
   },
   {
-    "id": "a33cb2720ab34313",
+    "id": "b6e4ff8ba72d45a7",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -1055,14 +1055,14 @@
     "y": 620,
     "wires": [
       [
-        "57f690aefd754cd4"
+        "fb1e0c71a3c54b28"
       ]
     ]
   },
   {
-    "id": "57f690aefd754cd4",
+    "id": "fb1e0c71a3c54b28",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
@@ -1082,9 +1082,9 @@
     ]
   },
   {
-    "id": "147c7bc9cd6f432f",
+    "id": "5a6f362632474391",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 7:00 AM (Risk)",
     "props": [
       {
@@ -1106,14 +1106,14 @@
     "y": 680,
     "wires": [
       [
-        "d7bf314b973243b0"
+        "cf368124332c4bf0"
       ]
     ]
   },
   {
-    "id": "d7bf314b973243b0",
+    "id": "cf368124332c4bf0",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 runRiskIntelligenceLoop",
     "func": "msg.payload = { action: 'runRiskIntelligenceLoop' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=runRiskIntelligenceLoop';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"runRiskIntelligenceLoop...\"});\nreturn msg;",
     "outputs": 1,
@@ -1126,14 +1126,14 @@
     "y": 680,
     "wires": [
       [
-        "07a90b0b64a1445a"
+        "a0c828e3a61e4081"
       ]
     ]
   },
   {
-    "id": "07a90b0b64a1445a",
+    "id": "a0c828e3a61e4081",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -1150,14 +1150,14 @@
     "y": 680,
     "wires": [
       [
-        "8382a01e49634f5b"
+        "5fbfdacb53584f44"
       ]
     ]
   },
   {
-    "id": "8382a01e49634f5b",
+    "id": "5fbfdacb53584f44",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -1170,14 +1170,14 @@
     "y": 680,
     "wires": [
       [
-        "2e4a7a8fb5464ec4"
+        "d8bea0f25bef4fa7"
       ]
     ]
   },
   {
-    "id": "2e4a7a8fb5464ec4",
+    "id": "d8bea0f25bef4fa7",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
@@ -1197,9 +1197,9 @@
     ]
   },
   {
-    "id": "b03932733add4f42",
+    "id": "956af962ce5b47ee",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 9:00 AM (Court)",
     "props": [
       {
@@ -1221,14 +1221,14 @@
     "y": 740,
     "wires": [
       [
-        "f77437452e6e4296"
+        "2394d28e69c94e56"
       ]
     ]
   },
   {
-    "id": "f77437452e6e4296",
+    "id": "2394d28e69c94e56",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 processDailyCourtReminders",
     "func": "msg.payload = { action: 'processDailyCourtReminders' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=processDailyCourtReminders';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"processDailyCourtReminders...\"});\nreturn msg;",
     "outputs": 1,
@@ -1241,14 +1241,14 @@
     "y": 740,
     "wires": [
       [
-        "dc473ace368f41f2"
+        "3e0061040f0b4c4a"
       ]
     ]
   },
   {
-    "id": "dc473ace368f41f2",
+    "id": "3e0061040f0b4c4a",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -1265,14 +1265,14 @@
     "y": 740,
     "wires": [
       [
-        "e806b03d9b5f4fd6"
+        "30217be40835496d"
       ]
     ]
   },
   {
-    "id": "e806b03d9b5f4fd6",
+    "id": "30217be40835496d",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -1285,14 +1285,14 @@
     "y": 740,
     "wires": [
       [
-        "0f20abbd3cc34b66"
+        "76815a13a4024123"
       ]
     ]
   },
   {
-    "id": "0f20abbd3cc34b66",
+    "id": "76815a13a4024123",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
@@ -1312,9 +1312,9 @@
     ]
   },
   {
-    "id": "088aac2d1f72469a",
+    "id": "a93928c221c6454e",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 10:00 AM Mon (Payments)",
     "props": [
       {
@@ -1336,14 +1336,14 @@
     "y": 800,
     "wires": [
       [
-        "5aab15b511274d5b"
+        "d8514b53938d4199"
       ]
     ]
   },
   {
-    "id": "5aab15b511274d5b",
+    "id": "d8514b53938d4199",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 TG_processWeeklyPaymentProgress",
     "func": "msg.payload = { action: 'TG_processWeeklyPaymentProgress' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=TG_processWeeklyPaymentProgress';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"TG_processWeeklyPaymentProgress...\"});\nreturn msg;",
     "outputs": 1,
@@ -1356,14 +1356,14 @@
     "y": 800,
     "wires": [
       [
-        "a438ae24ef9c4085"
+        "fcce0ca80cc24f73"
       ]
     ]
   },
   {
-    "id": "a438ae24ef9c4085",
+    "id": "fcce0ca80cc24f73",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -1380,14 +1380,14 @@
     "y": 800,
     "wires": [
       [
-        "29e9d3e3bf944b89"
+        "f0e18cbfd3bb4019"
       ]
     ]
   },
   {
-    "id": "29e9d3e3bf944b89",
+    "id": "f0e18cbfd3bb4019",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -1400,14 +1400,14 @@
     "y": 800,
     "wires": [
       [
-        "759e94059721477b"
+        "c26c46b72c6f49c1"
       ]
     ]
   },
   {
-    "id": "759e94059721477b",
+    "id": "c26c46b72c6f49c1",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
@@ -1427,9 +1427,9 @@
     ]
   },
   {
-    "id": "bead7dddcd7e412b",
+    "id": "cd426cc004ec496d",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 11:00 AM (Retry Posts)",
     "props": [
       {
@@ -1451,14 +1451,14 @@
     "y": 860,
     "wires": [
       [
-        "e6e02a0cb8b84253"
+        "bf9c9c0b6ce64b35"
       ]
     ]
   },
   {
-    "id": "e6e02a0cb8b84253",
+    "id": "bf9c9c0b6ce64b35",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 retryFailedPosts",
     "func": "msg.payload = { action: 'retryFailedPosts' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=retryFailedPosts';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"retryFailedPosts...\"});\nreturn msg;",
     "outputs": 1,
@@ -1471,14 +1471,14 @@
     "y": 860,
     "wires": [
       [
-        "34500bac48c8428d"
+        "96dd6dbf92ae4fd8"
       ]
     ]
   },
   {
-    "id": "34500bac48c8428d",
+    "id": "96dd6dbf92ae4fd8",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -1495,14 +1495,14 @@
     "y": 860,
     "wires": [
       [
-        "5daa759b8f364a64"
+        "261536f57dee447f"
       ]
     ]
   },
   {
-    "id": "5daa759b8f364a64",
+    "id": "261536f57dee447f",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -1515,14 +1515,14 @@
     "y": 860,
     "wires": [
       [
-        "1f6d0207ca6a4a9e"
+        "a6ea5c921c7348e6"
       ]
     ]
   },
   {
-    "id": "1f6d0207ca6a4a9e",
+    "id": "a6ea5c921c7348e6",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
@@ -1542,9 +1542,9 @@
     ]
   },
   {
-    "id": "9a89ea3b1b714a2b",
+    "id": "b6977f26a6d34cbf",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 11:00 AM (Check-ins)",
     "props": [
       {
@@ -1566,14 +1566,14 @@
     "y": 920,
     "wires": [
       [
-        "4c3fcd25f58a4adb"
+        "2feba5f73acf456e"
       ]
     ]
   },
   {
-    "id": "4c3fcd25f58a4adb",
+    "id": "2feba5f73acf456e",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 sendAutomatedCheckIns",
     "func": "msg.payload = { action: 'sendAutomatedCheckIns' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=sendAutomatedCheckIns';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"sendAutomatedCheckIns...\"});\nreturn msg;",
     "outputs": 1,
@@ -1586,14 +1586,14 @@
     "y": 920,
     "wires": [
       [
-        "2a40e55dcce746ef"
+        "ccf46b3d60b44264"
       ]
     ]
   },
   {
-    "id": "2a40e55dcce746ef",
+    "id": "ccf46b3d60b44264",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -1610,14 +1610,14 @@
     "y": 920,
     "wires": [
       [
-        "bed6178e83d948be"
+        "3a8d14c2a4404085"
       ]
     ]
   },
   {
-    "id": "bed6178e83d948be",
+    "id": "3a8d14c2a4404085",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -1630,14 +1630,14 @@
     "y": 920,
     "wires": [
       [
-        "e244b91238c94a57"
+        "7884d031a3254b08"
       ]
     ]
   },
   {
-    "id": "e244b91238c94a57",
+    "id": "7884d031a3254b08",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
@@ -1657,9 +1657,9 @@
     ]
   },
   {
-    "id": "f33a62cff2dc4a13",
+    "id": "88ef322e9b6e458c",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 1:00 PM (Geofence)",
     "props": [
       {
@@ -1681,14 +1681,14 @@
     "y": 980,
     "wires": [
       [
-        "61a58f942ed84b9b"
+        "ffc671151c8747cb"
       ]
     ]
   },
   {
-    "id": "61a58f942ed84b9b",
+    "id": "ffc671151c8747cb",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 checkCourtDateProximity",
     "func": "msg.payload = { action: 'checkCourtDateProximity' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=checkCourtDateProximity';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"checkCourtDateProximity...\"});\nreturn msg;",
     "outputs": 1,
@@ -1701,14 +1701,14 @@
     "y": 980,
     "wires": [
       [
-        "67e7e0d4f2114cfe"
+        "78f24b73edb44665"
       ]
     ]
   },
   {
-    "id": "67e7e0d4f2114cfe",
+    "id": "78f24b73edb44665",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -1725,14 +1725,14 @@
     "y": 980,
     "wires": [
       [
-        "ca82a3f204cb4d9c"
+        "31f14cbacbc14949"
       ]
     ]
   },
   {
-    "id": "ca82a3f204cb4d9c",
+    "id": "31f14cbacbc14949",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -1745,14 +1745,14 @@
     "y": 980,
     "wires": [
       [
-        "26b3dc0c6ec94339"
+        "a6dfadc3770446d0"
       ]
     ]
   },
   {
-    "id": "26b3dc0c6ec94339",
+    "id": "a6dfadc3770446d0",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
@@ -1772,9 +1772,9 @@
     ]
   },
   {
-    "id": "f6197160723841c0",
+    "id": "8443cc47b2f6460d",
     "type": "inject",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u23f0 2:00 PM (Reconcile)",
     "props": [
       {
@@ -1796,14 +1796,14 @@
     "y": 1040,
     "wires": [
       [
-        "e0192db80f924ef2"
+        "d788739b107a4e74"
       ]
     ]
   },
   {
-    "id": "e0192db80f924ef2",
+    "id": "d788739b107a4e74",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83d\udce6 reconcilePaymentPlans",
     "func": "msg.payload = { action: 'reconcilePaymentPlans' };\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.url = 'https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec?action=reconcilePaymentPlans';\nnode.status({fill:\"blue\", shape:\"ring\", text:\"reconcilePaymentPlans...\"});\nreturn msg;",
     "outputs": 1,
@@ -1816,14 +1816,14 @@
     "y": 1040,
     "wires": [
       [
-        "97373448e1a844e5"
+        "de231b5655414eab"
       ]
     ]
   },
   {
-    "id": "97373448e1a844e5",
+    "id": "de231b5655414eab",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\ud83c\udf10 GAS Call",
     "method": "POST",
     "ret": "obj",
@@ -1840,14 +1840,14 @@
     "y": 1040,
     "wires": [
       [
-        "07ad318db6114283"
+        "67aeee09e6994dd5"
       ]
     ]
   },
   {
-    "id": "07ad318db6114283",
+    "id": "67aeee09e6994dd5",
     "type": "function",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u2705 Result",
     "func": "const result = msg.payload || {};\nconst action = msg.payload.action || msg.topic || 'unknown';\nconst ok = result.success || result.status === 'ok' || msg.statusCode === 200;\n\nif (ok) {\n    node.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + new Date().toLocaleTimeString('en-US', {timeZone:'America/New_York'})});\n} else {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c \" + (result.error || msg.statusCode || 'failed')});\n    \n    // Alert on failure\n    msg.headers = {\n        \"Authorization\": \"Bearer \" + (global.get(\"SLACK_TOKEN\") || \"\"),\n        \"Content-Type\": \"application/json; charset=utf-8\"\n    };\n    msg.payload = {\n        \"channel\": \"#alerts\",\n        \"text\": \"\u26a0\ufe0f *GAS Scheduler Alert*\\nAction failed: \" + action + \"\\nError: \" + (result.error || msg.statusCode || 'unknown')\n    };\n    msg.url = \"https://slack.com/api/chat.postMessage\";\n    return msg;\n}\nreturn null;",
     "outputs": 1,
@@ -1860,14 +1860,14 @@
     "y": 1040,
     "wires": [
       [
-        "ae194c6a03fc455d"
+        "85dd15dd5b8a4e90"
       ]
     ]
   },
   {
-    "id": "ae194c6a03fc455d",
+    "id": "85dd15dd5b8a4e90",
     "type": "http request",
-    "z": "47a279345d2c43f7",
+    "z": "2cf73d0e7cc34650",
     "name": "\u26a0\ufe0f Slack Alert (on error)",
     "method": "POST",
     "ret": "obj",
