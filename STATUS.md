@@ -69,5 +69,6 @@ See `shamrock-telegram-app/STATUS.md` for Telegram mini-app data flows.
 | OSINT Intelligence + Ops Digest Node-RED tabs (`osint_ops_flows.json`) | ✅ |
 
 | FlowFuse Dashboard Command Center (Shamrock emerald theme + logo) | ✅ |
+| Public Site Monitors tab (FA/embeds/home read-only probes) | ✅ 2026-08-06 |
 
 | Workflow Kit subflows + Automation Builder page | ✅ |
