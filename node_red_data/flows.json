@@ -547,7 +547,8 @@
       [
         "node-slack-response"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "node-slack-response",
@@ -1498,7 +1499,8 @@
         "9498c8758b964060",
         "fn-process-scraper-response"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "9498c8758b964060",
@@ -1561,7 +1563,8 @@
       [
         "c64ed1f07f7e41a0"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "1770a9db8dc8478c",
@@ -1607,7 +1610,8 @@
       [
         "dc58638431b94db0"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "84baa60c49364c11",
@@ -1638,7 +1642,8 @@
       [
         "f9ff69187b164abb"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ca2d28d6b17745b8",
@@ -1684,7 +1689,8 @@
       [
         "04ded4ccc9ed423a"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "4f46bfeb4fac472a",
@@ -1730,7 +1736,8 @@
       [
         "34b3f81517c24710"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "94b98db845e54761",
@@ -1807,7 +1814,8 @@
         "678369f714ab460f",
         "fn-process-scraper-response"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "678369f714ab460f",
@@ -1901,7 +1909,8 @@
         "6521dd03f30b4a07",
         "fn-process-court-email-resp"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "6521dd03f30b4a07",
@@ -1981,7 +1990,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "a4ebf0a9",
@@ -2044,7 +2054,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "9a946f62",
@@ -2107,7 +2118,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "fa597b15",
@@ -2170,7 +2182,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "4400792a",
@@ -2233,7 +2246,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "737678fb",
@@ -2296,7 +2310,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "611c8b46",
@@ -2359,7 +2374,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "e239e3cb",
@@ -2422,7 +2438,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "dd4e66f4",
@@ -2485,7 +2502,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "1b54db70",
@@ -2566,7 +2584,8 @@
       [
         "dac824f9"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "dac824f9",
@@ -2703,7 +2722,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ui_toast_doc_result",
@@ -3048,7 +3068,8 @@
       [
         "ba4c02e1"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ba4c02e1",
@@ -3123,7 +3144,8 @@
       [
         "cab8a0945aa84fe1"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "dbg-19cd52abe46",
@@ -3320,7 +3342,8 @@
         "node-irb-debug",
         "fn-build-outreach-status"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "node-irb-11labs-build",
@@ -3360,7 +3383,8 @@
         "node-irb-debug",
         "fn-build-outreach-status"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "node-irb-debug",
@@ -3498,7 +3522,8 @@
       [
         "ddad251f1de64275"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "be294373",
@@ -3550,7 +3575,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "node-telegram-in",
@@ -3602,7 +3628,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "prep_signnow_payload",
@@ -3642,7 +3669,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "log_signnow",
@@ -3843,7 +3871,8 @@
       [
         "78f50c41f91547b5"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "tg-bot-debug",
@@ -3931,7 +3960,8 @@
       [
         "32209bc19f9b4521"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "tg-convo-debug",
@@ -4020,7 +4050,8 @@
       [
         "265ca24bf99e41e5"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "11labs-slack-alert",
@@ -4057,7 +4088,8 @@
       [
         "8f218d095d644d90"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "11labs-status-debug",
@@ -4145,7 +4177,8 @@
       [
         "c0a9a90fcffc435c"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "tg-miniapp-debug",
@@ -4238,7 +4271,8 @@
       [
         "1da98bdcee3e44da"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ngrok-config-inject",
@@ -4441,7 +4475,8 @@
       [
         "ff16a5e49b5c4c20"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ff16a5e49b5c4c20",
@@ -4505,7 +4540,8 @@
       [
         "9e71bb42ceaa4468"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "9e71bb42ceaa4468",
@@ -4612,7 +4648,8 @@
       [
         "8d497a89645743c3"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "8d497a89645743c3",
@@ -4676,7 +4713,8 @@
       [
         "6ea236429cc144e6"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "6ea236429cc144e6",
@@ -4783,7 +4821,8 @@
       [
         "23ff3fb32f384276"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "23ff3fb32f384276",
@@ -4847,7 +4886,8 @@
       [
         "779e2792ccd446f5"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "779e2792ccd446f5",
@@ -4955,7 +4995,8 @@
       [
         "20056dc8a47c4f41"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "0c7112e935114ef7",
@@ -5039,7 +5080,8 @@
       [
         "ddc28f1b29cb439c"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ddc28f1b29cb439c",
@@ -5147,7 +5189,8 @@
         "b310f91a5baa440f",
         "fn-update-ticker-from-gas"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "b310f91a5baa440f",
@@ -5252,7 +5295,8 @@
       [
         "fe46817fd4f2483d"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "9e6dc9af7af848ee",
@@ -5276,7 +5320,8 @@
       [
         "4549598f7a18419e"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "fe46817fd4f2483d",
@@ -5479,7 +5524,8 @@
       [
         "c1e150e019514af0"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "c1e150e019514af0",
@@ -5616,7 +5662,8 @@
       [
         "5bfc3985a7c841f3"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "5bfc3985a7c841f3",
@@ -5661,7 +5708,8 @@
       [
         "b0d221eb57b04e40"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "c2f35535e3cc4fb9",
@@ -5741,7 +5789,8 @@
       [
         "22dc3a7245274a64"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "22dc3a7245274a64",
@@ -5786,7 +5835,8 @@
       [
         "4b7a08630ca040b6"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "786b8de0367b447e",
@@ -5866,7 +5916,8 @@
       [
         "2f08fa3e7e6c4000"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "2f08fa3e7e6c4000",
@@ -5911,7 +5962,8 @@
       [
         "e0c63a9253a14a33"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "9813c94555a048a5",
@@ -5991,7 +6043,8 @@
       [
         "dbce8bcf62d74642"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "dbce8bcf62d74642",
@@ -6036,7 +6089,8 @@
       [
         "3076a6cfc4c94f2b"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "7734c9f1ecd44537",
@@ -6116,7 +6170,8 @@
       [
         "6d85f16c68b8450a"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "6d85f16c68b8450a",
@@ -6161,7 +6216,8 @@
       [
         "86d8935d23844cc1"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "b0a8b7e707314dc0",
@@ -6241,7 +6297,8 @@
       [
         "b1a70079a54645a5"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "b1a70079a54645a5",
@@ -6286,7 +6343,8 @@
       [
         "f6be1b607fe14bee"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "7e931f955c534fd4",
@@ -6366,7 +6424,8 @@
       [
         "6a75baa88fd34bbc"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "6a75baa88fd34bbc",
@@ -6411,7 +6470,8 @@
       [
         "4a69154ca3cb4e63"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "2d626dfd126c4332",
@@ -6491,7 +6551,8 @@
       [
         "a37f060b7e424bbf"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "a37f060b7e424bbf",
@@ -6536,7 +6597,8 @@
       [
         "57367e1e415e41c5"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "e902263901fb43a0",
@@ -6616,7 +6678,8 @@
       [
         "a33cb2720ab34313"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "a33cb2720ab34313",
@@ -6661,7 +6724,8 @@
       [
         "c20dede2f61741fa"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "147c7bc9cd6f432f",
@@ -6741,7 +6805,8 @@
       [
         "8382a01e49634f5b"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "8382a01e49634f5b",
@@ -6786,7 +6851,8 @@
       [
         "a05fe795082b42e5"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "b03932733add4f42",
@@ -6866,7 +6932,8 @@
       [
         "e806b03d9b5f4fd6"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "e806b03d9b5f4fd6",
@@ -6911,7 +6978,8 @@
       [
         "9d9f84bbc60746f8"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "088aac2d1f72469a",
@@ -6991,7 +7059,8 @@
       [
         "29e9d3e3bf944b89"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "29e9d3e3bf944b89",
@@ -7036,7 +7105,8 @@
       [
         "60b9dda26c0c419c"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "bead7dddcd7e412b",
@@ -7116,7 +7186,8 @@
       [
         "5daa759b8f364a64"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "5daa759b8f364a64",
@@ -7161,7 +7232,8 @@
       [
         "a6f161493066413a"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "9a89ea3b1b714a2b",
@@ -7241,7 +7313,8 @@
       [
         "bed6178e83d948be"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "bed6178e83d948be",
@@ -7286,7 +7359,8 @@
       [
         "43d6e4efa9d54515"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "f33a62cff2dc4a13",
@@ -7366,7 +7440,8 @@
       [
         "ca82a3f204cb4d9c"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ca82a3f204cb4d9c",
@@ -7411,7 +7486,8 @@
       [
         "f2fa8ff34f1b4084"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "f6197160723841c0",
@@ -7491,7 +7567,8 @@
       [
         "07ad318db6114283"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "07ad318db6114283",
@@ -7536,7 +7613,8 @@
       [
         "e7906e3b70d441d4"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "e1ffe2c13c804c2e",
@@ -7626,7 +7704,8 @@
       [
         "a666b20f177d48dd"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "a666b20f177d48dd",
@@ -7697,7 +7776,8 @@
       [
         "9239a2c3059f4255"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "9239a2c3059f4255",
@@ -7761,7 +7841,8 @@
       [
         "3bf3ec66374d46d7"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "3bf3ec66374d46d7",
@@ -7868,7 +7949,8 @@
       [
         "7cec1b6568154517"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "7cec1b6568154517",
@@ -8008,7 +8090,8 @@
       [
         "26b056527d9e4f20"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "26b056527d9e4f20",
@@ -8052,7 +8135,8 @@
       [
         "4c5bbe30bede4c92"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "4c5bbe30bede4c92",
@@ -8159,7 +8243,8 @@
       [
         "4954f20e6bad4667"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "4954f20e6bad4667",
@@ -8230,7 +8315,8 @@
       [
         "9f8dae6fc3bc4385"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "9f8dae6fc3bc4385",
@@ -8274,7 +8360,8 @@
       [
         "2f5f347469b04f7f"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "2f5f347469b04f7f",
@@ -8381,7 +8468,8 @@
       [
         "2d0c8899939747a3"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "2d0c8899939747a3",
@@ -8452,7 +8540,8 @@
       [
         "787bd108514b42fa"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "787bd108514b42fa",
@@ -8496,7 +8585,8 @@
       [
         "d272d7b3d42349a4"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "d272d7b3d42349a4",
@@ -8603,7 +8693,8 @@
       [
         "360f7e6097414a00"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "360f7e6097414a00",
@@ -8690,7 +8781,8 @@
       [
         "1baa660f180c4d95"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "1baa660f180c4d95",
@@ -8799,7 +8891,8 @@
       [
         "d9ad21df5d5b401e"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "0a8676e393144195",
@@ -8850,7 +8943,8 @@
       [
         "30859efe4f5e4c96"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "30859efe4f5e4c96",
@@ -8901,7 +8995,8 @@
       [
         "4330d58a38674a01"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "4330d58a38674a01",
@@ -8945,7 +9040,8 @@
       [
         "a6859d72059e4a7b"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "a6859d72059e4a7b",
@@ -9063,7 +9159,8 @@
       [
         "ddcfd5c586ed46ee"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ddcfd5c586ed46ee",
@@ -9127,7 +9224,8 @@
       [
         "a74795a83f92458a"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "a74795a83f92458a",
@@ -9234,7 +9332,8 @@
       [
         "755665ab6e204977"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "755665ab6e204977",
@@ -9298,7 +9397,8 @@
       [
         "1580094e87e446aa"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "1580094e87e446aa",
@@ -9405,7 +9505,8 @@
       [
         "41d4410b811a4a94"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "41d4410b811a4a94",
@@ -9469,7 +9570,8 @@
       [
         "7bb1493e70f64792"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "7bb1493e70f64792",
@@ -9569,7 +9671,8 @@
       [
         "0f472b5749244fda"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "0f472b5749244fda",
@@ -9620,7 +9723,8 @@
       [
         "7db7a2f52f5747d9"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "7db7a2f52f5747d9",
@@ -9664,7 +9768,8 @@
       [
         "a85e4f95291e4d8b"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "a85e4f95291e4d8b",
@@ -9721,7 +9826,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "6b8ce56f4cdf48ea",
@@ -9779,7 +9885,8 @@
       ]
     ],
     "x": 870,
-    "y": 720
+    "y": 720,
+    "reqTimeout": 15000
   },
   {
     "id": "3d618b533f0a4170",
@@ -11963,7 +12070,8 @@
         "node-irb-debug",
         "fn-build-outreach-status"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "node-irb-tg-build",
@@ -12003,7 +12111,8 @@
         "node-irb-debug",
         "fn-build-outreach-status"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "node-irb-email-build",
@@ -12050,7 +12159,8 @@
         "node-irb-debug",
         "fn-build-outreach-status"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "node-irb-status-display",
@@ -12240,7 +12350,8 @@
       [
         "node-court-remind-result"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "node-court-remind-result",
@@ -12353,7 +12464,8 @@
       [
         "node-magic-link-result"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "node-magic-link-result",
@@ -12443,7 +12555,8 @@
     "y": 340,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "node-panic-btn",
@@ -12511,7 +12624,8 @@
       [
         "node-panic-status"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "node-panic-status",
@@ -12624,7 +12738,8 @@
       [
         "node-collections-result"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "node-collections-result",
@@ -12705,7 +12820,8 @@
         "valueType": "other",
         "valueValue": "Bearer {{global.SLACK_BOT_TOKEN}}"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "debug_error_log_node",
@@ -12830,7 +12946,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "t007-process-response",
@@ -12897,7 +13014,8 @@
       [
         "t007-debug"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "t007-slack-post",
@@ -12927,7 +13045,8 @@
         "valueType": "other",
         "valueValue": "Bearer {{global.SLACK_BOT_TOKEN}}"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "t007-debug",
@@ -13238,7 +13357,8 @@
         "valueType": "other",
         "valueValue": "application/json"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sf-check-resp",
@@ -13286,7 +13406,8 @@
         "valueType": "other",
         "valueValue": "Bearer {{global.SLACK_BOT_TOKEN}}"
       }
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "tab_scraper_ctrl_v2",
@@ -13446,7 +13567,8 @@
       [
         "sc2_res_all"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_all",
@@ -13528,7 +13650,8 @@
       [
         "sc2_res_01"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_01",
@@ -13610,7 +13733,8 @@
       [
         "sc2_res_02"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_02",
@@ -13692,7 +13816,8 @@
       [
         "sc2_res_03"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_03",
@@ -13774,7 +13899,8 @@
       [
         "sc2_res_04"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_04",
@@ -13856,7 +13982,8 @@
       [
         "sc2_res_05"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_05",
@@ -13938,7 +14065,8 @@
       [
         "sc2_res_06"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_06",
@@ -14020,7 +14148,8 @@
       [
         "sc2_res_07"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_07",
@@ -14102,7 +14231,8 @@
       [
         "sc2_res_08"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_08",
@@ -14184,7 +14314,8 @@
       [
         "sc2_res_09"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_09",
@@ -14266,7 +14397,8 @@
       [
         "sc2_res_10"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_10",
@@ -14348,7 +14480,8 @@
       [
         "sc2_res_11"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_11",
@@ -14430,7 +14563,8 @@
       [
         "sc2_res_12"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_12",
@@ -14512,7 +14646,8 @@
       [
         "sc2_res_13"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_13",
@@ -14594,7 +14729,8 @@
       [
         "sc2_res_14"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_14",
@@ -14676,7 +14812,8 @@
       [
         "sc2_res_15"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sc2_res_15",
@@ -14813,7 +14950,8 @@
       [
         "fn-mongo-process-atlas"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "fn-mongo-process-atlas",
@@ -14856,7 +14994,8 @@
       [
         "fn-mongo-process-gas"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "fn-mongo-process-gas",
@@ -14990,7 +15129,8 @@
       [
         "fn-irb-parse-response"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "fn-irb-parse-response",
@@ -15136,7 +15276,8 @@
       [
         "drip_parse_001"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "drip_parse_001",
@@ -15200,7 +15341,8 @@
       [
         "drip_debug_001"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "drip_debug_001",
@@ -15672,7 +15814,8 @@
       [
         "pref_sync_store"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "pref_sync_store",
@@ -15790,7 +15933,8 @@
       [
         "t022_parse"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "t022_parse",
@@ -15853,7 +15997,8 @@
     "y": 800,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "t022_debug",
@@ -16113,7 +16258,8 @@
     "y": 600,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "t026_debug",
@@ -16260,7 +16406,8 @@
     "y": 1620,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "subflow_tenant",
@@ -16394,7 +16541,8 @@
       [
         "t018_store"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "t018_store",
@@ -16471,7 +16619,8 @@
     "y": 100,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "closer_ab_test",
@@ -16737,7 +16886,8 @@
       [
         "ro_dedup"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ro_dedup",
@@ -16802,7 +16952,8 @@
       [
         "ro_enrich"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ro_enrich",
@@ -16867,7 +17018,8 @@
       [
         "ro_debug"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ro_outreach",
@@ -16911,7 +17063,8 @@
       [
         "ro_outreach_result"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ro_outreach_result",
@@ -16975,7 +17128,8 @@
       [
         "ro_debug"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ro_debug",
@@ -17109,7 +17263,8 @@
       [
         "bb_debug_fwd"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "bb_log_to_slack",
@@ -17138,7 +17293,8 @@
     "y": 200,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "bb_send_comment",
@@ -17197,7 +17353,8 @@
       [
         "bb_send_result"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "bb_send_result",
@@ -17306,7 +17463,8 @@
     "y": 600,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "tab-findmy-tracker",
@@ -17379,7 +17537,8 @@
       [
         "fm_process_locations"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "fm_process_locations",
@@ -17428,7 +17587,8 @@
       [
         "fm_debug_breach"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "fm_debug_ok",
@@ -17492,7 +17652,8 @@
     "y": 280,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "tab-speed-to-contact",
@@ -17581,7 +17742,8 @@
       [
         "s2c_check_bb_result"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "s2c_check_bb_result",
@@ -17630,7 +17792,8 @@
       [
         "s2c_log_success"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "s2c_log_success",
@@ -17659,7 +17822,8 @@
     "y": 120,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "s2c_error_catch",
@@ -17703,7 +17867,8 @@
     "y": 280,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "tab-paperwork-chase",
@@ -17776,7 +17941,8 @@
       [
         "pc_process_list"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "pc_process_list",
@@ -17840,7 +18006,8 @@
       [
         "pc_check_result"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "pc_check_result",
@@ -17887,7 +18054,8 @@
       [
         "pc_voice_debug"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "pc_voice_debug",
@@ -17941,7 +18109,8 @@
     "y": 360,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "wd_check_dashboard",
@@ -17972,7 +18141,8 @@
       [
         "wd_dash_collect"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "wd_dash_collect",
@@ -18098,7 +18268,8 @@
       [
         "ce_slack_fmt"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ce_slack_fmt",
@@ -18142,7 +18313,8 @@
       [
         "ce_debug"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ce_debug",
@@ -18311,7 +18483,8 @@
       [
         "br_slack_fmt"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "br_slack_fmt",
@@ -18353,7 +18526,8 @@
     "y": 520,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "dr_inject",
@@ -18422,7 +18596,8 @@
       [
         "dr_slack_fmt"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "dr_slack_fmt",
@@ -18464,7 +18639,8 @@
     "y": 680,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "co_catch",
@@ -18521,7 +18697,8 @@
     "y": 760,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "tab_dashboard_brand",
@@ -18852,7 +19029,8 @@
       [
         "cc_prep_schedule"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "cc_prep_schedule",
@@ -18894,7 +19072,8 @@
       [
         "cc_prep_health"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "cc_prep_health",
@@ -18936,7 +19115,8 @@
       [
         "cc_merge_status"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "cc_merge_status",
@@ -19142,7 +19322,8 @@
       [
         "cc_action_status"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "cc_action_status",
@@ -19400,7 +19581,8 @@
       [
         "wf_merge"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "wf_merge",
@@ -19550,7 +19732,8 @@
       [
         "lq_prep_concierge"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "lq_prep_concierge",
@@ -19594,7 +19777,8 @@
       [
         "lq_prep_leads"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "lq_prep_leads",
@@ -19638,7 +19822,8 @@
       [
         "lq_slack_fmt"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "lq_slack_fmt",
@@ -19685,7 +19870,8 @@
       [
         "lq_debug"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "lq_debug",
@@ -19759,7 +19945,8 @@
     "y": 460,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "bl_comment",
@@ -19863,7 +20050,8 @@
       [
         "bl_prep_closer"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "bl_prep_closer",
@@ -19910,7 +20098,8 @@
       [
         "bl_slack_fmt"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "bl_slack_fmt",
@@ -19954,7 +20143,8 @@
       [
         "bl_debug"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "bl_debug",
@@ -20028,7 +20218,8 @@
     "y": 400,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "rm_comment",
@@ -20157,7 +20348,8 @@
       [
         "rm_prep_court"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "rm_prep_court",
@@ -20201,7 +20393,8 @@
       [
         "rm_prep_checkins"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "rm_prep_checkins",
@@ -20245,7 +20438,8 @@
       [
         "rm_prep_leads"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "rm_prep_leads",
@@ -20289,7 +20483,8 @@
       [
         "rm_slack_fmt"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "rm_slack_fmt",
@@ -20333,7 +20528,8 @@
       [
         "rm_debug"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "rm_debug",
@@ -20407,7 +20603,8 @@
     "y": 560,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "tab_osint",
@@ -20583,7 +20780,8 @@
       [
         "osint_slack_hot"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "osint_slack_hot",
@@ -20650,7 +20848,8 @@
       [
         "osint_health_fmt"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "osint_health_fmt",
@@ -20697,7 +20896,8 @@
       [
         "osint_debug"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "osint_debug",
@@ -20822,7 +21022,8 @@
       [
         "ops_fmt"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ops_fmt",
@@ -20869,7 +21070,8 @@
       [
         "ops_debug"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "ops_debug",
@@ -21063,7 +21265,8 @@
       [
         "sf_leads_check"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sf_leads_check",
@@ -21167,7 +21370,8 @@
       [
         "sf_slack_route"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sf_slack_route",
@@ -21369,7 +21573,8 @@
       [
         "sf_gas_check"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "sf_gas_check",
@@ -21630,7 +21835,8 @@
       [
         "wk_debug"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "bus_leads_fn",
@@ -21668,7 +21874,8 @@
       [
         "bus_result_ok"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "bus_slack_fn",
@@ -21704,7 +21911,8 @@
     "y": 200,
     "wires": [
       []
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "tab_public_site_mon",
@@ -21794,7 +22002,8 @@
       [
         "psm_evaluate"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "psm_evaluate",
@@ -21858,7 +22067,8 @@
       [
         "psm_debug"
       ]
-    ]
+    ],
+    "reqTimeout": 15000
   },
   {
     "id": "psm_debug",
@@ -21876,5 +22086,652 @@
     "x": 1410,
     "y": 120,
     "wires": []
+  },
+  {
+    "id": "79d35b6325424dbf",
+    "type": "catch",
+    "z": "tab-bond-renewal",
+    "name": "Catch Errors (Bond Renewal Reminders)",
+    "scope": null,
+    "uncaught": false,
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "b3fae3febd384db7"
+      ]
+    ]
+  },
+  {
+    "id": "b3fae3febd384db7",
+    "type": "function",
+    "z": "tab-bond-renewal",
+    "name": "Format Error Payload",
+    "func": "msg.payload = {\n    timestamp: new Date().toISOString(),\n    tab: \"Bond Renewal Reminders\",\n    error: msg.error ? msg.error.message : \"Unknown error\",\n    source: msg.error && msg.error.source ? msg.error.source.name : \"System\"\n};\nnode.status({fill:\"red\", shape:\"dot\", text: msg.error ? msg.error.message : \"Error caught\"});\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "ccca49157f694d23"
+      ]
+    ]
+  },
+  {
+    "id": "ccca49157f694d23",
+    "type": "debug",
+    "z": "tab-bond-renewal",
+    "name": "Log Error (Bond Renewal Reminders)",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 540,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "1645c035318144e8",
+    "type": "catch",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Catch Errors (Scraper Control)",
+    "scope": null,
+    "uncaught": false,
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "333a8714494c40eb"
+      ]
+    ]
+  },
+  {
+    "id": "333a8714494c40eb",
+    "type": "function",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Format Error Payload",
+    "func": "msg.payload = {\n    timestamp: new Date().toISOString(),\n    tab: \"Scraper Control\",\n    error: msg.error ? msg.error.message : \"Unknown error\",\n    source: msg.error && msg.error.source ? msg.error.source.name : \"System\"\n};\nnode.status({fill:\"red\", shape:\"dot\", text: msg.error ? msg.error.message : \"Error caught\"});\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "9691cb9d7c154001"
+      ]
+    ]
+  },
+  {
+    "id": "9691cb9d7c154001",
+    "type": "debug",
+    "z": "tab_scraper_ctrl_v2",
+    "name": "Log Error (Scraper Control)",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 540,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "c5156f2033274ff7",
+    "type": "catch",
+    "z": "tab_repeat_offender",
+    "name": "Catch Errors (Repeat Offender Alerts)",
+    "scope": null,
+    "uncaught": false,
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "d2b2f1460fa944ff"
+      ]
+    ]
+  },
+  {
+    "id": "d2b2f1460fa944ff",
+    "type": "function",
+    "z": "tab_repeat_offender",
+    "name": "Format Error Payload",
+    "func": "msg.payload = {\n    timestamp: new Date().toISOString(),\n    tab: \"Repeat Offender Alerts\",\n    error: msg.error ? msg.error.message : \"Unknown error\",\n    source: msg.error && msg.error.source ? msg.error.source.name : \"System\"\n};\nnode.status({fill:\"red\", shape:\"dot\", text: msg.error ? msg.error.message : \"Error caught\"});\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "69c691bdbc2e4e34"
+      ]
+    ]
+  },
+  {
+    "id": "69c691bdbc2e4e34",
+    "type": "debug",
+    "z": "tab_repeat_offender",
+    "name": "Log Error (Repeat Offender Alerts)",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 540,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "d0496d123ed343f6",
+    "type": "catch",
+    "z": "tab_dashboard_brand",
+    "name": "Catch Errors (Dashboard Brand & Command)",
+    "scope": null,
+    "uncaught": false,
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "f9a093d27fae47a9"
+      ]
+    ]
+  },
+  {
+    "id": "f9a093d27fae47a9",
+    "type": "function",
+    "z": "tab_dashboard_brand",
+    "name": "Format Error Payload",
+    "func": "msg.payload = {\n    timestamp: new Date().toISOString(),\n    tab: \"Dashboard Brand & Command\",\n    error: msg.error ? msg.error.message : \"Unknown error\",\n    source: msg.error && msg.error.source ? msg.error.source.name : \"System\"\n};\nnode.status({fill:\"red\", shape:\"dot\", text: msg.error ? msg.error.message : \"Error caught\"});\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "0cdf4ca393a14c14"
+      ]
+    ]
+  },
+  {
+    "id": "0cdf4ca393a14c14",
+    "type": "debug",
+    "z": "tab_dashboard_brand",
+    "name": "Log Error (Dashboard Brand & Command)",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 540,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "7a645a022d774476",
+    "type": "catch",
+    "z": "tab_osint",
+    "name": "Catch Errors (OSINT Intelligence)",
+    "scope": null,
+    "uncaught": false,
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "1f72165ae8514910"
+      ]
+    ]
+  },
+  {
+    "id": "1f72165ae8514910",
+    "type": "function",
+    "z": "tab_osint",
+    "name": "Format Error Payload",
+    "func": "msg.payload = {\n    timestamp: new Date().toISOString(),\n    tab: \"OSINT Intelligence\",\n    error: msg.error ? msg.error.message : \"Unknown error\",\n    source: msg.error && msg.error.source ? msg.error.source.name : \"System\"\n};\nnode.status({fill:\"red\", shape:\"dot\", text: msg.error ? msg.error.message : \"Error caught\"});\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "3073f6f8ca714278"
+      ]
+    ]
+  },
+  {
+    "id": "3073f6f8ca714278",
+    "type": "debug",
+    "z": "tab_osint",
+    "name": "Log Error (OSINT Intelligence)",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 540,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "e9acb46057424778",
+    "type": "catch",
+    "z": "tab_ops_digest",
+    "name": "Catch Errors (Ops Digest Pack)",
+    "scope": null,
+    "uncaught": false,
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "b7b20b757dcc44a7"
+      ]
+    ]
+  },
+  {
+    "id": "b7b20b757dcc44a7",
+    "type": "function",
+    "z": "tab_ops_digest",
+    "name": "Format Error Payload",
+    "func": "msg.payload = {\n    timestamp: new Date().toISOString(),\n    tab: \"Ops Digest Pack\",\n    error: msg.error ? msg.error.message : \"Unknown error\",\n    source: msg.error && msg.error.source ? msg.error.source.name : \"System\"\n};\nnode.status({fill:\"red\", shape:\"dot\", text: msg.error ? msg.error.message : \"Error caught\"});\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "ab0b9592a8c0493b"
+      ]
+    ]
+  },
+  {
+    "id": "ab0b9592a8c0493b",
+    "type": "debug",
+    "z": "tab_ops_digest",
+    "name": "Log Error (Ops Digest Pack)",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 540,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "b81799db702b45a7",
+    "type": "catch",
+    "z": "tab_workflow_kit",
+    "name": "Catch Errors (Workflow Kit (Bus & Log))",
+    "scope": null,
+    "uncaught": false,
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "d6ab8c9ec562406c"
+      ]
+    ]
+  },
+  {
+    "id": "d6ab8c9ec562406c",
+    "type": "function",
+    "z": "tab_workflow_kit",
+    "name": "Format Error Payload",
+    "func": "msg.payload = {\n    timestamp: new Date().toISOString(),\n    tab: \"Workflow Kit (Bus & Log)\",\n    error: msg.error ? msg.error.message : \"Unknown error\",\n    source: msg.error && msg.error.source ? msg.error.source.name : \"System\"\n};\nnode.status({fill:\"red\", shape:\"dot\", text: msg.error ? msg.error.message : \"Error caught\"});\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "baa49452bca94c32"
+      ]
+    ]
+  },
+  {
+    "id": "baa49452bca94c32",
+    "type": "debug",
+    "z": "tab_workflow_kit",
+    "name": "Log Error (Workflow Kit (Bus & Log))",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 540,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "0a1a00d2dccb423b",
+    "type": "catch",
+    "z": "tab_public_site_mon",
+    "name": "Catch Errors (Public Site Monitors)",
+    "scope": null,
+    "uncaught": false,
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "a8f47505ecb24965"
+      ]
+    ]
+  },
+  {
+    "id": "a8f47505ecb24965",
+    "type": "function",
+    "z": "tab_public_site_mon",
+    "name": "Format Error Payload",
+    "func": "msg.payload = {\n    timestamp: new Date().toISOString(),\n    tab: \"Public Site Monitors\",\n    error: msg.error ? msg.error.message : \"Unknown error\",\n    source: msg.error && msg.error.source ? msg.error.source.name : \"System\"\n};\nnode.status({fill:\"red\", shape:\"dot\", text: msg.error ? msg.error.message : \"Error caught\"});\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "86baf7c56fbb4749"
+      ]
+    ]
+  },
+  {
+    "id": "86baf7c56fbb4749",
+    "type": "debug",
+    "z": "tab_public_site_mon",
+    "name": "Log Error (Public Site Monitors)",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 540,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "tab-imessage-healer",
+    "type": "tab",
+    "label": "iMessage & Tunnel Watchdog",
+    "disabled": false,
+    "info": "Automated 5-minute health probe & failover alert system for BlueBubbles and Tunnel connectivity."
+  },
+  {
+    "id": "3c4e1f79358742c6",
+    "type": "inject",
+    "z": "tab-imessage-healer",
+    "name": "\u23f0 Every 5 Min Probe",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "300",
+    "crontab": "",
+    "once": true,
+    "onceDelay": 5,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 140,
+    "wires": [
+      [
+        "490573d95d0d467f"
+      ]
+    ]
+  },
+  {
+    "id": "490573d95d0d467f",
+    "type": "http request",
+    "z": "tab-imessage-healer",
+    "name": "GET /api/bb-health/status",
+    "method": "GET",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "http://shamrock-dashboard:5050/api/bb-health/status",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "reqTimeout": 15000,
+    "x": 380,
+    "y": 140,
+    "wires": [
+      [
+        "3c6515d49baf42dc"
+      ]
+    ]
+  },
+  {
+    "id": "3c6515d49baf42dc",
+    "type": "function",
+    "z": "tab-imessage-healer",
+    "name": "Evaluate iMessage Health",
+    "func": "const data = msg.payload || {};\nconst isHealthy = data.healthy === true || data.status === \"online\";\nconst lastState = global.get(\"imessage_watchdog_state\") || \"unknown\";\nconst webhook = global.get(\"SLACK_WEBHOOK_ALERTS\") || process.env.SLACK_WEBHOOK_ERRORS || \"\";\n\nif (!isHealthy && lastState !== \"offline\") {\n    global.set(\"imessage_watchdog_state\", \"offline\");\n    if (webhook) {\n        msg.url = webhook;\n        msg.payload = {\n            text: \"\ud83d\udea8 *iMessage Bridge / Tunnel Alert*\\n- *Status*: Unreachable or Offline\\n- *Primary URL*: \" + (data.primary_url || \"N/A\") + \"\\n- *Issue*: \" + (data.error || data.message || \"Host unreachable\") + \"\\n- *Action*: Check Office iMac power/internet or update tunnel URL on Dashboard.\"\n        };\n        return msg;\n    }\n} else if (isHealthy && lastState === \"offline\") {\n    global.set(\"imessage_watchdog_state\", \"online\");\n    if (webhook) {\n        msg.url = webhook;\n        msg.payload = {\n            text: \"\u2705 *iMessage Bridge Connectivity Restored*\\n- *Primary URL*: \" + (data.primary_url || \"N/A\") + \"\\n- *Response Time*: \" + (data.ping_ms || \"OK\")\n        };\n        return msg;\n    }\n}\nnode.status({fill: isHealthy ? \"green\" : \"red\", shape: \"dot\", text: isHealthy ? \"Online\" : \"Offline\"});\nreturn null;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 640,
+    "y": 140,
+    "wires": [
+      [
+        "9cf5c8d4f68c4dc8"
+      ]
+    ]
+  },
+  {
+    "id": "9cf5c8d4f68c4dc8",
+    "type": "http request",
+    "z": "tab-imessage-healer",
+    "name": "Post to Slack Alert",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [
+      {
+        "key": "Content-Type",
+        "value": "application/json"
+      }
+    ],
+    "reqTimeout": 10000,
+    "x": 900,
+    "y": 140,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "cc185eb6fb514efe",
+    "type": "catch",
+    "z": "tab-imessage-healer",
+    "name": "Catch Watchdog Errors",
+    "scope": null,
+    "uncaught": false,
+    "x": 140,
+    "y": 240,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "tab-first-appearance-autocrm",
+    "type": "tab",
+    "label": "First Appearance Auto-CRM Watcher",
+    "disabled": false,
+    "info": "24/7 background watcher re-checking $0 and unset bond arrestees every 30 mins to trigger auto-CRM."
+  },
+  {
+    "id": "032ee8954fde4065",
+    "type": "inject",
+    "z": "tab-first-appearance-autocrm",
+    "name": "\u23f0 Every 30 Min Cron",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "1800",
+    "crontab": "",
+    "once": true,
+    "onceDelay": 10,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 150,
+    "y": 140,
+    "wires": [
+      [
+        "71e8adbf345d4c27"
+      ]
+    ]
+  },
+  {
+    "id": "71e8adbf345d4c27",
+    "type": "http request",
+    "z": "tab-first-appearance-autocrm",
+    "name": "POST /api/automation/first-appearance-watcher",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "http://shamrock-dashboard:5050/api/automation/first-appearance-watcher",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [
+      {
+        "key": "Content-Type",
+        "value": "application/json"
+      }
+    ],
+    "reqTimeout": 30000,
+    "x": 450,
+    "y": 140,
+    "wires": [
+      [
+        "834e920b69f94fab"
+      ]
+    ]
+  },
+  {
+    "id": "834e920b69f94fab",
+    "type": "function",
+    "z": "tab-first-appearance-autocrm",
+    "name": "Format Auto-CRM Results",
+    "func": "const data = msg.payload || {};\nconst hotLeads = data.hot_leads || 0;\nconst scanned = data.scanned || 0;\nconst updated = data.updated || 0;\nconst webhook = global.get(\"SLACK_WEBHOOK_LEADS\") || process.env.SLACK_WEBHOOK_LEADS || \"\";\n\nnode.status({fill: \"blue\", shape: \"dot\", text: `Scanned: ${scanned} | Updated: ${updated} | Hot: ${hotLeads}`});\n\nif (hotLeads > 0 && webhook) {\n    msg.url = webhook;\n    msg.payload = {\n        text: `\ud83d\udd25 *First Appearance Auto-CRM Alert*\\n- *Scanned Unset Bonds*: ${scanned}\\n- *Newly Set Bonds*: ${updated}\\n- *Hot Leads Generated*: ${hotLeads}\\nCheck Super CRM: https://leads.shamrockbailbonds.biz`\n    };\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 750,
+    "y": 140,
+    "wires": [
+      [
+        "822e8a93dcdb4b1f"
+      ]
+    ]
+  },
+  {
+    "id": "822e8a93dcdb4b1f",
+    "type": "http request",
+    "z": "tab-first-appearance-autocrm",
+    "name": "Post Hot Lead Alert",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [
+      {
+        "key": "Content-Type",
+        "value": "application/json"
+      }
+    ],
+    "reqTimeout": 10000,
+    "x": 1000,
+    "y": 140,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "045c4f2428b64514",
+    "type": "catch",
+    "z": "tab-first-appearance-autocrm",
+    "name": "Catch Auto-CRM Errors",
+    "scope": null,
+    "uncaught": false,
+    "x": 150,
+    "y": 240,
+    "wires": [
+      []
+    ]
   }
 ]

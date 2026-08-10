@@ -7,7 +7,9 @@ import json
 import sys
 from collections import defaultdict
 
-FLOWS_PATH = "/home/ubuntu/shamrock-node-red/node_red_data/flows.json"
+import os
+
+FLOWS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "node_red_data", "flows.json")
 
 with open(FLOWS_PATH) as f:
     nodes = json.load(f)
@@ -180,6 +182,7 @@ export = {
     "orphan_widgets": [{"id": n["id"], "name": n.get("name",""), "type": n["type"], "tab": get_tab(n)} for n in orphan_widgets],
     "http_ff": [{"id": n["id"], "name": n.get("name",""), "url": n.get("url",""), "tab": get_tab(n)} for n in http_nodes if all(len(w)==0 for w in n.get("wires",[[]])) ],
 }
-with open("/home/ubuntu/shamrock-node-red/audit_map.json", "w") as f:
+AUDIT_MAP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "audit_map.json")
+with open(AUDIT_MAP_PATH, "w") as f:
     json.dump(export, f, indent=2)
 print("\n  ✅ Audit map saved to audit_map.json")
