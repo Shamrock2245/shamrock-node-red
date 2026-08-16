@@ -70,13 +70,6 @@
     "info": "\u26a0\ufe0f DISABLED \u2014 Waiting on 10DLC/A2P campaign approval.\nEnable this tab once approved.\n\nMirrors The Closer's SMS drip with WhatsApp via Twilio.\n98% open rates vs 20% for SMS."
   },
   {
-    "id": "6647cd5307914885",
-    "type": "tab",
-    "label": "SignNow Tracker",
-    "disabled": true,
-    "info": "Disabled pending staff-approved outbound outreach verification."
-  },
-  {
     "id": "2916c0669be64f55",
     "type": "tab",
     "label": "Review Harvester",
@@ -96,13 +89,6 @@
     "label": "No-Show Escalation",
     "disabled": false,
     "info": "Monitors check-ins and court appearances.\nMissed check-in or court date \u2192 instant Slack + staff call.\nProtects the bottom line on active bonds."
-  },
-  {
-    "id": "47df6624715c4999",
-    "type": "tab",
-    "label": "Intake Pipeline",
-    "disabled": true,
-    "info": "Disabled: direct intake-to-SignNow flow bypasses validated Match, BondCase, surety, POA, and staff approval gates."
   },
   {
     "id": "c9cd99104acc4337",
@@ -1158,27 +1144,6 @@
       "#e5e5e5"
     ],
     "gridColorDefault": true
-  },
-  {
-    "id": "cd7d39a7f65841d9",
-    "type": "ui-template",
-    "z": "tab-shamrock",
-    "group": "eff86b3e88354b0c",
-    "name": "SignNow Packet Tracker",
-    "order": 2,
-    "width": 6,
-    "height": 4,
-    "format": "<div style=\"font-family:'Inter',system-ui,sans-serif;padding:16px;background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:12px;border:1px solid rgba(99,102,241,0.2);box-shadow:0 4px 24px rgba(0,0,0,0.4);border-color:rgba(168,85,247,0.3);\">\n  <div style=\"display:flex;align-items:center;gap:8px;margin-bottom:12px;\">\n    <span style=\"font-size:20px;\">\ud83d\udcdd</span>\n    <h3 style=\"margin:0;font-weight:700;letter-spacing:-0.5px;font-size:14px;text-transform:uppercase;color:#a855f7;\">SIGNING PIPELINE</h3>\n    <span style=\"margin-left:auto;font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid #334155;color:#a855f7;background:#1e293b;\">TRACK</span>\n  </div>\n  <div v-if=\"msg?.payload?.length\">\n  <div v-for=\"(pkt, i) in msg.payload\" :key=\"i\" style=\"padding:8px 12px;margin:4px 0;border-radius:8px;border-left:3px solid;transition:all 0.2s;background:rgba(30,41,59,0.5);border-color:#a855f7;background:rgba(168,85,247,0.05);\">\n    <div style=\"display:flex;justify-content:space-between;align-items:center;\">\n      <div><strong style=\"color:#e2e8f0;font-size:13px;\">{{pkt.caseName}}</strong></div>\n      <span :style=\"{color: pkt.status==='complete'?'#22c55e':pkt.status==='pending'?'#f59e0b':'#ef4444'}\" style=\"font-size:12px;font-weight:600;\">{{pkt.status?.toUpperCase()}}</span>\n    </div>\n    <div style=\"margin-top:6px;background:#1e293b;border-radius:8px;height:6px;overflow:hidden;\">\n      <div :style=\"{width: (pkt.progress||0)+'%', background:'linear-gradient(90deg,#a855f7,#ec4899)'}\" style=\"height:100%;border-radius:8px;transition:width 0.5s ease;\"></div>\n    </div>\n    <span style=\"color:#64748b;font-size:10px;\">{{pkt.progress||0}}% \u2014 {{pkt.nextStep}}</span>\n  </div>\n</div>\n<div v-else style=\"color:#64748b;text-align:center;padding:20px;font-style:italic;\">No active packets</div>\n</div>",
-    "storeOutMessages": true,
-    "passthru": true,
-    "resendOnRefresh": true,
-    "templateScope": "local",
-    "className": "",
-    "x": 300,
-    "y": 1120,
-    "wires": [
-      []
-    ]
   },
   {
     "id": "9c9dbea9fbd7403a",
@@ -3453,37 +3418,6 @@
     ]
   },
   {
-    "id": "bf3f6258",
-    "type": "function",
-    "z": "tab-advanced",
-    "name": "Mark Complete",
-    "func": "const phone = msg.payload.phone;\nif(phone) {\n    global.set('intake_' + phone, 'complete');\n}\nreturn msg;",
-    "outputs": 1,
-    "x": 380,
-    "y": 240,
-    "wires": [
-      [
-        "prep_signnow_payload"
-      ]
-    ]
-  },
-  {
-    "id": "3ba0bff6",
-    "type": "http in",
-    "z": "tab-advanced",
-    "name": "SignNow Webhook",
-    "url": "/signnow-event",
-    "method": "post",
-    "x": 130,
-    "y": 440,
-    "wires": [
-      [
-        "6b0f0efe",
-        "2f242403"
-      ]
-    ]
-  },
-  {
     "id": "6b0f0efe",
     "type": "http response",
     "z": "tab-advanced",
@@ -3630,62 +3564,6 @@
       }
     ],
     "reqTimeout": 15000
-  },
-  {
-    "id": "prep_signnow_payload",
-    "type": "function",
-    "z": "tab-advanced",
-    "name": "Prep SignNow Payload",
-    "func": "msg.payload = {\n  action: 'sendForSignature',\n  method: 'sms',\n  bookingData: msg.payload\n};\nmsg.headers = { ...msg.headers, 'x-api-key': global.get('gas_api_key') || '' };\nreturn msg;",
-    "outputs": 1,
-    "x": 600,
-    "y": 240,
-    "wires": [
-      [
-        "gas_signnow_call"
-      ]
-    ]
-  },
-  {
-    "id": "gas_signnow_call",
-    "type": "http request",
-    "z": "tab-advanced",
-    "name": "GAS SignNow Webhook",
-    "method": "POST",
-    "ret": "txt",
-    "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}",
-    "x": 800,
-    "y": 240,
-    "wires": [
-      [
-        "log_signnow"
-      ]
-    ],
-    "headers": [
-      {
-        "keyType": "other",
-        "keyValue": "Content-Type",
-        "valueType": "other",
-        "valueValue": "application/json"
-      }
-    ],
-    "reqTimeout": 15000
-  },
-  {
-    "id": "log_signnow",
-    "type": "debug",
-    "z": "tab-advanced",
-    "name": "SignNow Log",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "payload",
-    "targetType": "msg",
-    "x": 1000,
-    "y": 240,
-    "wires": []
   },
   {
     "id": "scout_webhook_in",
@@ -4296,21 +4174,6 @@
     "wires": [
       [
         "ngrok-config-setter"
-      ]
-    ]
-  },
-  {
-    "id": "ngrok-config-setter",
-    "type": "function",
-    "z": "tab-advanced",
-    "name": "Configure Global Vars",
-    "func": "// Configure only environment-backed shared values. Never embed credentials or a GAS /exec URL in a flow.\nconst leadsUrl = (\n    env.get('LEADS_URL') || env.get('LEADS_PUBLIC_URL') || env.get('DASHBOARD_PUBLIC_URL') ||\n    env.get('SHAMROCK_DASHBOARD_URL') || 'https://leads.shamrockbailbonds.biz'\n).replace(/\\/$/, '');\nconst gasUrl = env.get('GAS_WEBHOOK_URL') || '';\nconst gasApiKey = env.get('GAS_API_KEY') || '';\n\nglobal.set('LEADS_URL', leadsUrl);\nglobal.set('LEADS_PUBLIC_URL', leadsUrl);\nglobal.set('GAS_API_KEY', gasApiKey);\nglobal.set('gas_api_key', gasApiKey);\nglobal.set('GAS_URL', gasUrl);\nglobal.set('GAS_URL_ALT', gasUrl);\nglobal.set('GAS_URL_OPS', gasUrl);\n\nif (!gasUrl || !gasApiKey) {\n    node.error('GAS_WEBHOOK_URL or GAS_API_KEY is missing; refusing to configure GAS automation.');\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS configuration missing' });\n    return null;\n}\n\nglobal.set('MONGODB_URI', env.get('MONGODB_URI') || '');\nglobal.set('MONGODB_ATLAS_DATA_API_URL', env.get('MONGODB_ATLAS_DATA_API_URL') || '');\nglobal.set('MONGODB_ATLAS_API_KEY', env.get('MONGODB_ATLAS_API_KEY') || '');\n\nconst base = env.get('NGROK_BASE_URL') || 'http://178.156.179.237:1880';\nglobal.set('NGROK_BASE_URL', base);\nglobal.set('WEBHOOK_ENDPOINTS', {\n    'Wix Intake': base + '/wix-intake',\n    'Wix Intake Start': base + '/intake-start',\n    'Wix Intake Complete': base + '/intake-complete',\n    'Scraper Update': base + '/api/scraper/webhook',\n    'Scraper Results': base + '/webhook/scraper-results',\n    'WhatsApp (Twilio)': base + '/whatsapp',\n    'Telegram (legacy)': base + '/telegram',\n    'Telegram Bot': base + '/webhook/telegram-bot',\n    'Telegram Convo': base + '/webhook/telegram-conversation',\n    'Telegram MiniApp': base + '/webhook/telegram-miniapp',\n    'ElevenLabs Status': base + '/webhook/elevenlabs-status',\n    'SignNow Events': base + '/signnow-event',\n    'Scout/Arrest': base + '/webhook/scout'\n});\n\nglobal.set('SHAMROCK_DASHBOARD_URL', env.get('SHAMROCK_DASHBOARD_URL') || 'http://178.156.179.237:8088');\nglobal.set('SHAMROCK_DASHBOARD_API_KEY', env.get('SHAMROCK_DASHBOARD_API_KEY') || '');\n\nnode.status({ fill: 'green', shape: 'dot', text: 'Environment-backed endpoints configured' });\nreturn msg;\n",
-    "outputs": 1,
-    "x": 400,
-    "y": 1060,
-    "wires": [
-      [
-        "ngrok-config-debug"
       ]
     ]
   },
@@ -7862,300 +7725,6 @@
     "wires": []
   },
   {
-    "id": "f536a5cda4c146aa",
-    "type": "comment",
-    "z": "6647cd5307914885",
-    "name": "\ud83d\udcdd SIGNNOW DOCUMENT TRACKER",
-    "info": "Polls for pending signatures every 30 min.\nAuto-reminds: 2h (gentle), 12h (moderate), 24h (urgent).\n30+ hours \u2192 escalates to Slack for manual follow-up.",
-    "x": 300,
-    "y": 40,
-    "wires": []
-  },
-  {
-    "id": "7b035f9c2263465b",
-    "type": "inject",
-    "z": "6647cd5307914885",
-    "name": "\u23f0 Every 30 Min",
-    "props": [
-      {
-        "p": "payload"
-      },
-      {
-        "p": "topic",
-        "vt": "str"
-      }
-    ],
-    "repeat": "",
-    "crontab": "12,42 * * * *",
-    "once": false,
-    "onceDelay": 0.1,
-    "topic": "",
-    "payload": "",
-    "payloadType": "date",
-    "x": 140,
-    "y": 200,
-    "wires": [
-      [
-        "c87dfe4c7e1a46ee"
-      ]
-    ]
-  },
-  {
-    "id": "c87dfe4c7e1a46ee",
-    "type": "function",
-    "z": "6647cd5307914885",
-    "name": "\ud83d\udce8 Fetch Pending",
-    "func": "/* Production-grade GAS dispatcher \u2014 getPendingSignatures */\n// Check system shutdown\nif (global.get('SYSTEM_SHUTDOWN')) {\n    node.status({fill:'red',shape:'ring',text:'SHUTDOWN \u2014 skipped'});\n    node.warn('System is in shutdown mode. Skipping getPendingSignatures.');\n    return null;\n}\n\nconst gasUrl = global.get('GAS_URL');\nif (!gasUrl) {\n    node.error('GAS_URL not configured in global context');\n    node.status({fill:'red',shape:'dot',text:'ERR: No GAS_URL'});\n    return null;\n}\n\nconst ts = new Date().toISOString();\nmsg.payload = {\n    action: 'getPendingSignatures',\n    requestedAt: ts,\n    source: 'node-red',\n    includeExpired: false,\n    escalationThresholds: { gentle: 2, moderate: 12, urgent: 24, escalate: 30 }\n};\n\n// Store last run time for monitoring\nglobal.set('last_run_getPendingSignatures', ts);\n\nnode.status({fill:'blue',shape:'dot',text:'Checking SignNow... @ ' + new Date().toLocaleTimeString()});\nreturn msg;",
-    "outputs": 1,
-    "timeout": 0,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 340,
-    "y": 200,
-    "wires": [
-      [
-        "61bc9387cbde4dd5"
-      ]
-    ]
-  },
-  {
-    "id": "61bc9387cbde4dd5",
-    "type": "http request",
-    "z": "6647cd5307914885",
-    "name": "\ud83c\udf10 GAS: Pending Sigs",
-    "method": "POST",
-    "ret": "txt",
-    "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=getPendingSignatures",
-    "tls": "",
-    "persist": false,
-    "proxy": "",
-    "insecureHTTPParser": false,
-    "authType": "",
-    "senderr": false,
-    "headers": [
-      {
-        "keyType": "other",
-        "keyValue": "Content-Type",
-        "valueType": "other",
-        "valueValue": "application/json"
-      }
-    ],
-    "x": 540,
-    "y": 200,
-    "wires": [
-      [
-        "7cec1b6568154517"
-      ]
-    ],
-    "reqTimeout": 15000
-  },
-  {
-    "id": "7cec1b6568154517",
-    "type": "function",
-    "z": "6647cd5307914885",
-    "name": "\ud83d\udd0d Categorize by Age",
-    "func": "// Parse GAS response\nvar data = msg.payload;\ntry {\n    if (typeof data === 'string') {\n        data = JSON.parse(data);\n    }\n} catch(e) {\n    node.warn('GAS returned non-JSON for signnow_packets: ' + (data || '').substring(0, 200));\n    msg.payload = { status: 'error', error: 'Non-JSON response' };\n    return msg;\n}\n\n// Store in global context for dashboard panels\nif (data) {\n    var storeData = data.data || data.results || data;\n    global.set('signnow_packets', storeData);\n    global.set('signnow_packets_updated', new Date().toISOString());\n    node.status({fill:'green', shape:'dot', text:'signnow_packets updated ' + new Date().toLocaleTimeString()});\n}\n\nmsg.payload = data;\nreturn msg;",
-    "outputs": 4,
-    "timeout": 0,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 760,
-    "y": 200,
-    "wires": [
-      [
-        "30db2a36e3114c76"
-      ],
-      [
-        "695e422211384551"
-      ],
-      [
-        "770e32fc9ac64124"
-      ],
-      [
-        "e57643ccc67447b4"
-      ]
-    ]
-  },
-  {
-    "id": "30db2a36e3114c76",
-    "type": "function",
-    "z": "6647cd5307914885",
-    "name": "\ud83d\udc9a 2h Gentle",
-    "func": "// Gentle 2-hour reminder\nconst docs = msg.payload || [];\nmsg.payload = {\n    action: 'sendSigningReminder',\n    tier: 'gentle',\n    documents: docs.map(d => ({\n        documentId: d.documentId || d.id,\n        recipientName: d.recipientName || d.name,\n        recipientPhone: d.recipientPhone || d.phone,\n        recipientEmail: d.recipientEmail || d.email,\n        message: `Hi ${d.recipientName || 'there'}, just a friendly reminder \u2014 your bail bond paperwork is ready for your signature. Tap the link in your email to sign in under 2 minutes. Questions? Call (239) 955-0178 \ud83c\udf40`\n    }))\n};\nnode.status({fill:\"green\", shape:\"dot\", text: docs.length + \" gentle reminders\"});\nreturn msg;",
-    "outputs": 1,
-    "timeout": 0,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 1000,
-    "y": 100,
-    "wires": [
-      [
-        "b9d12c3d7f284c4b"
-      ]
-    ]
-  },
-  {
-    "id": "695e422211384551",
-    "type": "function",
-    "z": "6647cd5307914885",
-    "name": "\ud83d\udfe1 12h Moderate",
-    "func": "// Moderate 12-hour reminder\nconst docs = msg.payload || [];\nmsg.payload = {\n    action: 'sendSigningReminder',\n    tier: 'moderate',\n    documents: docs.map(d => ({\n        documentId: d.documentId || d.id,\n        recipientName: d.recipientName || d.name,\n        recipientPhone: d.recipientPhone || d.phone,\n        recipientEmail: d.recipientEmail || d.email,\n        message: `${d.recipientName || 'Hi'}, your bail bond paperwork still needs your signature. Your loved one is waiting \u2014 please sign ASAP so we can get them home. Link in your email or call (239) 955-0178 \ud83c\udf40`\n    }))\n};\nnode.status({fill:\"yellow\", shape:\"dot\", text: docs.length + \" moderate reminders\"});\nreturn msg;",
-    "outputs": 1,
-    "timeout": 0,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 1000,
-    "y": 180,
-    "wires": [
-      [
-        "b9d12c3d7f284c4b"
-      ]
-    ]
-  },
-  {
-    "id": "770e32fc9ac64124",
-    "type": "function",
-    "z": "6647cd5307914885",
-    "name": "\ud83d\udd34 24h Urgent",
-    "func": "// Urgent 24-hour reminder\nconst docs = msg.payload || [];\nmsg.payload = {\n    action: 'sendSigningReminder',\n    tier: 'urgent',\n    documents: docs.map(d => ({\n        documentId: d.documentId || d.id,\n        recipientName: d.recipientName || d.name,\n        recipientPhone: d.recipientPhone || d.phone,\n        recipientEmail: d.recipientEmail || d.email,\n        message: `\u26a0\ufe0f ${d.recipientName || 'Hi'}, URGENT: Your bail bond paperwork has been unsigned for 24+ hours. We need your signature to proceed with getting your loved one released. Please sign NOW or call (239) 955-0178 \ud83c\udf40`\n    }))\n};\nnode.status({fill:\"red\", shape:\"dot\", text: docs.length + \" urgent reminders\"});\nreturn msg;",
-    "outputs": 1,
-    "timeout": 0,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 1000,
-    "y": 260,
-    "wires": [
-      [
-        "b9d12c3d7f284c4b"
-      ]
-    ]
-  },
-  {
-    "id": "e57643ccc67447b4",
-    "type": "function",
-    "z": "6647cd5307914885",
-    "name": "\ud83d\udea8 30h+ ESCALATE",
-    "func": "// Escalate to staff \u2014 30+ hours unsigned\nconst docs = msg.payload || [];\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || (global.get('env').SLACK_BOT_TOKEN || global.get('SLACK_TOKEN') || '') || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\n\nconst docList = docs.map(d => \n    `\u2022 *${d.recipientName || 'Unknown'}* \u2014 ${d.hoursOld}h unsigned`\n).join('\\n');\n\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\ud83d\udea8 *SignNow ESCALATION \u2014 ${docs.length} Doc(s) Unsigned 30+ Hours*\\n\\n${docList}\\n\\n_Manual follow-up required. These deals may be going cold._`\n};\nnode.status({fill:\"red\", shape:\"ring\", text: docs.length + \" ESCALATED!\"});\nreturn msg;",
-    "outputs": 1,
-    "timeout": 0,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 1000,
-    "y": 340,
-    "wires": [
-      [
-        "fb8d478d9b2b4fb9"
-      ]
-    ]
-  },
-  {
-    "id": "b9d12c3d7f284c4b",
-    "type": "http request",
-    "z": "6647cd5307914885",
-    "name": "\ud83d\udce4 GAS: Send Reminder",
-    "method": "POST",
-    "ret": "txt",
-    "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=sendSigningReminder",
-    "tls": "",
-    "persist": false,
-    "proxy": "",
-    "insecureHTTPParser": false,
-    "authType": "",
-    "senderr": false,
-    "headers": [
-      {
-        "keyType": "other",
-        "keyValue": "Content-Type",
-        "valueType": "other",
-        "valueValue": "application/json"
-      }
-    ],
-    "x": 1240,
-    "y": 180,
-    "wires": [
-      [
-        "26b056527d9e4f20"
-      ]
-    ],
-    "reqTimeout": 15000
-  },
-  {
-    "id": "26b056527d9e4f20",
-    "type": "function",
-    "z": "6647cd5307914885",
-    "name": "\ud83d\udce2 Slack Summary",
-    "func": "const result = msg.payload || {};\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || (global.get('env').SLACK_BOT_TOKEN || global.get('SLACK_TOKEN') || '') || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\ud83d\udcdd *SignNow Tracker*: ${result.sent || 0} reminder(s) sent (${msg.category || 'unknown'} tier)`\n};\nreturn msg;",
-    "outputs": 1,
-    "timeout": 0,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 1460,
-    "y": 180,
-    "wires": [
-      [
-        "fb8d478d9b2b4fb9"
-      ]
-    ]
-  },
-  {
-    "id": "fb8d478d9b2b4fb9",
-    "type": "http request",
-    "z": "6647cd5307914885",
-    "name": "\ud83d\udce4 Slack",
-    "method": "POST",
-    "ret": "obj",
-    "paytoqs": "ignore",
-    "url": "https://slack.com/api/chat.postMessage",
-    "tls": "",
-    "persist": false,
-    "proxy": "",
-    "insecureHTTPParser": false,
-    "authType": "",
-    "senderr": false,
-    "headers": [],
-    "x": 1660,
-    "y": 260,
-    "wires": [
-      [
-        "4c5bbe30bede4c92"
-      ]
-    ],
-    "reqTimeout": 15000
-  },
-  {
-    "id": "4c5bbe30bede4c92",
-    "type": "debug",
-    "z": "6647cd5307914885",
-    "name": "\ud83d\udd0d Debug",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": true,
-    "complete": "payload",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 1840,
-    "y": 260,
-    "wires": []
-  },
-  {
     "id": "1516526bc5ee4b47",
     "type": "comment",
     "z": "2916c0669be64f55",
@@ -8802,16 +8371,6 @@
     "wires": []
   },
   {
-    "id": "9297f4a667714913",
-    "type": "comment",
-    "z": "47df6624715c4999",
-    "name": "\ud83d\udd04 END-TO-END INTAKE PIPELINE",
-    "info": "Webhook \u2192 Validate \u2192 Slack Alert \u2192 Create SignNow Packet \u2192 Send Signing Link \u2192 Confirm.\nFully automated \u2014 no manual steps needed.",
-    "x": 340,
-    "y": 40,
-    "wires": []
-  },
-  {
     "id": "d5d6364796504126",
     "type": "http in",
     "z": "47df6624715c4999",
@@ -8895,58 +8454,6 @@
     "reqTimeout": 15000
   },
   {
-    "id": "0a8676e393144195",
-    "type": "function",
-    "z": "47df6624715c4999",
-    "name": "\ud83d\udcdd Create Packet",
-    "func": "// Prepare SignNow document creation request\nmsg.payload = {\n    action: 'createSignNowPacket',\n    caseId: msg.intake.caseId,\n    defendantName: msg.intake.name,\n    indemnitorPhone: msg.intake.phone,\n    indemnitorEmail: msg.intake.email,\n    county: msg.intake.county,\n    bondAmount: msg.intake.bondAmount,\n    charges: msg.intake.charges\n};\nnode.status({fill:\"blue\", shape:\"ring\", text:\"Creating packet...\"});\nreturn msg;",
-    "outputs": 1,
-    "timeout": 0,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 620,
-    "y": 240,
-    "wires": [
-      [
-        "e7a9e389fb614e98"
-      ]
-    ]
-  },
-  {
-    "id": "e7a9e389fb614e98",
-    "type": "http request",
-    "z": "47df6624715c4999",
-    "name": "\ud83c\udf10 GAS: SignNow",
-    "method": "POST",
-    "ret": "txt",
-    "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=createSignNowPacket",
-    "tls": "",
-    "persist": false,
-    "proxy": "",
-    "insecureHTTPParser": false,
-    "authType": "",
-    "senderr": false,
-    "headers": [
-      {
-        "keyType": "other",
-        "keyValue": "Content-Type",
-        "valueType": "other",
-        "valueValue": "application/json"
-      }
-    ],
-    "x": 840,
-    "y": 240,
-    "wires": [
-      [
-        "30859efe4f5e4c96"
-      ]
-    ],
-    "reqTimeout": 15000
-  },
-  {
     "id": "30859efe4f5e4c96",
     "type": "function",
     "z": "47df6624715c4999",
@@ -8997,26 +8504,6 @@
       ]
     ],
     "reqTimeout": 15000
-  },
-  {
-    "id": "4330d58a38674a01",
-    "type": "function",
-    "z": "47df6624715c4999",
-    "name": "\u2705 Pipeline Complete",
-    "func": "const result = msg.payload || {};\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || (global.get('env').SLACK_BOT_TOKEN || global.get('SLACK_TOKEN') || '') || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"#alerts\",\n    \"text\": `\u2705 *Intake Pipeline Complete*\\n\\n\ud83d\udc64 ${msg.intake.name}\\n\ud83d\udcdd SignNow packet created\\n\ud83d\udce4 Signing link sent via SMS\\n\ud83d\udd17 ${msg.signingLink || 'Link sent'}\\n\\n_Case ${msg.intake.caseId} \u2014 now tracking in SignNow Tracker_`\n};\nreturn msg;",
-    "outputs": 1,
-    "timeout": 0,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 1500,
-    "y": 240,
-    "wires": [
-      [
-        "3e8f20ccfd7f401a"
-      ]
-    ]
   },
   {
     "id": "3e8f20ccfd7f401a",
@@ -10897,47 +10384,6 @@
     "y": 900
   },
   {
-    "id": "af078c54a85d42c9",
-    "type": "catch",
-    "z": "6647cd5307914885",
-    "name": "\ud83d\udea8 SignNow Tracker Error Catch",
-    "scope": null,
-    "uncaught": false,
-    "wires": [
-      [
-        "cc439f5648934c0a"
-      ]
-    ],
-    "x": 200,
-    "y": 900
-  },
-  {
-    "id": "cc439f5648934c0a",
-    "type": "function",
-    "z": "6647cd5307914885",
-    "name": "Format Error for Slack",
-    "func": "// Global error handler for tab: SignNow Tracker\nconst err = msg.error || {};\nconst source = err.source ? (err.source.name || err.source.type || err.source.id) : 'Unknown';\nconst errMsg = err.message || JSON.stringify(err);\nconst ts = new Date().toISOString();\n\nnode.warn('[SignNow Tracker] Error in ' + source + ': ' + errMsg);\n\nmsg.payload = {\n    channel: '#alerts',\n    text: `\ud83d\udea8 *Node-RED Error \u2014 SignNow Tracker*\\n*Node:* ${source}\\n*Error:* ${errMsg}\\n*Time:* ${ts}`,\n    blocks: [{\n        type: 'section',\n        text: {\n            type: 'mrkdwn',\n            text: `\ud83d\udea8 *Node-RED Error \u2014 SignNow Tracker*\\n*Node:* ${source}\\n*Error:* ${errMsg}\\n*Time:* ${ts}`\n        }\n    }]\n};\nmsg.headers = {\n    'Authorization': 'Bearer ' + (env.get('SLACK_BOT_TOKEN') || ''),\n    'Content-Type': 'application/json'\n};\nreturn msg;",
-    "outputs": 1,
-    "wires": [
-      [
-        "d49ecf3b4d104027"
-      ]
-    ],
-    "x": 400,
-    "y": 900
-  },
-  {
-    "id": "d49ecf3b4d104027",
-    "type": "debug",
-    "z": "6647cd5307914885",
-    "name": "Error Debug (SignNow Tracker)",
-    "active": true,
-    "tosidebar": true,
-    "wires": [],
-    "x": 600,
-    "y": 900
-  },
-  {
     "id": "921b5902851a408e",
     "type": "catch",
     "z": "2916c0669be64f55",
@@ -11505,41 +10951,6 @@
     "wires": [
       [
         "52fd9116d9de40d6"
-      ]
-    ],
-    "x": 430,
-    "y": 1000
-  },
-  {
-    "id": "dbb3e97c3af94aea",
-    "type": "inject",
-    "z": "tab-shamrock",
-    "name": "\u23f1 Feed SignNow Packet Tracker",
-    "repeat": "120",
-    "crontab": "",
-    "once": true,
-    "onceDelay": "3",
-    "topic": "",
-    "payload": "",
-    "payloadType": "date",
-    "wires": [
-      [
-        "8196841cdbff4dd1"
-      ]
-    ],
-    "x": 200,
-    "y": 1000
-  },
-  {
-    "id": "8196841cdbff4dd1",
-    "type": "function",
-    "z": "tab-shamrock",
-    "name": "Build SignNow Packet Tracker Data",
-    "func": "// Feed SignNow Packet Tracker template\nconst packets = global.get('signnow_packets') || [];\nif (packets.length === 0) {\n    msg.payload = '<div style=\"padding:16px;color:#aaa;text-align:center\">No active signing packets</div>';\n} else {\n    const rows = packets.slice(0, 15).map(p => {\n        const name = p.defendantName || p.name || 'Unknown';\n        const status = p.status || 'Pending';\n        const sent = p.sentAt ? new Date(p.sentAt).toLocaleDateString() : '?';\n        const color = status === 'completed' ? '#4CAF50' : status === 'pending' ? '#FF9800' : '#9E9E9E';\n        return `<tr>\n            <td style=\"padding:4px\">${name}</td>\n            <td style=\"color:${color}\">${status}</td>\n            <td style=\"color:#aaa;font-size:11px\">${sent}</td>\n        </tr>`;\n    }).join('');\n    msg.payload = `<table style=\"width:100%;font-size:12px\">\n        <thead><tr style=\"color:#FFD700\"><th>Defendant</th><th>Status</th><th>Sent</th></tr></thead>\n        <tbody>${rows}</tbody></table>`;\n}\nreturn msg;",
-    "outputs": 1,
-    "wires": [
-      [
-        "cd7d39a7f65841d9"
       ]
     ],
     "x": 430,
@@ -17943,21 +17354,6 @@
       ]
     ],
     "reqTimeout": 15000
-  },
-  {
-    "id": "pc_process_list",
-    "type": "function",
-    "z": "tab-paperwork-chase",
-    "name": "\ud83d\udccb Process Unsigned List",
-    "func": "/* Process list of unsigned docs and determine escalation level */\nconst result = msg.payload || {};\nconst bonds = result.bonds || result.pending || result.data || [];\n\nif (!Array.isArray(bonds) || bonds.length === 0) {\n    node.status({fill:'green', shape:'dot', text:'All signed \u2713'});\n    return null;\n}\n\nconst now = Date.now();\nconst messages = [];\n\nbonds.forEach(bond => {\n    const phone = bond.indemnitor_phone || bond.phone || '';\n    if (!phone) return;\n    \n    const createdAt = new Date(bond.created_at || bond.intake_date || 0).getTime();\n    const hoursOld = (now - createdAt) / (1000 * 60 * 60);\n    \n    // Determine escalation level\n    let escalation = 'imessage';\n    if (hoursOld >= 8) escalation = 'voice';\n    else if (hoursOld >= 4) escalation = 'sms';\n    \n    // Don't spam \u2014 check last contact time\n    const lastContact = new Date(bond.last_paperwork_reminder || 0).getTime();\n    const hoursSinceContact = (now - lastContact) / (1000 * 60 * 60);\n    if (hoursSinceContact < 2) return;  // Skip if contacted within 2h\n    \n    const defendant = bond.defendant_name || 'your client';\n    const booking = bond.booking_number || '';\n    const signnowUrl = bond.signnow_url || bond.signing_url || '';\n    \n    let message = '';\n    if (escalation === 'imessage' || escalation === 'sms') {\n        message = `Hi! This is Shamrock Bail Bonds. We still need your signature on ${defendant}'s bond paperwork to complete the release. Please sign here: ${signnowUrl || 'Call us at (239) 332-2245'} \u2618\ufe0f`;\n    }\n    \n    messages.push({ phone, defendant, booking, escalation, message, signnowUrl, hoursOld });\n});\n\nif (messages.length === 0) {\n    node.status({fill:'green', shape:'dot', text:'No new reminders needed'});\n    return null;\n}\n\nnode.status({fill:'orange', shape:'dot', text: messages.length + ' reminders to send'});\nnode.warn('[Paperwork Chase] ' + messages.length + ' unsigned docs need reminders');\n\nmsg.pendingReminders = messages;\nreturn msg;\n",
-    "outputs": 1,
-    "x": 760,
-    "y": 120,
-    "wires": [
-      [
-        "pc_send_loop"
-      ]
-    ]
   },
   {
     "id": "pc_send_loop",

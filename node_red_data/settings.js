@@ -81,9 +81,6 @@ module.exports = {
             ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY || "",
             ELEVENLABS_AGENT_ID: process.env.ELEVENLABS_AGENT_ID || "",
             
-            // SignNow
-            SIGNNOW_API_KEY: process.env.SIGNNOW_API_KEY || "",
-            
             // Webhook Auth
             WEBHOOK_HMAC_SECRET: process.env.WEBHOOK_HMAC_SECRET || "",
             
