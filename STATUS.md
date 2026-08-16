@@ -1,6 +1,6 @@
 # Shamrock Node-RED — True Status
 
-> **Last verified:** 2026-07-10  
+> **Last verified:** 2026-08-16  
 > **Repo:** `Shamrock2245/shamrock-node-red`  
 > **Role:** Automation fabric of **Shamrock’s Platform** (internal n8n / Zapier)  
 > **Runtime:** typically Hetzner Docker `node-red` service (profile `ops`) on the leads VPS, editor `:1880`  
@@ -49,6 +49,14 @@ See `shamrock-leads/docs/ECOSYSTEM.md` (four-repo harmony).
 Local docs: `docs/OVERVIEW.md`, `docs/SYSTEM.md`, `docs/INTEGRATIONS.md`, `docs/SCHEDULING.md`.
 
 ---
+
+## Fail-closed release (2026-08-16)
+
+Commit `30023d8` was deployed through **Deploy Node-RED Flows** run `31970187751`. The legacy **Intake Pipeline**, **SignNow Tracker**, and **Review Harvester** tabs are now disabled. They could create direct SignNow packets, send signing links, or send client-facing reminders outside the validated Super CRM / DocuSeal workflow and staff approval gates.
+
+> **Operator route:** Use Super CRM for a validated Match → BondCase → explicit surety → assigned POA → staff-approved DocuSeal packet. Do not re-enable these tabs until their downstream actions are rebuilt against that authoritative workflow and the required staff outreach smoke is proven.
+
+All former hardcoded factory URLs and the executable GAS API-key fallback in `flows.json` were replaced with environment-backed settings. The deployed flow fails closed when `GAS_WEBHOOK_URL` or `GAS_API_KEY` is absent; it does not invent or substitute an endpoint.
 
 ## Recent changes (July 2026)
 
