@@ -19,7 +19,7 @@
 | Public site + GAS factory | `shamrock-bail-portal-site` |
 | School LMS | `shamrock-bail-school` |
 
-It **routes, schedules, and glues** GAS, Twilio, Slack, Telegram, SignNow, ElevenLabs, Mongo, scrapers, and health checks. Business rules still live primarily in GAS / leads Python; Node-RED is the wiring and cron brain for many cross-service flows.
+It **routes, schedules, and glues** GAS, Twilio, Slack, Telegram, DocuSeal, ElevenLabs, Mongo, scrapers, and health checks. Business rules still live primarily in GAS / leads Python; Node-RED is the wiring and cron brain for many cross-service flows.
 
 ---
 
@@ -52,9 +52,9 @@ Local docs: `docs/OVERVIEW.md`, `docs/SYSTEM.md`, `docs/INTEGRATIONS.md`, `docs/
 
 ## Fail-closed release (2026-08-16)
 
-Commit `30023d8` was deployed through **Deploy Node-RED Flows** run `31970187751`. The legacy **Intake Pipeline**, **SignNow Tracker**, and **Review Harvester** tabs are now disabled. They could create direct SignNow packets, send signing links, or send client-facing reminders outside the validated Super CRM / DocuSeal workflow and staff approval gates.
+Commit `16f9572` was deployed through **Deploy Node-RED Flows** run `31976445036`. The legacy e-sign tracker tab, direct signing-link/reminder nodes, and legacy provider runtime configuration were removed from the active `flows.json`; no active Node-RED path can create a legacy packet or send a legacy signing link.
 
-> **Operator route:** Use Super CRM for a validated Match → BondCase → explicit surety → assigned POA → staff-approved DocuSeal packet. Do not re-enable these tabs until their downstream actions are rebuilt against that authoritative workflow and the required staff outreach smoke is proven.
+> **Operator route:** Use Super CRM for a validated Match → BondCase → explicit surety → assigned POA → staff-approved DocuSeal packet. Do not create or send a signing link from Node-RED; the required staff workflow smoke remains open.
 
 All former hardcoded factory URLs and the executable GAS API-key fallback in `flows.json` were replaced with environment-backed settings. The deployed flow fails closed when `GAS_WEBHOOK_URL` or `GAS_API_KEY` is absent; it does not invent or substitute an endpoint.
 
