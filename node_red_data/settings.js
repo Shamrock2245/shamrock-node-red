@@ -148,7 +148,12 @@ module.exports = {
     // ═══════════════════════════════════════
     httpRequestTimeout: 30000,   // 30s timeout for http request nodes
     httpNodeCors: {
-        origin: "*",
+        origin: [
+            "https://www.shamrockbailbonds.biz",
+            "https://shamrockbailbonds.biz",
+            "https://leads.shamrockbailbonds.biz",
+            "https://school.shamrockbailbonds.biz"
+        ],
         methods: "GET,PUT,POST,DELETE"
     },
 
@@ -159,22 +164,36 @@ module.exports = {
     // Set WEBHOOK_HMAC_SECRET env var to enforce auth.
     // When no secret is set, all requests pass through (dev mode).
     httpNodeMiddleware: function(req, res, next) {
+        const crypto = require('crypto');
         const secret = process.env.WEBHOOK_HMAC_SECRET || "";
-        
-        // Skip auth if no secret configured (graceful degradation)
-        if (!secret) return next();
-        
-        const provided = req.headers['x-webhook-secret'] 
-            || req.headers['x-api-key'] 
+        const path = (req.url || "").split("?")[0];
+        const providerPaths = [
+            "/whatsapp",
+            "/telegram",
+            "/webhook/telegram-bot",
+            "/webhook/telegram-conversation",
+            "/webhook/telegram-miniapp",
+            "/webhook/elevenlabs-status",
+            "/webhook/bluebubbles"
+        ];
+        if (providerPaths.some((p) => path === p || path.startsWith(p + "/"))) {
+            return next();
+        }
+        if (!secret) {
+            console.warn("[AUTH] WEBHOOK_HMAC_SECRET is not set — internal webhooks are unauthenticated");
+            return next();
+        }
+        const provided = req.headers["x-webhook-secret"]
+            || req.headers["x-api-key"]
             || "";
-        
-        if (provided === secret) return next();
-        
-        // Auth failed
+        const a = Buffer.from(String(provided));
+        const b = Buffer.from(String(secret));
+        const ok = a.length === b.length && a.length > 0 && crypto.timingSafeEqual(a, b);
+        if (ok) return next();
         console.warn(`[AUTH] Webhook auth failed from ${req.ip} on ${req.method} ${req.url}`);
-        res.status(403).json({ 
-            error: "Unauthorized", 
-            message: "Invalid or missing webhook secret" 
+        res.status(403).json({
+            error: "Unauthorized",
+            message: "Invalid or missing webhook secret"
         });
     },
 

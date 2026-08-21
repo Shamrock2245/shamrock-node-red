@@ -1,6 +1,6 @@
 # Shamrock Node-RED — True Status
 
-> **Last verified:** 2026-08-16  
+> **Last verified:** 2026-08-21  
 > **Repo:** `Shamrock2245/shamrock-node-red`  
 > **Role:** Automation fabric of **Shamrock’s Platform** (internal n8n / Zapier)  
 > **Runtime:** typically Hetzner Docker `node-red` service (profile `ops`) on the leads VPS, editor `:1880`  
@@ -58,6 +58,10 @@ Commit `16f9572` was deployed through **Deploy Node-RED Flows** run `31976445036
 
 All former hardcoded factory URLs and the executable GAS API-key fallback in `flows.json` were replaced with environment-backed settings. The deployed flow fails closed when `GAS_WEBHOOK_URL` or `GAS_API_KEY` is absent; it does not invent or substitute an endpoint.
 
+## Factory auth body (2026-08-21)
+
+GAS web apps do not receive HTTP headers. Scheduler, dashboard, and lifecycle jobs now send `apiKey` in the JSON body (and GET `?apiKey=`). Watchdog uses public `?action=health`. Sync VPS `flows.json` after pull.
+
 ## Recent changes (July 2026)
 
 | Area | Status |
@@ -78,5 +82,6 @@ See `shamrock-telegram-app/STATUS.md` for Telegram mini-app data flows.
 
 | FlowFuse Dashboard Command Center (Shamrock emerald theme + logo) | ✅ |
 | Public Site Monitors tab (FA/embeds/home read-only probes) | ✅ 2026-08-06 |
+| GAS factory GET/POST jobs send `apiKey` in JSON body; stale `/exec` URLs pointed at stable portal factory | ✅ 2026-08-21 (sync VPS flows after pull) |
 
 | Workflow Kit subflows + Automation Builder page | ✅ |

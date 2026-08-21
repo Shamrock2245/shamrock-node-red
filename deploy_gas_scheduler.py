@@ -9,8 +9,8 @@ Run: python3 deploy_gas_scheduler.py
 import json, requests, uuid
 
 NR_URL = "http://localhost:1880"
-GAS_URL = "https://script.google.com/macros/s/AKfycbzZfPy0nFDWWKcn731yX8kg9A0t_sCFK3rOdVBddGK1/exec"
-GAS_URL_OPS = "https://script.google.com/macros/s/AKfycbwe-uOTzOWhqFvXn0O3t2B0V5Xo41W1n1-P13kHqH5TItn33rB6A9C5kQ17t5gA6C9t/exec"
+GAS_URL = "https://script.google.com/macros/s/AKfycbyCIDPzA_EA1B1SGsfhYiXRGKM8z61EgACZdDPILT_MjjXee0wSDEI0RRYthE0CvP-Z/exec"
+GAS_URL_OPS = "https://script.google.com/macros/s/AKfycbyCIDPzA_EA1B1SGsfhYiXRGKM8z61EgACZdDPILT_MjjXee0wSDEI0RRYthE0CvP-Z/exec"
 
 def nid():
     return uuid.uuid4().hex[:16]
@@ -28,9 +28,11 @@ def make_inject(node_id, tab_id, name, cron, x, y, wires):
 def make_gas_caller(node_id, tab_id, name, action, x, y, wires, gas_url=None):
     """Function node that sets up GAS call payload."""
     url = gas_url or GAS_URL
-    func = f"""msg.payload = {{ action: '{action}' }};
+    func = f"""const apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || (global.get('env') || {{}}).GAS_API_KEY || '';
+msg.payload = {{ action: '{action}', apiKey: apiKey, source: 'node-red-scheduler' }};
 msg.headers = {{ 'Content-Type': 'application/json' }};
-msg.url = '{url}?action={action}';
+msg.url = '{url}?action={action}' + (apiKey ? ('&apiKey=' + encodeURIComponent(apiKey)) : '');
+msg.method = 'POST';
 node.status({{fill:"blue", shape:"ring", text:"{action}..."}});
 return msg;"""
     return {

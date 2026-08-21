@@ -50,6 +50,7 @@ Data that could identify individuals or expose financial information:
 | ElevenLabs API Key | `flows_cred.json` (encrypted) | ✅ Secure |
 | SignNow API Key | `flows_cred.json` (encrypted) | ✅ Secure |
 | GAS Webhook URLs | ⚠️ Hardcoded in function nodes | 🟡 Should migrate to env vars |
+| GAS_API_KEY | `.env` / `global.get('GAS_API_KEY')` sent in JSON body | ✅ Required after 2026-08-21 factory auth |
 | Node-RED admin password | `settings.js` `adminAuth` | ⚠️ Not configured |
 
 ### Rules
@@ -74,6 +75,8 @@ msg.url = env.get("GAS_INVESTIGATOR_URL");
 ```
 
 ### GAS Web App URL stability
+
+GAS web apps **do not read HTTP headers**. Node-RED must send `apiKey` in the JSON body (and may also append `?apiKey=` on GET). `X-API-Key` alone is not enough.
 
 Keep `GAS_WEBHOOK_URL` (and any `GAS_*_URL`) pointing at the **same** portal factory `/exec` path.
 Re-deploy GAS with `clasp deploy -i <EXISTING_ID>` — do **not** mint a new Web App URL for routine fixes.

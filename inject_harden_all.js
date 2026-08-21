@@ -32,11 +32,13 @@ if (!gasUrl) {
 }
 
 const ts = new Date().toISOString();
-msg.url = gasUrl;
+const apiKey = global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || (global.get('env') || {}).GAS_API_KEY || '';
+msg.url = gasUrl.split('?')[0] + '?action=${action}' + (apiKey ? ('&apiKey=' + encodeURIComponent(apiKey)) : '');
 msg.method = 'POST';
 msg.headers = { 'Content-Type': 'application/json' };
 msg.payload = {
     action: '${action}',
+    apiKey: apiKey,
     requestedAt: ts,
     source: 'node-red',
     ${extraPayload}
@@ -166,7 +168,7 @@ if (!gasUrl) {
     return msg;
 }
 
-msg.url = gasUrl + '?action=healthCheck';
+msg.url = gasUrl.split('?')[0] + '?action=health';
 msg.method = 'GET';
 msg.headers = { 'Accept': 'application/json' };
 msg.checkName = 'GAS';
