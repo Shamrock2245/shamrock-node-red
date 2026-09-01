@@ -22036,7 +22036,7 @@
     "y": 140,
     "wires": [
       [
-        "71e8adbf345d4c27"
+        "fa_prep_request"
       ]
     ]
   },
@@ -22045,10 +22045,10 @@
     "type": "http request",
     "z": "tab-first-appearance-autocrm",
     "name": "POST /api/automation/first-appearance-watcher",
-    "method": "POST",
+    "method": "use",
     "ret": "obj",
     "paytoqs": "ignore",
-    "url": "http://shamrock-dashboard:5050/api/automation/first-appearance-watcher",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -22062,7 +22062,7 @@
       }
     ],
     "reqTimeout": 30000,
-    "x": 450,
+    "x": 580,
     "y": 140,
     "wires": [
       [
@@ -22128,6 +22128,25 @@
     "y": 240,
     "wires": [
       []
+    ]
+  },
+  {
+    "id": "fa_prep_request",
+    "type": "function",
+    "z": "tab-first-appearance-autocrm",
+    "name": "\ud83d\udd27 Prep FA Request",
+    "func": "if (global.get(\"SYSTEM_SHUTDOWN\")) {\n    node.status({fill:\"red\", shape:\"ring\", text:\"SHUTDOWN\"});\n    return null;\n}\nconst base = (global.get(\"LEADS_URL\") || env.get(\"LEADS_PUBLIC_URL\") || env.get(\"DASHBOARD_PUBLIC_URL\") || \"https://leads.shamrockbailbonds.biz\").replace(/\\/$/, \"\");\nconst apiKey = global.get(\"GAS_API_KEY\") || env.get(\"GAS_API_KEY\") || \"\";\nmsg.url = base + \"/api/automation/first-appearance-watcher\";\nmsg.method = \"POST\";\nmsg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"X-API-Key\": apiKey,\n    \"X-Api-Key\": apiKey\n};\nmsg.payload = {};\nnode.status({fill:\"blue\", shape:\"dot\", text:\"Running court window sweep...\"});\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 140,
+    "wires": [
+      [
+        "71e8adbf345d4c27"
+      ]
     ]
   }
 ]
