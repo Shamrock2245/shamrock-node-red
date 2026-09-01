@@ -3398,7 +3398,7 @@
     "y": 240,
     "wires": [
       [
-        "bf3f6258"
+        "2f242403"
       ]
     ]
   },
@@ -4173,7 +4173,7 @@
     "y": 1060,
     "wires": [
       [
-        "ngrok-config-setter"
+        "ngrok-config-debug"
       ]
     ]
   },
@@ -8371,194 +8371,6 @@
     "wires": []
   },
   {
-    "id": "d5d6364796504126",
-    "type": "http in",
-    "z": "47df6624715c4999",
-    "name": "\ud83d\udce5 /intake-pipeline",
-    "url": "/intake-pipeline",
-    "method": "post",
-    "upload": false,
-    "swaggerDoc": "",
-    "x": 160,
-    "y": 180,
-    "wires": [
-      [
-        "c8bd100fad38449e"
-      ]
-    ]
-  },
-  {
-    "id": "c8bd100fad38449e",
-    "type": "function",
-    "z": "47df6624715c4999",
-    "name": "\u2705 Validate Intake",
-    "func": "// Validate intake data \u2014 ensure minimum fields present\nconst intake = msg.payload || {};\nconst name = intake.name || intake.firstName || intake.defendantName || '';\nconst phone = intake.phone || intake.phoneNumber || '';\nconst county = intake.county || intake.location || 'Unknown';\n\nif (!name || !phone) {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c Missing name/phone\"});\n    return null; // Drop incomplete intakes\n}\n\nmsg.intake = {\n    name: name,\n    phone: phone.replace(/\\D/g, ''),\n    county: county,\n    charges: intake.charges || 'Pending',\n    bondAmount: intake.bondAmount || intake.bond_amount || 'TBD',\n    email: intake.email || '',\n    caseId: intake.caseId || intake.id || 'NEW-' + Date.now(),\n    timestamp: new Date().toISOString()\n};\n\nnode.status({fill:\"green\", shape:\"dot\", text:\"\u2705 \" + name + \" | \" + county});\nreturn msg;",
-    "outputs": 1,
-    "timeout": 0,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 380,
-    "y": 180,
-    "wires": [
-      [
-        "a801661036954453",
-        "0a8676e393144195"
-      ]
-    ]
-  },
-  {
-    "id": "a801661036954453",
-    "type": "function",
-    "z": "47df6624715c4999",
-    "name": "\ud83d\udce2 Slack: New Intake",
-    "func": "// Alert Slack about new intake\nconst i = msg.intake;\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + ((global.get(\"env\").SLACK_BOT_TOKEN || (global.get('env').SLACK_BOT_TOKEN || global.get('SLACK_TOKEN') || '') || \"\") || \"\"),\n    \"Content-Type\": \"application/json; charset=utf-8\"\n};\nmsg.payload = {\n    \"channel\": \"C09MP494D1T\",\n    \"blocks\": [\n        {\"type\": \"header\", \"text\": {\"type\": \"plain_text\", \"text\": \"\ud83d\udea8 New Intake \u2014 \" + i.county, \"emoji\": true}},\n        {\"type\": \"divider\"},\n        {\"type\": \"section\", \"fields\": [\n            {\"type\": \"mrkdwn\", \"text\": \"*Client:*\\n\" + i.name},\n            {\"type\": \"mrkdwn\", \"text\": \"*Phone:*\\n\" + i.phone}\n        ]},\n        {\"type\": \"section\", \"fields\": [\n            {\"type\": \"mrkdwn\", \"text\": \"*Charges:*\\n\" + i.charges},\n            {\"type\": \"mrkdwn\", \"text\": \"*Bond:*\\n$\" + i.bondAmount}\n        ]},\n        {\"type\": \"context\", \"elements\": [\n            {\"type\": \"mrkdwn\", \"text\": \"_Case \" + i.caseId + \" \u2014 Pipeline auto-processing..._\"}\n        ]}\n    ]\n};\nreturn msg;",
-    "outputs": 1,
-    "timeout": 0,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 620,
-    "y": 120,
-    "wires": [
-      [
-        "d63c8e9142fc4afb"
-      ]
-    ]
-  },
-  {
-    "id": "d63c8e9142fc4afb",
-    "type": "http request",
-    "z": "47df6624715c4999",
-    "name": "\ud83d\udce4 Slack",
-    "method": "POST",
-    "ret": "obj",
-    "paytoqs": "ignore",
-    "url": "https://slack.com/api/chat.postMessage",
-    "tls": "",
-    "persist": false,
-    "proxy": "",
-    "insecureHTTPParser": false,
-    "authType": "",
-    "senderr": false,
-    "headers": [],
-    "x": 840,
-    "y": 120,
-    "wires": [
-      [
-        "d9ad21df5d5b401e"
-      ]
-    ],
-    "reqTimeout": 15000
-  },
-  {
-    "id": "30859efe4f5e4c96",
-    "type": "function",
-    "z": "47df6624715c4999",
-    "name": "\ud83d\udce4 Send Signing Link",
-    "func": "// Send signing link via SMS\nconst result = msg.payload || {};\nconst signingLink = result.signingLink || result.url || '';\n\nif (!signingLink) {\n    node.status({fill:\"red\", shape:\"ring\", text:\"\u274c No signing link returned\"});\n    return null;\n}\n\nmsg.signingLink = signingLink;\nmsg.payload = {\n    apiKey: (global.get('GAS_API_KEY') || env.get('GAS_API_KEY') || (global.get('env')||{}).GAS_API_KEY || ''),\n    action: 'sendSigningLink',\n    phone: msg.intake.phone,\n    name: msg.intake.name,\n    caseId: msg.intake.caseId,\n    link: signingLink,\n    message: `Hi ${msg.intake.name}, your Shamrock Bail Bonds paperwork is ready! \ud83c\udf40\\n\\nSign here (takes ~2 min): ${signingLink}\\n\\nQuestions? Call (239) 955-0178`\n};\nnode.status({fill:\"green\", shape:\"dot\", text:\"\ud83d\udce4 Sending link...\"});\nreturn msg;",
-    "outputs": 1,
-    "timeout": 0,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 1060,
-    "y": 240,
-    "wires": [
-      [
-        "aa5bfc0002fc4801"
-      ]
-    ]
-  },
-  {
-    "id": "aa5bfc0002fc4801",
-    "type": "http request",
-    "z": "47df6624715c4999",
-    "name": "\ud83c\udf10 GAS: SMS Link",
-    "method": "POST",
-    "ret": "txt",
-    "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=sendSigningLink",
-    "tls": "",
-    "persist": false,
-    "proxy": "",
-    "insecureHTTPParser": false,
-    "authType": "",
-    "senderr": false,
-    "headers": [
-      {
-        "keyType": "other",
-        "keyValue": "Content-Type",
-        "valueType": "other",
-        "valueValue": "application/json"
-      }
-    ],
-    "x": 1280,
-    "y": 240,
-    "wires": [
-      [
-        "4330d58a38674a01"
-      ]
-    ],
-    "reqTimeout": 15000
-  },
-  {
-    "id": "3e8f20ccfd7f401a",
-    "type": "http request",
-    "z": "47df6624715c4999",
-    "name": "\ud83d\udce4 Slack",
-    "method": "POST",
-    "ret": "obj",
-    "paytoqs": "ignore",
-    "url": "https://slack.com/api/chat.postMessage",
-    "tls": "",
-    "persist": false,
-    "proxy": "",
-    "insecureHTTPParser": false,
-    "authType": "",
-    "senderr": false,
-    "headers": [],
-    "x": 1700,
-    "y": 240,
-    "wires": [
-      [
-        "a6859d72059e4a7b"
-      ]
-    ],
-    "reqTimeout": 15000
-  },
-  {
-    "id": "a6859d72059e4a7b",
-    "type": "debug",
-    "z": "47df6624715c4999",
-    "name": "\ud83d\udd0d",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": true,
-    "complete": "payload",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 1860,
-    "y": 240,
-    "wires": []
-  },
-  {
-    "id": "f2d97261ecba4bcc",
-    "type": "http response",
-    "z": "47df6624715c4999",
-    "name": "\u21a9\ufe0f 200 OK",
-    "statusCode": "200",
-    "headers": {},
-    "x": 380,
-    "y": 260,
-    "wires": []
-  },
-  {
     "id": "adbeb18a19584ef2",
     "type": "comment",
     "z": "c9cd99104acc4337",
@@ -10507,47 +10319,6 @@
     "y": 900
   },
   {
-    "id": "4a797ba4e1c24d17",
-    "type": "catch",
-    "z": "47df6624715c4999",
-    "name": "\ud83d\udea8 Intake Pipeline Error Catch",
-    "scope": null,
-    "uncaught": false,
-    "wires": [
-      [
-        "98eeb60c426e491e"
-      ]
-    ],
-    "x": 200,
-    "y": 900
-  },
-  {
-    "id": "98eeb60c426e491e",
-    "type": "function",
-    "z": "47df6624715c4999",
-    "name": "Format Error for Slack",
-    "func": "// Global error handler for tab: Intake Pipeline\nconst err = msg.error || {};\nconst source = err.source ? (err.source.name || err.source.type || err.source.id) : 'Unknown';\nconst errMsg = err.message || JSON.stringify(err);\nconst ts = new Date().toISOString();\n\nnode.warn('[Intake Pipeline] Error in ' + source + ': ' + errMsg);\n\nmsg.payload = {\n    channel: '#alerts',\n    text: `\ud83d\udea8 *Node-RED Error \u2014 Intake Pipeline*\\n*Node:* ${source}\\n*Error:* ${errMsg}\\n*Time:* ${ts}`,\n    blocks: [{\n        type: 'section',\n        text: {\n            type: 'mrkdwn',\n            text: `\ud83d\udea8 *Node-RED Error \u2014 Intake Pipeline*\\n*Node:* ${source}\\n*Error:* ${errMsg}\\n*Time:* ${ts}`\n        }\n    }]\n};\nmsg.headers = {\n    'Authorization': 'Bearer ' + (env.get('SLACK_BOT_TOKEN') || ''),\n    'Content-Type': 'application/json'\n};\nreturn msg;",
-    "outputs": 1,
-    "wires": [
-      [
-        "56c9a265806d4ae9"
-      ]
-    ],
-    "x": 400,
-    "y": 900
-  },
-  {
-    "id": "56c9a265806d4ae9",
-    "type": "debug",
-    "z": "47df6624715c4999",
-    "name": "Error Debug (Intake Pipeline)",
-    "active": true,
-    "tosidebar": true,
-    "wires": [],
-    "x": 600,
-    "y": 900
-  },
-  {
     "id": "7f924aacf4784459",
     "type": "catch",
     "z": "c9cd99104acc4337",
@@ -11328,17 +11099,6 @@
     "tosidebar": true,
     "wires": [],
     "x": 1400,
-    "y": 400
-  },
-  {
-    "id": "d9ad21df5d5b401e",
-    "type": "debug",
-    "z": "47df6624715c4999",
-    "name": "Intake Slack Debug",
-    "active": true,
-    "tosidebar": true,
-    "wires": [],
-    "x": 1200,
     "y": 400
   },
   {
@@ -22146,6 +21906,25 @@
     "wires": [
       [
         "71e8adbf345d4c27"
+      ]
+    ]
+  },
+  {
+    "id": "pc_process_list",
+    "type": "function",
+    "z": "tab-paperwork-chase",
+    "name": "\ud83d\udccb Process Unsigned Docs",
+    "func": "/* Process list of unsigned docs and prepare reminder escalation */\nconst result = msg.payload || {};\nconst items = result.data || result.bonds || result.items || (Array.isArray(result) ? result : []);\n\nif (!items || items.length === 0) {\n    node.status({ fill: \"grey\", shape: \"dot\", text: \"No unsigned docs\" });\n    return null;\n}\n\nconst now = Date.now();\nconst reminders = [];\n\nitems.forEach(doc => {\n    const phone = doc.cosigner_phone || doc.indemnitor_phone || doc.phone || \"\";\n    if (!phone) return;\n    \n    const sentAt = doc.created_at ? new Date(doc.created_at).getTime() : now;\n    const hoursElapsed = (now - sentAt) / (1000 * 60 * 60);\n    const defendant = doc.defendant_name || doc.name || \"your loved one\";\n    const link = doc.signing_url || doc.docuseal_url || \"https://www.shamrockbailbonds.biz/portal-start\";\n    \n    let escalation = \"imessage\";\n    if (hoursElapsed > 24) escalation = \"voice\";\n    else if (hoursElapsed > 6) escalation = \"sms\";\n    \n    reminders.push({\n        phone: phone,\n        defendant: defendant,\n        booking: doc.booking_number || \"\",\n        escalation: escalation,\n        message: `Shamrock Bail Bonds reminder: Bail paperwork for ${defendant} is ready for mobile signing: ${link}`\n    });\n});\n\nnode.status({ fill: \"green\", shape: \"dot\", text: reminders.length + \" reminder(s) queued\" });\nmsg.pendingReminders = reminders;\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 640,
+    "y": 120,
+    "wires": [
+      [
+        "pc_send_loop"
       ]
     ]
   }
