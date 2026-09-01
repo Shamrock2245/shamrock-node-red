@@ -21927,5 +21927,100 @@
         "pc_send_loop"
       ]
     ]
+  },
+  {
+    "id": "lee_ap_inject",
+    "type": "inject",
+    "z": "tab-first-appearance-autocrm",
+    "name": "Every 15m (Lee Auto-Pilot)",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "900",
+    "crontab": "",
+    "once": true,
+    "onceDelay": 15,
+    "topic": "lee_county_autopilot",
+    "payload": "",
+    "payloadType": "date",
+    "x": 150,
+    "y": 320,
+    "wires": [
+      [
+        "lee_ap_prep"
+      ]
+    ]
+  },
+  {
+    "id": "lee_ap_prep",
+    "type": "function",
+    "z": "tab-first-appearance-autocrm",
+    "name": "\ud83c\udfdb\ufe0f Prep Lee Sweep",
+    "func": "if (global.get(\"SYSTEM_SHUTDOWN\")) {\n    node.status({fill:\"red\", shape:\"ring\", text:\"SHUTDOWN\"});\n    return null;\n}\nconst base = (global.get(\"LEADS_URL\") || env.get(\"LEADS_PUBLIC_URL\") || env.get(\"DASHBOARD_PUBLIC_URL\") || \"https://leads.shamrockbailbonds.biz\").replace(/\\/$/, \"\");\nconst apiKey = global.get(\"GAS_API_KEY\") || env.get(\"GAS_API_KEY\") || \"\";\nmsg.url = base + \"/api/lee-county/autopilot/sweep\";\nmsg.method = \"POST\";\nmsg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"X-API-Key\": apiKey,\n    \"X-Api-Key\": apiKey\n};\nmsg.payload = {};\nnode.status({fill:\"blue\", shape:\"dot\", text:\"Sweeping Lee County leads...\"});\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 320,
+    "wires": [
+      [
+        "lee_ap_http"
+      ]
+    ]
+  },
+  {
+    "id": "lee_ap_http",
+    "type": "http request",
+    "z": "tab-first-appearance-autocrm",
+    "name": "POST /api/lee-county/autopilot/sweep",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [
+      {
+        "key": "Content-Type",
+        "value": "application/json"
+      }
+    ],
+    "reqTimeout": 30000,
+    "x": 620,
+    "y": 320,
+    "wires": [
+      [
+        "lee_ap_format"
+      ]
+    ]
+  },
+  {
+    "id": "lee_ap_format",
+    "type": "function",
+    "z": "tab-first-appearance-autocrm",
+    "name": "Format Lee Auto-Pilot Alert",
+    "func": "const data = msg.payload || {};\nconst contacted = data.contacted_count || 0;\nconst processed = data.processed_candidates || 0;\nconst webhook = global.get(\"SLACK_WEBHOOK_LEADS\") || process.env.SLACK_WEBHOOK_LEADS || \"\";\n\nnode.status({fill: contacted > 0 ? \"green\" : \"grey\", shape: \"dot\", text: `Processed: ${processed} | Auto-Texted: ${contacted}`});\n\nif (contacted > 0 && webhook) {\n    msg.url = webhook;\n    msg.payload = {\n        text: `\ud83c\udfdb\ufe0f *Lee County Auto-Pilot Family Outreach Alert*\\n- *Evaluated Arrests*: ${processed}\\n- *Verified Family Texts Sent*: ${contacted}\\nView HQ: https://leads.shamrockbailbonds.biz`\n    };\n    return msg;\n}\nreturn null;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 880,
+    "y": 320,
+    "wires": [
+      []
+    ]
   }
 ]
