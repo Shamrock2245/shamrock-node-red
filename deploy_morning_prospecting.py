@@ -94,6 +94,19 @@ def main():
     else:
         print("flows.json updated. Re-run with --deploy to live-load.")
 
+    # VPS: ensure Slack env is injected into the Node-RED container (idempotent).
+    # Invoked by Sync Node-RED Flows after merge; safe no-op off-box.
+    if Path("/opt/shamrock-leads").is_dir():
+        ensure = ROOT / "ops_ensure_slack_env.py"
+        if ensure.exists():
+            print("Running ops_ensure_slack_env.py …")
+            import subprocess as _sp
+            rc = _sp.call([sys.executable, str(ensure)])
+            if rc not in (0, 2):
+                sys.exit(rc)
+            if rc == 2:
+                print("WARNING: Slack compose fix not on leads main yet — token may still be missing")
+
 
 if __name__ == "__main__":
     main()
