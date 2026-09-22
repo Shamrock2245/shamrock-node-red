@@ -13,7 +13,7 @@
 **Node-RED is the visual orchestration layer** between systems that should not all call each other ad hoc:
 
 | Analogy | Shamrock |
-|---------|----------|
+|--------|----------|
 | Zapier / n8n / Make | **shamrock-node-red** |
 | CRM / scrapers / dashboard | `shamrock-leads` |
 | Public site + GAS factory | `shamrock-bail-portal-site` |
@@ -75,7 +75,9 @@ GAS web apps do not receive HTTP headers. Scheduler, dashboard, and lifecycle jo
 | Leads `POST /api/automation/*` sweeps for Node-RED (GAS_API_KEY) | ✅ |
 | `deploy_lifecycle_automations.py` + `docs/SUPER_ADMIN.md` | ✅ |
 
-**Five-repo ecosystem** (was four): `shamrock-leads`, `shamrock-bail-portal-site`, `shamrock-bail-school`, `shamrock-node-red`, **`shamrock-telegram-app`**.  
+**Core public ecosystem:** `shamrock-leads`, `shamrock-bail-portal-site`, `shamrock-bail-school`, `shamrock-node-red`, **`shamrock-telegram-app`**.  
+**Also private:** [`Shamrock2245/shamrock-bond-tracker`](https://github.com/Shamrock2245/shamrock-bond-tracker) (GPS/IP check-in geolocation) — private repo, not missing.  
+Canonical staff Auto-CRM URL: `https://leads.shamrockbailbonds.biz` (not raw Hetzner `:8088`).  
 See `shamrock-telegram-app/STATUS.md` for Telegram mini-app data flows.
 
 | OSINT Intelligence + Ops Digest Node-RED tabs (`osint_ops_flows.json`) | ✅ |
