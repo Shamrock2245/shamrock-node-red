@@ -10,7 +10,7 @@
 
 ## True status
 
-See **[`STATUS.md`](./STATUS.md)**. In the Shamrock stack this repo is our **open-source Zapier / n8n**: visual flows, crons, and webhooks that glue GAS, leads, Twilio, Slack, Telegram, SignNow, and health checks. It is **not** the Super CRM UI (`shamrock-leads`) and **not** the Bail School LMS (`shamrock-bail-school`).
+See **[`STATUS.md`](./STATUS.md)**. In the Shamrock stack this repo is our **open-source Zapier / n8n**: visual flows, crons, and webhooks that glue GAS, leads, Twilio, Slack, Telegram, DocuSeal (`https://sign.shamrockbailbonds.biz`), and health checks. SignNow is permanently retired (historical only). It is **not** the Super CRM UI (`shamrock-leads`) and **not** the Bail School LMS (`shamrock-bail-school`).
 
 ---
 
@@ -18,7 +18,7 @@ See **[`STATUS.md`](./STATUS.md)**. In the Shamrock stack this repo is our **ope
 
 This is the **Node-RED instance** for Shamrock Bail Bonds. It acts as the central orchestration layer that:
 
-- 🔗 **Routes** data between Wix, Google Apps Script, Twilio, Slack, Telegram, SignNow, and ElevenLabs
+- 🔗 **Routes** data between Wix, Google Apps Script, Twilio, Slack, Telegram, DocuSeal, and ElevenLabs
 - 🤖 **Powers** 9 AI agents (The Concierge, Clerk, Analyst, Investigator, Closer, Court Clerk, Bounty Hunter, Watchdog, Scout)
 - 📊 **Serves** a 10-page Operations Dashboard with premium dark glassmorphism styling
 - ⏰ **Runs** 64 scheduled automations (scrapers, reminders, reports, health checks, backups)
@@ -67,14 +67,14 @@ cp .env.example .env
 | [OVERVIEW.md](docs/OVERVIEW.md) | 🗺 Visual map — ecosystem diagram, intake pipeline, 24-hour cycle |
 | [SYSTEM.md](docs/SYSTEM.md) | Architecture, tech stack, directory layout, flow tab map |
 | [AGENTS.md](.agents/AGENTS.md) | 🤖 Digital workforce — 9 AI agents with roles, data flows, KPIs |
-| [INTEGRATIONS.md](docs/INTEGRATIONS.md) | External services — GAS, Twilio, Slack, Telegram, SignNow, ElevenLabs |
+| [INTEGRATIONS.md](docs/INTEGRATIONS.md) | External services — GAS, Twilio, Slack, Telegram, DocuSeal, ElevenLabs |
 | [APIS.md](docs/APIS.md) | HTTP endpoints, webhooks, rate limits, security |
 | [CAPABILITIES.md](docs/CAPABILITIES.md) | Feature inventory — 40+ capabilities by business function |
 | [FLOWS.md](docs/FLOWS.md) | Detailed reference for every flow tab |
 | [TASKS.md](docs/TASKS.md) | Prioritized backlog with effort estimates |
 | [SCHEDULING.md](docs/SCHEDULING.md) | Cron schedule bible — daily timeline, intervals, collision risks |
-| [SECURITY.md](docs/SECURITY.md) | PII handling, secrets management, compliance |
-| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Developer & AI agent onboarding, conventions, deployment guide |
+| [SECURITY.md](docs/SECURITY.md) | PII handling, secrets, compliance |
+| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Developer & AI onboarding, conventions, deployment guide |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and fixes |
 | [RUNBOOKS.md](docs/RUNBOOKS.md) | Step-by-step operational procedures |
 | [Dashboard Capabilities](docs/dashboard-capabilities.md) | All 25 dashboard capabilities — implementation status |
@@ -85,7 +85,7 @@ cp .env.example .env
 
 ```
   ┌─────────┐  ┌─────────┐  ┌──────────┐  ┌─────────┐  ┌──────────┐
-  │   Wix   │  │ Twilio  │  │Telegram  │  │ SignNow │  │  County  │
+  │   Wix   │  │ Twilio  │  │Telegram  │  │ DocuSeal│  │  County  │
   │ Website │  │SMS/WA   │  │   Bot    │  │ Signing │  │  Jails   │
   └────┬────┘  └────┬────┘  └────┬─────┘  └────┬────┘  └────┬─────┘
        │            │            │              │             │
@@ -124,7 +124,7 @@ cp .env.example .env
 | The Bounty Hunter | ✅ Live | High-value bond tracking |
 | Watchdog | ✅ Live | System health (5-min check) |
 | WhatsApp Campaigns | ⏸ Disabled | Outbound drip campaigns (awaiting 10DLC) |
-| SignNow Tracker | ✅ Live | Document signing status |
+| DocuSeal / Packet Status | ✅ Live | Signing status via Super CRM (SignNow tracker retired) |
 | Review Harvester | ✅ Live | Google review solicitation |
 | Payment Reminders | ✅ Live | Payment collection + reminders |
 | No-Show Escalation | ✅ Live | FTA detection & warrants |
@@ -226,7 +226,7 @@ shamrock-node-red/
 |---|---|
 | [shamrock-bail-portal-site](https://github.com/Shamrock2245/shamrock-bail-portal-site) | Wix website + GAS backend |
 | **shamrock-node-red** (this repo) | Node-RED automation engine |
-| [swfl-arrest-scrapers](https://github.com/Shamrock2245/swfl-arrest-scrapers) | County scraper fleet |
+| [shamrock-leads](https://github.com/Shamrock2245/shamrock-leads) | Super CRM / Auto-CRM + arrest intelligence (`https://leads.shamrockbailbonds.biz`) |
 | [shamrock-telegram-app](https://github.com/Shamrock2245/shamrock-telegram-app) | Telegram Mini-Apps (Netlify) |
 
 ---
