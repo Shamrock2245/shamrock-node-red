@@ -15,8 +15,8 @@
               ┌───────────────┘   │   │   │   │   │   │   └───────────────┐
               ▼                   ▼   │   ▼   │   ▼   │                   ▼
         ┌──────────┐       ┌─────────┐│┌─────┐│┌─────┐│           ┌──────────┐
-        │  Google  │       │ Twilio  │││Slack │││Sign ││           │   Wix    │
-        │  Apps    │       │ SMS/WA/ ││└─────┘│││Now  ││           │ Website  │
+        │  Google  │       │ Twilio  │││Slack │││Docu ││           │   Wix    │
+        │  Apps    │       │ SMS/WA/ ││└─────┘│││Seal ││           │ Website  │
         │  Script  │       │ Voice   ││       ││└─────┘│           └──────────┘
         └──────────┘       └─────────┘│       │        │
                                       ▼       ▼        ▼
@@ -46,7 +46,7 @@
 | GAS Link Generator | Magic link creation | Dashboard form |
 | GAS Notify | Notification dispatch | Various |
 | GAS Shutdown API | Emergency system shutdown | PANIC button |
-| GAS SignNow Webhook | SignNow document processing | Intake completion |
+| GAS paperwork webhook | DocuSeal/paperwork status (legacy SignNow path retired) | Intake / signing events |
 | GAS Conversation Handler | Telegram conversation processing | Telegram webhook |
 | GAS MiniApp Handler | Telegram mini-app data | MiniApp webhook |
 | GAS Court API | Court date fetch/update | 30-min cron |
@@ -122,23 +122,25 @@
 
 ---
 
-## 5. SignNow
+## 5. DocuSeal (sole active signing) — SignNow retired
 
 | Field | Value |
 |---|---|
-| **Purpose** | Electronic document signing — bail applications, indemnity agreements |
-| **Protocol** | REST API + webhooks |
-| **Auth** | API Key + Bearer Token |
-| **Node-RED Nodes** | `http in` (webhook receiver), `http request` (API calls) |
-| **Flow Tabs Using** | Digital Workforce, SignNow Tracker |
+| **Purpose** | Electronic document signing — staff-gated bail packets via Super CRM (`shamrock-leads`) |
+| **Protocol** | Super CRM → DocuSeal; Node-RED may observe paperwork / leads status |
+| **Auth** | DocuSeal / leads secrets (not SignNow) |
+| **Node-RED Nodes** | `http in` / `http request` toward **leads** paperwork paths |
+| **Flow Tabs Using** | Digital Workforce, Paperwork / DocuSeal Tracker (formerly “SignNow Tracker”) |
 
-### SignNow Events
+**SignNow is retired.** Do not configure `SIGNNOW_*` for live paperwork. Historical tracker tab names may still appear in flow JSON until a separate flow rename; treat them as paperwork/DocuSeal.
+
+### Paperwork / DocuSeal events
 
 | Event | Action |
-|---|---|
-| Document signed | Alert to #bonds-live, GAS processing |
-| Invite sent | Log to tracking dashboard |
-| Document viewed | Update status in tracker |
+|---|---|---|---|---|
+| DocuSeal submission complete | Alert / GAS or leads processing |
+| Staff-issued invite | Logged via Super CRM |
+| Legacy SignNow events | Historical / fail-closed only |
 
 ---
 
@@ -215,23 +217,23 @@ IRB Deep Search → Find Relatives → Build ElevenLabs Call → 11Labs API POST
 | Field | Value |
 |---|---|
 | **Purpose** | Client-facing Telegram mini-apps: 5-step intake form, document review & signing, staff paperwork trigger |
-| **Protocol** | Netlify-hosted mini-apps → GAS (POST/GET) → SignNow → Drive |
+| **Protocol** | Netlify-hosted mini-apps → GAS (POST/GET) → DocuSeal (staff-issued) → Drive |
 | **Auth** | Telegram WebApp `initData` validation; GAS API key for backend calls |
 | **Node-RED Role** | Receives `/webhook/telegram-miniapp` submissions; routes to GAS; monitors signing status |
-| **Flow Tabs Using** | Digital Workforce, SignNow Tracker |
+| **Flow Tabs Using** | Digital Workforce, Paperwork / DocuSeal Tracker |
 
 ### Telegram Mini-App Data Flows
 
 | Mini-App | Entry Point | Data Captured | GAS Action | Output |
 |---|---|---|---|---|
 | **Intake** (`/intake/`) | Indemnitor self-serve | 5-step form: personal, defendant, bond, employment, references + **surety_id** | `telegram_intake_submit` → IntakeQueue sheet + MongoDB | Confirmation SMS; leads dashboard queued |
-| **Documents** (`/documents/`) | Indemnitor/defendant signing | Case lookup by case# or phone; **surety_id** from case record | `telegram_document_lookup` → `telegram_get_signing_url` (surety-routed template) | SignNow embedded signing link |
-| **Send Paperwork** (`/api/send-paperwork`) | Shannon AI mid-call tool | caller_name, email, phone, defendant_name, county, **surety_id** | `send_paperwork` → GAS → SignNow Phase 1 packet | Signing link SMS to indemnitor |
+| **Documents** (`/documents/`) | Indemnitor/defendant status | Case lookup by case# or phone; **surety_id** from case record | staff-reviewed DocuSeal handoff only | DocuSeal signing link (staff-issued; never created by Telegram) |
+| **Send Paperwork** (`/api/send-paperwork`) | Shannon / legacy | retired direct path | returns `DIRECT_PAPERWORK_RETIRED` / fail-closed | Staff issues DocuSeal from Super CRM |
 
 ### surety_id Routing (as of 2026-07 realignment)
 
 All three entry points now capture and forward `surety_id` (`'osi'` or `'palmetto'`).  
-GAS resolves the correct SignNow template via `_resolveTemplateId(docKey, surety_id)` in `Telegram_Documents.js`.  
+Surety routing for **DocuSeal** templates is owned by Super CRM staff issuance (OSI / Palmetto). Legacy SignNow `_resolveTemplateId` paths are retired/fail-closed.  
 Completed packets are filed to Drive under `Completed Bonds / OSI` or `Completed Bonds / PALMETTO`.
 
 ---
@@ -242,7 +244,7 @@ This section documents the **canonical surety routing** enforced across all five
 
 ### Canonical surety_id Values
 
-| Value | Surety Company | SignNow Template Prefix | Drive Subfolder |
+| Value | Surety Company | DocuSeal / packet prefix | Drive Subfolder |
 |---|---|---|---|
 | `osi` | Old Surety Insurance (default) | `osi_*` | `Completed Bonds/OSI/` |
 | `palmetto` | Palmetto Surety Corporation | `palmetto_*` | `Completed Bonds/PALMETTO/` |
@@ -256,10 +258,10 @@ Entry Point (Telegram Intake / Wix Portal / Leads Dashboard)
 GAS IntakeQueue Sheet  ←→  MongoDB intake_queue
     │  surety_id stored in both
     ▼
-SignNow_SendPaperwork.js / Telegram_Documents.js
-    │  _resolveTemplateId(docKey, surety_id) selects OSI or Palmetto template
+Super CRM staff approval (Match → BondCase → surety → POA)
+    │  issues DocuSeal submission (OSI or Palmetto template)
     ▼
-SignNow (correct surety-specific template)
+DocuSeal (sole active signing provider)
     │  signed documents
     ▼
 Google Drive  →  Completed Bonds / OSI|PALMETTO / LastName, F_YYYYMMDD /
@@ -272,7 +274,7 @@ Google Drive  →  Completed Bonds / OSI|PALMETTO / LastName, F_YYYYMMDD /
 | Agent Name | Brendan O'Neal |
 | License # | P139768 |
 | Phone | (239) 332-2245 |
-| Source files | `signnow_packet_service.py`, `SignNow_SendPaperwork.js`, `bond_pdf_service.py` |
+| Source files | Super CRM DocuSeal issuance; legacy SignNow senders remain fail-closed |
 
 ---
 
