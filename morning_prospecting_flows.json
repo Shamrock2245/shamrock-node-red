@@ -88,7 +88,7 @@
   },
   {
     "id": "mp_gate",
-    "type": "subflow-safe-cron",
+    "type": "subflow:subflow-safe-cron",
     "z": "tab_morning_prospect",
     "name": "Safe Cron Gate",
     "x": 380,
@@ -135,7 +135,7 @@
   },
   {
     "id": "mp_leads",
-    "type": "subflow-leads-api",
+    "type": "subflow:subflow-leads-api",
     "z": "tab_morning_prospect",
     "name": "Leads API Call",
     "x": 820,
@@ -189,7 +189,7 @@
   },
   {
     "id": "mp_slack",
-    "type": "subflow-slack-notify",
+    "type": "subflow:subflow-slack-notify",
     "z": "tab_morning_prospect",
     "name": "Slack Notify (staff)",
     "x": 1280,
@@ -203,7 +203,7 @@
   },
   {
     "id": "mp_slack_fail",
-    "type": "subflow-slack-notify",
+    "type": "subflow:subflow-slack-notify",
     "z": "tab_morning_prospect",
     "name": "Slack Notify (fail)",
     "x": 1280,
