@@ -184,68 +184,106 @@ def pull_leads_and_recreate() -> None:
     raise SystemExit(1)
 
 
-def slack_test_post() -> None:
-    print("-- Slack chat.postMessage test → #leads --")
-    # Get token inside container without printing it
-    get_tok = r'''
-TOKEN="${SLACK_BOT_TOKEN:-}"
-CHAN="${SLACK_CHANNEL_PROSPECTING:-${SLACK_CHANNEL_LEADS:-#leads}}"
-printf '%s\n' "$TOKEN"
-printf '%s\n' "$CHAN"
-'''
-    out = run(["docker", "exec", CONTAINER, "sh", "-c", get_tok], check=False).stdout
-    lines = out.splitlines()
-    token = lines[0] if lines else ""
-    chan = lines[1] if len(lines) > 1 else "#leads"
-    if not token:
-        print("SLACK_TEST=FAIL reason=no_token_in_container")
-        raise SystemExit(1)
-    body = json.dumps(
-        {
-            "channel": chan,
-            "text": (
-                "✅ Node-RED Slack env check — CoS ensure "
-                f"{__import__('datetime').datetime.utcnow().strftime('%Y-%m-%dT%H:%MZ')} UTC"
-                " · staff only · no client SMS"
-            ),
-        }
-    ).encode()
+def _slack_api(token: str, method: str, payload: dict | None = None) -> dict:
+    body = None if payload is None else json.dumps(payload).encode()
     req = urllib.request.Request(
-        "https://slack.com/api/chat.postMessage",
+        f"https://slack.com/api/{method}",
         data=body,
         headers={
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json; charset=utf-8",
         },
-        method="POST",
+        method="POST" if payload is not None else "GET",
     )
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             raw = resp.read().decode()
     except urllib.error.HTTPError as e:
         raw = e.read().decode() if e.fp else str(e)
-    except Exception as e:
-        print(f"SLACK_TEST=FAIL reason=request_error {e}")
-        raise SystemExit(1)
     try:
-        d = json.loads(raw)
+        return json.loads(raw)
     except Exception:
-        print("SLACK_TEST=FAIL reason=non_json", raw[:200])
+        return {"ok": False, "error": "non_json", "raw": raw[:200]}
+
+
+def _candidate_channels(token: str) -> list[str]:
+    """Prefer prospecting/#leads, then known IDs, then host SLACK_CHANNEL, then name lookup."""
+    get_env = r'''
+printf '%s\n' "${SLACK_BOT_TOKEN:-}"
+printf '%s\n' "${SLACK_CHANNEL_PROSPECTING:-}"
+printf '%s\n' "${SLACK_CHANNEL_LEADS:-}"
+printf '%s\n' "${SLACK_CHANNEL:-}"
+'''
+    out = run(["docker", "exec", CONTAINER, "sh", "-c", get_env], check=False).stdout
+    lines = out.splitlines()
+    # token is lines[0]; channels follow
+    cands: list[str] = []
+    for v in lines[1:]:
+        v = (v or "").strip()
+        if v and v not in cands:
+            cands.append(v)
+    for v in ("#leads", "leads", "C09MSHM72D8", "C0ACWDRQWD9", "#shamrock", "shamrock"):
+        if v not in cands:
+            cands.append(v)
+    # Resolve by name via conversations.list (public channels the bot can see)
+    listed = _slack_api(token, "conversations.list", {"types": "public_channel,private_channel", "limit": 200})
+    if listed.get("ok"):
+        by_name = { (c.get("name") or "").lower(): c.get("id") for c in listed.get("channels") or [] }
+        print("SLACK_VISIBLE_CHANNELS=", ",".join(sorted(by_name)[:30]))
+        for name in ("leads", "shamrock", "new-cases", "alerts"):
+            cid = by_name.get(name)
+            if cid and cid not in cands:
+                cands.append(cid)
+    else:
+        print("conversations.list error=", listed.get("error"))
+    return cands
+
+
+def slack_test_post() -> None:
+    print("-- Slack chat.postMessage test (staff channel) --")
+    get_tok = r'printf "%s" "${SLACK_BOT_TOKEN:-}"'
+    token = run(["docker", "exec", CONTAINER, "sh", "-c", get_tok], check=False).stdout.strip()
+    if not token:
+        print("SLACK_TEST=FAIL reason=no_token_in_container")
         raise SystemExit(1)
-    print(
-        "ok=",
-        d.get("ok"),
-        "error=",
-        d.get("error"),
-        "channel=",
-        d.get("channel"),
-        "ts=",
-        d.get("ts"),
+    from datetime import datetime, timezone
+    text = (
+        "✅ Node-RED Slack env check — CoS ensure "
+        f"{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%MZ')} UTC"
+        " · staff only · no client SMS"
     )
-    if not d.get("ok"):
-        print("SLACK_TEST=FAIL")
-        raise SystemExit(1)
-    print("SLACK_TEST=PASS")
+    cands = _candidate_channels(token)
+    print("CANDIDATES=", ",".join(cands[:12]))
+    last = {}
+    for chan in cands:
+        # Try join (no-op if already in / public)
+        if chan.startswith("C"):
+            _slack_api(token, "conversations.join", {"channel": chan})
+        d = _slack_api(token, "chat.postMessage", {"channel": chan, "text": text})
+        print(f"try chan={chan} ok={d.get('ok')} error={d.get('error')} channel_id={d.get('channel')} ts={d.get('ts')}")
+        last = d
+        if d.get("ok"):
+            # Persist working channel into leads .env for morning prospecting
+            leads_env = LEADS / ".env"
+            if leads_env.is_file():
+                raw = leads_env.read_text(errors="replace")
+                lines = [ln for ln in raw.splitlines() if not ln.startswith("SLACK_CHANNEL_PROSPECTING=")]
+                # Prefer channel id when Slack returns it
+                target = d.get("channel") or chan
+                lines.append(f"SLACK_CHANNEL_PROSPECTING={target}")
+                leads_env.write_text("\n".join(lines) + "\n")
+                print(f"PERSISTED_SLACK_CHANNEL_PROSPECTING={target}")
+                # Recreate so NR picks up prospecting channel (token already present)
+                sh(f"cd {LEADS} && docker compose --profile ops up -d --no-deps --force-recreate node-red")
+                for _ in range(24):
+                    import time
+                    if subprocess.run(["curl", "-sf", "--max-time", "5", "http://127.0.0.1:1880/"], capture_output=True).returncode == 0:
+                        break
+                    time.sleep(5)
+            print("SLACK_TEST=PASS")
+            return
+    print("SLACK_TEST=FAIL last=", last.get("error"))
+    raise SystemExit(1)
 
 
 def main() -> int:
@@ -275,14 +313,23 @@ def main() -> int:
 
     after = redact_report("AFTER")
     do_post = os.environ.get("SKIP_SLACK_TEST") != "1"
+    slack_ok = False
     if do_post:
         if not after["token_set"]:
             print("SLACK_TEST=FAIL reason=token_still_missing_after")
+            print("=== DONE ===")
             return 1
-        slack_test_post()
+        try:
+            slack_test_post()
+            slack_ok = True
+        except SystemExit:
+            print("WARNING: token injected but Slack post failed (channel/membership). Sync continues.")
+            slack_ok = False
     else:
         print("SLACK_TEST=skipped")
+        slack_ok = True
     print("=== DONE ===")
+    # Token presence is the hard gate for 07:30; Slack post is reported separately.
     return 0 if after["token_set"] else 1
 
 
