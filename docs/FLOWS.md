@@ -155,6 +155,8 @@ Hourly cron → Fetch unposted bonds (Lee, Collier, Charlotte) → Filter >$2,50
 ### SignNow Tracker (16 nodes)
 30-min cron → Fetch pending docs → Categorize by age (2h gentle, 12h moderate, 24h urgent, 30h+ escalate) → Follow-up SMS → Slack summary
 
+> **Note (2026-09):** Treat this tab as **Paperwork / DocuSeal** status monitoring. SignNow is retired; DocuSeal is the sole active signing provider. Flow JSON node names may still say SignNow until a separate flow rename.
+
 ### Review Harvester (13 nodes)
 10 AM cron → Fetch bonds posted in last 48h → Filter eligible (exclude already reviewed) → Send review solicitation SMS → Slack report
 
@@ -189,7 +191,7 @@ Dashboard UI + crons → Orchestrate scraper fleet (Lee, Charlotte, Collier, DeS
 
 ## Tabs 23-26: BlueBubbles & iMessage Integration (NEW — May 2026)
 
-> These tabs connect Node-RED directly to the ShamrockLeads Python dashboard (`http://178.156.179.237:8088`) and the BlueBubbles iMessage server. All outbound iMessages go through the dashboard's `/api/imessage/send` endpoint. All env vars use `SHAMROCK_DASHBOARD_URL` and `SHAMROCK_DASHBOARD_API_KEY`.
+> These tabs connect Node-RED directly to the ShamrockLeads Python dashboard (`https://leads.shamrockbailbonds.biz`) and the BlueBubbles iMessage server. All outbound iMessages go through the dashboard's `/api/imessage/send` endpoint. All env vars use `SHAMROCK_DASHBOARD_URL` and `SHAMROCK_DASHBOARD_API_KEY` (canonical: `https://leads.shamrockbailbonds.biz`; raw Hetzner `:8088` deprecated).
 
 ### BlueBubbles iMessage Router (22 nodes)
 ```
