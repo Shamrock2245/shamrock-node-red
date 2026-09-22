@@ -51,6 +51,11 @@ Coded in `lifecycle_automation_flows.json` and merged into `node_red_data/flows.
 3. **Risk Mitigation Loop** — daily 7:15 + every 2h  
    GAS `runRiskIntelligenceLoop` → `checkCourtDateProximity` → `sendAutomatedCheckIns` → leads `/api/automation/risk-mitigation` → Slack `#alerts`
 
+
+4. **Morning Prospecting Call List** — daily **07:30 ET**  
+   Safe Cron Gate → leads `POST /api/automation/lead-qualification` → Slack TOP N (staff only; zero client SMS).  
+   Pack: `morning_prospecting_flows.json` · docs: `docs/MORNING_PROSPECTING.md`
+
 Deploy:
 
 ```bash

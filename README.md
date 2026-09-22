@@ -137,6 +137,7 @@ cp .env.example .env
 | Bond Renewal Reminders | ✅ Live | Daily 8AM bond renewal checks |
 | Scraper Control | ✅ Live | Scraper fleet orchestration |
 | Lead Qualification Engine | ✅ Live | Score + concierge + hot/warm Slack (15 min) |
+| Morning Prospecting Call List | ✅ Pack | 07:30 ET TOP N call list → Slack staff only |
 | Bond Lifecycle Manager | ✅ Live | Stuck stages, missing court, closer (30 min) |
 | Risk Mitigation Loop | ✅ Live | Flight risk, court proximity, check-ins, FTA |
 

@@ -16,6 +16,7 @@ Time    │ Task                          │ Tab                    │ Frequen
 6:00 AM │ Weather-Based Social Post     │ Weather Posting        │ Daily
 6:00 AM │ Sex Offender Registry Sync    │ GAS Scheduler          │ Daily
 7:00 AM │ Morning Ops Briefing (Slack)  │ Morning Briefing       │ Daily
+7:30 AM │ Morning Prospecting Call List │ Morning Prospecting     │ Daily
 7:00 AM │ Risk Score Recalculation      │ GAS Scheduler          │ Daily
 8:00 AM │ Social Post #1               │ Social Auto-Pilot      │ Weekdays
 9:00 AM │ Court Date Reminders          │ GAS Scheduler          │ Daily

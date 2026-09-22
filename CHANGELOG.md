@@ -2,6 +2,12 @@
 
 All notable changes to Shamrock Node-RED are documented in this file.
 
+## [Unreleased] — 2026-09-22
+
+### Added
+
+- **Morning Prospecting Call List** (`morning_prospecting_flows.json` + `deploy_morning_prospecting.py`): daily **07:30 America/New_York** Safe Cron Gate → Leads `POST /api/automation/lead-qualification` → Slack TOP N for Brendan/staff only. Fail-closed: zero client SMS/iMessage, no DocuSeal link minting, no GAS URL changes. Packet/prefill digests deferred (no NR webhook contract yet). Docs: `docs/MORNING_PROSPECTING.md`.
+
 ## [Unreleased] — 2026-08-16
 
 ### Changed
