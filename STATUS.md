@@ -85,3 +85,4 @@ See `shamrock-telegram-app/STATUS.md` for Telegram mini-app data flows.
 | GAS factory GET/POST jobs send `apiKey` in JSON body; stale `/exec` URLs pointed at stable portal factory | ✅ 2026-08-21 (sync VPS flows after pull) |
 
 | Workflow Kit subflows + Automation Builder page | ✅ |
+| Morning Prospecting Call List (07:30 ET staff Slack TOP 3) | ✅ pack `morning_prospecting_flows.json` |

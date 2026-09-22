@@ -1,0 +1,228 @@
+[
+  {
+    "id": "tab_morning_prospect",
+    "type": "tab",
+    "label": "Morning Prospecting Call List",
+    "disabled": false,
+    "info": "Brendan TOP-N morning prospecting call list (~07:30 America/New_York).\n\nFlow: Safe Cron Gate \u2192 prep \u2192 Leads API Call POST /api/automation/lead-qualification \u2192 format TOP N \u2192 Slack Notify (staff only).\n\nFAIL-CLOSED:\n- Zero client SMS / iMessage / Twilio\n- No DocuSeal signing-link minting\n- No GAS URL changes\n- Revenue/client modes stay review/fail-closed\n\nDeferred: packet-ready / prefill-ready Slack digests \u2014 Paperwork Desk has no signed outbound webhook contract for NR yet (see docs/MORNING_PROSPECTING.md)."
+  },
+  {
+    "id": "mp_comment",
+    "type": "comment",
+    "z": "tab_morning_prospect",
+    "name": "\ud83d\udcde MORNING PROSPECTING \u2014 Brendan TOP 3 (staff Slack only)",
+    "info": "Cron: 30 7 * * * with TZ=America/New_York \u2192 07:30 ET daily.\nReuses Workflow Kit: subflow-safe-cron + subflow-leads-api + subflow-slack-notify.\niMessage NOT wired \u2014 BB router paths are client-facing; no staff-only Apple credential path in repo.\nPacket/prefill digests DEFERRED \u2014 no NR-bound webhook from Paperwork Desk/Leads yet.",
+    "x": 320,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "mp_gap_comment",
+    "type": "comment",
+    "z": "tab_morning_prospect",
+    "name": "\u23f8 STUB/GAP \u2014 packet ready/failed + prefill ready digests",
+    "info": "Optional support deferred.\nSearched shamrock-node-red + shamrock-leads: DocuSeal completion is POST /api/webhooks/docuseal on leads (not Node-RED). UI strings 'DocuSeal packet ready' / 'prefill ready' are in-CRM only.\nDo NOT invent unsigned webhook contracts here. When leads exposes signed staff webhooks (e.g. /api/webhooks/nr-packet-status), add HMAC http-in \u2192 Slack with Super CRM deep links on a follow-up PR.",
+    "x": 340,
+    "y": 360,
+    "wires": []
+  },
+  {
+    "id": "mp_inject_0730",
+    "type": "inject",
+    "z": "tab_morning_prospect",
+    "name": "\u23f0 07:30 ET daily",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "v": "morning-prospecting-call-list",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "30 7 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "morning-prospecting-call-list",
+    "payload": "",
+    "payloadType": "date",
+    "x": 160,
+    "y": 140,
+    "wires": [
+      [
+        "mp_gate"
+      ]
+    ]
+  },
+  {
+    "id": "mp_inject_manual",
+    "type": "inject",
+    "z": "tab_morning_prospect",
+    "name": "\u25b6 Run Now",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "v": "morning-prospecting-call-list",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "morning-prospecting-call-list",
+    "payload": "",
+    "payloadType": "date",
+    "x": 150,
+    "y": 200,
+    "wires": [
+      [
+        "mp_gate"
+      ]
+    ]
+  },
+  {
+    "id": "mp_gate",
+    "type": "subflow-safe-cron",
+    "z": "tab_morning_prospect",
+    "name": "Safe Cron Gate",
+    "x": 380,
+    "y": 160,
+    "wires": [
+      [
+        "mp_prep"
+      ],
+      [
+        "mp_gated"
+      ]
+    ]
+  },
+  {
+    "id": "mp_gated",
+    "type": "debug",
+    "z": "tab_morning_prospect",
+    "name": "Gated (shutdown/quiet/dedupe)",
+    "active": true,
+    "tosidebar": true,
+    "complete": "true",
+    "x": 620,
+    "y": 220,
+    "wires": []
+  },
+  {
+    "id": "mp_prep",
+    "type": "function",
+    "z": "tab_morning_prospect",
+    "name": "Prep lead-qualification",
+    "func": "// Prep Leads API Call for morning TOP-N call list\nif (global.get('SYSTEM_SHUTDOWN')) {\n    node.status({fill:'red',shape:'ring',text:'SHUTDOWN'});\n    return null;\n}\nconst envObj = (typeof env !== 'undefined' && env.get) ? env : { get: () => '' };\nconst topN = Math.max(1, Math.min(parseInt(envObj.get('MORNING_CALL_LIST_TOP_N') || '3', 10) || 3, 10));\nconst limit = Math.max(topN, Math.min(parseInt(envObj.get('MORNING_CALL_LIST_LIMIT') || '50', 10) || 50, 200));\n\nmsg.leadsPath = '/api/automation/lead-qualification';\nmsg.method = 'POST';\nmsg.topic = msg.topic || 'morning-prospecting-call-list';\nmsg.payload = {\n    hours_back: parseInt(envObj.get('MORNING_CALL_LIST_HOURS_BACK') || '24', 10) || 24,\n    hot_threshold: parseInt(envObj.get('MORNING_CALL_LIST_HOT_THRESHOLD') || '70', 10) || 70,\n    warm_threshold: parseInt(envObj.get('MORNING_CALL_LIST_WARM_THRESHOLD') || '40', 10) || 40,\n    high_value_bond: parseFloat(envObj.get('MORNING_CALL_LIST_HV_BOND') || '2500') || 2500,\n    limit: limit\n};\n// Explicit fail-closed flags for downstream (no client channels)\nmsg._staffOnly = true;\nmsg._forbidClientSms = true;\nmsg._forbidDocusealMint = true;\nnode.status({fill:'blue',shape:'dot',text:'prep qualification'});\nreturn msg;\n",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 600,
+    "y": 140,
+    "wires": [
+      [
+        "mp_leads"
+      ]
+    ]
+  },
+  {
+    "id": "mp_leads",
+    "type": "subflow-leads-api",
+    "z": "tab_morning_prospect",
+    "name": "Leads API Call",
+    "x": 820,
+    "y": 140,
+    "wires": [
+      [
+        "mp_format"
+      ],
+      [
+        "mp_fail"
+      ]
+    ]
+  },
+  {
+    "id": "mp_format",
+    "type": "function",
+    "z": "tab_morning_prospect",
+    "name": "Format TOP N staff Slack",
+    "func": "// Morning Prospecting Call List \u2014 Brendan TOP N (staff Slack ONLY)\n// FAIL-CLOSED: never Twilio, never /api/imessage/send, never DocuSeal link minting,\n// never defendant/client SMS. Staff channel only.\nif (global.get('SYSTEM_SHUTDOWN')) {\n    node.status({fill:'red',shape:'ring',text:'SHUTDOWN'});\n    return null;\n}\n\nconst data = msg.payload || {};\nconst envObj = (typeof env !== 'undefined' && env.get) ? env : { get: () => '' };\nconst topN = Math.max(1, Math.min(parseInt(envObj.get('MORNING_CALL_LIST_TOP_N') || '3', 10) || 3, 10));\nconst channel = envObj.get('SLACK_CHANNEL_PROSPECTING')\n    || global.get('SLACK_CHANNEL_LEADS')\n    || '#leads';\nconst base = (global.get('LEADS_URL') || envObj.get('LEADS_PUBLIC_URL') || envObj.get('DASHBOARD_PUBLIC_URL') || 'https://leads.shamrockbailbonds.biz').replace(/\\/$/, '');\n\nfunction phoneOf(h) {\n    return h.phone || h.phone_number || h.contact_phone || h.defendant_phone || '';\n}\nfunction keyOf(h) {\n    return String(h.booking_number || h.name || '') + '|' + String(h.county || '');\n}\n\nconst hot = Array.isArray(data.hot) ? data.hot.slice() : [];\nconst hv = Array.isArray(data.high_value) ? data.high_value.slice() : [];\nhot.sort((a, b) => (b.lead_score || 0) - (a.lead_score || 0) || (b.bond_amount || 0) - (a.bond_amount || 0));\nhv.sort((a, b) => (b.bond_amount || 0) - (a.bond_amount || 0));\n\nconst seen = {};\nconst ranked = [];\nfor (const pool of [hot, hv]) {\n    for (const h of pool) {\n        const k = keyOf(h);\n        if (!k || seen[k]) continue;\n        seen[k] = true;\n        ranked.push(h);\n        if (ranked.length >= topN) break;\n    }\n    if (ranked.length >= topN) break;\n}\n\nconst nowEt = new Date().toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });\nconst c = data.counts || {};\n\nif (ranked.length === 0) {\n    node.status({fill:'green',shape:'ring',text:'no call targets'});\n    msg.payload = {\n        channel: channel,\n        text: `\ud83d\udcde *Morning Call List* (${nowEt} ET)\\n_No hot/high-value prospects in window._\\nScanned: ${c.scanned || 0} \u00b7 Hot: ${c.hot || 0} \u00b7 HV: ${c.high_value || 0}\\nCRM: ${base}\\n_Staff only \u2014 zero client SMS_`\n    };\n    return msg;\n}\n\nconst lines = ranked.map((h, i) => {\n    const name = h.name || 'Unknown';\n    const county = h.county || '?';\n    const bond = Number(h.bond_amount || 0).toLocaleString('en-US');\n    const score = h.lead_score != null ? h.lead_score : '?';\n    const phone = phoneOf(h);\n    const booking = h.booking_number || '';\n    const phoneBit = phone ? ` \u00b7 \ud83d\udcf1 ${phone}` : ' \u00b7 \ud83d\udcf1 _n/a_';\n    const bookBit = booking ? ` \u00b7 \\`${booking}\\`` : '';\n    return `${i + 1}. *${name}* \u2014 ${county} \u00b7 $${bond} \u00b7 score ${score}${phoneBit}${bookBit}`;\n}).join('\\n');\n\nconst text = [\n    `\ud83d\udcde *Morning Prospecting Call List \u2014 TOP ${ranked.length}*`,\n    `_${nowEt} ET \u00b7 staff only_`,\n    '',\n    lines,\n    '',\n    `Window: ${data.window_hours || 24}h \u00b7 scanned ${c.scanned || 0} \u00b7 hot ${c.hot || 0} \u00b7 warm ${c.warm || 0} \u00b7 HV ${c.high_value || 0}`,\n    `CRM: ${base}`,\n    '_Fail-closed: no client SMS \u00b7 no DocuSeal minting \u00b7 Slack staff only_'\n].join('\\n');\n\nmsg.payload = { channel: channel, text: text };\nmsg._morningCallList = { topN: ranked.length, channel: channel, staffOnly: true };\nnode.status({fill:'green',shape:'dot',text:`TOP ${ranked.length} \u2192 ${channel}`});\nreturn msg;\n",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1040,
+    "y": 120,
+    "wires": [
+      [
+        "mp_slack"
+      ]
+    ]
+  },
+  {
+    "id": "mp_fail",
+    "type": "function",
+    "z": "tab_morning_prospect",
+    "name": "Fail \u2192 staff Slack",
+    "func": "const channel = (typeof env !== 'undefined' && env.get && env.get('SLACK_CHANNEL_ALERTS')) || '#scraper-errors';\nconst detail = JSON.stringify(msg.payload || msg.error || {}).slice(0, 400);\nmsg.payload = {\n  channel: channel,\n  text: '\u26a0\ufe0f *Morning Prospecting Call List failed*\\n' + detail + '\\n_Staff alert only \u2014 no client outreach attempted_'\n};\nreturn msg;\n",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1040,
+    "y": 200,
+    "wires": [
+      [
+        "mp_slack_fail"
+      ]
+    ]
+  },
+  {
+    "id": "mp_slack",
+    "type": "subflow-slack-notify",
+    "z": "tab_morning_prospect",
+    "name": "Slack Notify (staff)",
+    "x": 1280,
+    "y": 120,
+    "wires": [
+      [
+        "mp_ok_dbg"
+      ],
+      []
+    ]
+  },
+  {
+    "id": "mp_slack_fail",
+    "type": "subflow-slack-notify",
+    "z": "tab_morning_prospect",
+    "name": "Slack Notify (fail)",
+    "x": 1280,
+    "y": 200,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "mp_ok_dbg",
+    "type": "debug",
+    "z": "tab_morning_prospect",
+    "name": "OK",
+    "active": true,
+    "tosidebar": true,
+    "complete": "payload",
+    "x": 1470,
+    "y": 120,
+    "wires": []
+  }
+]

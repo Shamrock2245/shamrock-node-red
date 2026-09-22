@@ -78,3 +78,14 @@ No phones/emails — only paths and status.
 ## Note on first deploy
 
 Kit ships **subflow definitions** for the palette. After Deploy, drag them from **Shamrock** onto a tab (definitions-first). Bus uses inline HTTP so startup never blocks on instance registration.
+
+## Production example — Morning Prospecting
+
+See `docs/MORNING_PROSPECTING.md` and `morning_prospecting_flows.json`:
+
+```bash
+python3 deploy_morning_prospecting.py
+```
+
+Cron `30 7 * * *` (America/New_York) → Safe Cron Gate → Leads `/api/automation/lead-qualification` → Slack TOP 3 staff-only.
+
