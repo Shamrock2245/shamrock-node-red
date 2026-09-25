@@ -6,7 +6,8 @@ VPS-only helper (idempotent): ensure shamrock-node-red has SLACK_BOT_TOKEN
 (+ channel env) injected via leads compose, recreate if needed, optionally
 post a staff-only #leads test via chat.postMessage.
 
-Never prints secret values — only yes/no, length, last4.
+Never prints secret values or partial hints (no length, no last-N chars) —
+only presence checks like "SLACK_BOT_TOKEN: set".
 No GAS URL mutations. No trading bot. No client SMS.
 """
 from __future__ import annotations
@@ -43,7 +44,7 @@ def container_running() -> bool:
 
 def redact_report(label: str) -> dict:
     print(f"-- {label} --")
-    info = {"present": container_running(), "token_set": False, "token_len": 0, "token_last4": ""}
+    info = {"present": container_running(), "token_set": False}
     if not info["present"]:
         print("CONTAINER_PRESENT=no")
         print("SLACK_BOT_TOKEN_SET=no")
@@ -52,24 +53,17 @@ def redact_report(label: str) -> dict:
     # Redacted inspect via docker exec
     script = r'''
 v="${SLACK_BOT_TOKEN:-}"
-if [ -z "$v" ]; then echo SET=no; echo LEN=0; echo LAST4=; else echo SET=yes; echo LEN=${#v}; echo LAST4=${v#"${v%????}"}; fi
+if [ -z "$v" ]; then echo "SLACK_BOT_TOKEN: not set"; else echo "SLACK_BOT_TOKEN: set"; fi
 for k in SLACK_CHANNEL SLACK_CHANNEL_PROSPECTING SLACK_CHANNEL_LEADS TZ GAS_WEBHOOK_URL GAS_API_KEY MONGODB_URI; do
   eval "val=\${$k:-}"
-  if [ -z "$val" ]; then echo "${k}=no"; else echo "${k}=yes:${#val}"; fi
+  if [ -z "$val" ]; then echo "${k}: not set"; else echo "${k}: set"; fi
 done
 '''
     out = run(["docker", "exec", CONTAINER, "sh", "-c", script], check=False).stdout
     print(out.rstrip())
     for line in out.splitlines():
-        if line.startswith("SET="):
-            info["token_set"] = line.split("=", 1)[1] == "yes"
-        elif line.startswith("LEN="):
-            try:
-                info["token_len"] = int(line.split("=", 1)[1])
-            except ValueError:
-                pass
-        elif line.startswith("LAST4="):
-            info["token_last4"] = line.split("=", 1)[1]
+        if line.strip() == "SLACK_BOT_TOKEN: set":
+            info["token_set"] = True
     print(f"SLACK_BOT_TOKEN_SET={'yes' if info['token_set'] else 'no'}")
     return info
 
