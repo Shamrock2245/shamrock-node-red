@@ -3061,6 +3061,7 @@
     "type": "catch",
     "z": "tab-shamrock",
     "name": "Global Error Catcher",
+    "d": true,
     "scope": null,
     "uncaught": false,
     "x": 150,
