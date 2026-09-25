@@ -12584,7 +12584,7 @@
     "id": "tab_scraper_ctrl_v2",
     "type": "tab",
     "label": "Scraper Control",
-    "disabled": false,
+    "disabled": true,
     "info": "Manual triggers for all 15 county scrapers via GitHub Actions workflow_dispatch"
   },
   {
