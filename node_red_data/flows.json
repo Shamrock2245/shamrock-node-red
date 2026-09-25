@@ -3615,6 +3615,7 @@
     "id": "scout_morning_cron",
     "type": "inject",
     "z": "tab-advanced",
+    "d": true,
     "name": "6 AM Daily Scrape",
     "props": [
       {
@@ -3640,6 +3641,7 @@
     "id": "scout_exec_run_all",
     "type": "exec",
     "z": "tab-advanced",
+    "d": true,
     "command": "cd /Users/brendan/Desktop/shamrock-active-software/swfl-arrest-scrapers && /usr/local/bin/node run_all_counties.js || node run_all_counties.js",
     "addpay": "",
     "append": "",
