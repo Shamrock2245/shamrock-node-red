@@ -1,0 +1,28 @@
+# Validate Node-RED flow JSON on pull requests and on pushes to main.
+# This does not deploy. Deployment stays in deploy-flows.yml.
+
+name: Validate Node-RED Flows
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate flows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Validate flow JSON
+        run: python3 scripts/validate_flows.py
+
+      - name: Test the validator
+        run: python3 -m unittest discover -s scripts -p "test_*.py" -v

@@ -1,0 +1,89 @@
+{
+  "note": "Documented exceptions for flow files already on main. Each entry suppresses one specific finding (file + rule, and ref id or secret hash when given). It does not disable a rule. New secrets, dangling wires, or broken ids still fail.",
+  "exceptions": [
+    {
+      "file": "node_red_data/shamrock_flows.json",
+      "rule": "json-parse",
+      "reason": "Legacy export is concatenated JSON objects, not one JSON document (JSONDecodeError: Extra data at line 8). deploy-flows.yml deploys node_red_data/flows.json only. Structural checks cannot run until this file is a single JSON array. Left unchanged on purpose."
+    },
+    {
+      "file": "node_red_data/shamrock_flows.json",
+      "rule": "secret-literal",
+      "secret_sha256": "fc849b322030ade17510ff16dc5520b5ba6f938d1f434f8a995182d6b94e89b1",
+      "reason": "Legacy GAS web-app deployment id (AKfycbzZfPy…, 48 chars) hardcoded in this export. Capability URL already committed; docs/SECURITY.md lists GAS webhook URLs as migration debt. Suppressed only for this exact id."
+    },
+    {
+      "file": "node_red_data/shamrock_flows.json",
+      "rule": "secret-literal",
+      "secret_sha256": "70723a542715445c801600e93cd4dc2725ef325f2ae0e270e2f09021ac03594e",
+      "reason": "Legacy GAS web-app deployment id (AKfycbwe-uOTz…, 72 chars) hardcoded in this export. Same migration debt as the other GAS URLs in docs/SECURITY.md. Suppressed only for this exact id."
+    },
+    {
+      "file": "node_red_data/flows.json",
+      "rule": "secret-literal",
+      "secret_sha256": "f12e2ed192da02fc99c5cbc0f57737562e44acd2891086c4afa2ef9ef0f81633",
+      "reason": "Existing GAS web-app deployment id (AKfycbyCIDPzA…, 72 chars) stored on the subflow env GAS_URL in the deployed flows.json. docs/SECURITY.md calls hardcoded GAS webhook URLs migration debt. Suppressed only for this exact id."
+    },
+    {
+      "file": "automation_flows.json",
+      "rule": "secret-literal",
+      "secret_sha256": "f12e2ed192da02fc99c5cbc0f57737562e44acd2891086c4afa2ef9ef0f81633",
+      "reason": "Same existing GAS web-app deployment id as flows.json, hardcoded in http request URLs in this module. Suppressed only for this exact id."
+    },
+    {
+      "file": "gas_scheduler_flows.json",
+      "rule": "secret-literal",
+      "secret_sha256": "f12e2ed192da02fc99c5cbc0f57737562e44acd2891086c4afa2ef9ef0f81633",
+      "reason": "Same existing GAS web-app deployment id as flows.json, hardcoded in http request URLs in this module. Suppressed only for this exact id."
+    },
+    {
+      "file": "ops_bonus_flows.json",
+      "rule": "secret-literal",
+      "secret_sha256": "f12e2ed192da02fc99c5cbc0f57737562e44acd2891086c4afa2ef9ef0f81633",
+      "reason": "Same existing GAS web-app deployment id as flows.json, hardcoded in http request URLs in this module. Suppressed only for this exact id."
+    },
+    {
+      "file": "revenue_gap_flows.json",
+      "rule": "secret-literal",
+      "secret_sha256": "f12e2ed192da02fc99c5cbc0f57737562e44acd2891086c4afa2ef9ef0f81633",
+      "reason": "Same existing GAS web-app deployment id as flows.json, hardcoded in http request URLs in this module. Suppressed only for this exact id."
+    },
+    {
+      "file": "node_red_data/flows.json",
+      "rule": "secret-literal",
+      "secret_sha256": "614d2a6ba5e8a53cee8f61df0980ea40a1b7a969197eb5f33792cbb7588ea4c9",
+      "reason": "Existing Google Sheets spreadsheet id (44 chars) embedded in an http request export URL in flows.json. High-entropy path segment already committed. Suppressed only for this exact id."
+    },
+    {
+      "file": "node_red_data/irb_flow.json",
+      "rule": "z-reference",
+      "ref_id": "tab-shamrock",
+      "reason": "irb_flow.json is an inject fragment. Every node sets z to tab-shamrock, the Shamrock Automations tab defined in node_red_data/flows.json, not in this file."
+    },
+    {
+      "file": "node_red_data/irb_flow.json",
+      "rule": "config-reference",
+      "ref_id": "3bf373650c1a4962",
+      "field": "group",
+      "reason": "The ui_form, ui_template, and ui_button nodes point group at ui-group 3bf373650c1a4962 (Background Investigations), which is defined in node_red_data/flows.json. This fragment does not include that config node."
+    },
+    {
+      "file": "morning_prospecting_flows.json",
+      "rule": "subflow-reference",
+      "ref_id": "subflow-safe-cron",
+      "reason": "Module merged into flows.json by deploy_morning_prospecting.py. subflow-safe-cron is defined in workflow_kit_flows.json and already present in node_red_data/flows.json. This module does not repeat the subflow definition."
+    },
+    {
+      "file": "morning_prospecting_flows.json",
+      "rule": "subflow-reference",
+      "ref_id": "subflow-leads-api",
+      "reason": "Module merged into flows.json by deploy_morning_prospecting.py. subflow-leads-api is defined in workflow_kit_flows.json and already present in node_red_data/flows.json. This module does not repeat the subflow definition."
+    },
+    {
+      "file": "morning_prospecting_flows.json",
+      "rule": "subflow-reference",
+      "ref_id": "subflow-slack-notify",
+      "reason": "Module merged into flows.json by deploy_morning_prospecting.py. subflow-slack-notify is defined in workflow_kit_flows.json and already present in node_red_data/flows.json. This module does not repeat the subflow definition."
+    }
+  ]
+}
