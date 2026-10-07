@@ -55,6 +55,62 @@ class ValidateFlowTextTest(unittest.TestCase):
         found = rules(text, "node_red_data/shamrock_flows.json")
         self.assertIn("json-parse", found)
 
+    def test_unparsed_file_still_scans_secret_fields(self):
+        # Concatenated objects, same shape as node_red_data/shamrock_flows.json.
+        # The json-parse allowlist must not hide a new plaintext credential.
+        text = "\n".join(
+            [
+                '{ "id": "tab-shamrock", "type": "tab", "password": "" }',
+                '{ "id": "node-http", "type": "http request", "password": "hunter2", '
+                '"apiKey": "abcd1234", "authToken": "s3cret", "secret": "", '
+                '"token": "${SLACK_BOT_TOKEN}" }',
+            ]
+        )
+        rel = "node_red_data/shamrock_flows.json"
+        found = vf.validate_flow_text(rel, text)
+        secret_fields = [item for item in found if item.rule == "secret-field"]
+        self.assertEqual(
+            sorted((item.node_id, item.field) for item in secret_fields),
+            [
+                ("node-http", "apiKey"),
+                ("node-http", "authToken"),
+                ("node-http", "password"),
+            ],
+        )
+        exceptions = vf.load_allowlist(vf.DEFAULT_ALLOWLIST)
+        _allowed, blocking = vf.partition_allowlist(found, exceptions)
+        self.assertFalse(any(item.rule == "json-parse" for item in blocking))
+        self.assertEqual(
+            sorted(item.field for item in blocking if item.rule == "secret-field"),
+            ["apiKey", "authToken", "password"],
+        )
+
+    def test_unparsed_file_scans_subflow_env_literals(self):
+        env_node = {
+            "id": "sf",
+            "type": "subflow",
+            "name": "SF",
+            "env": [
+                {"name": "API_KEY", "type": "str", "value": "literal-secret"},
+                {"name": "TOKEN", "type": "env", "value": "SLACK_BOT_TOKEN"},
+            ],
+        }
+        text = json.dumps(env_node) + "\n" + json.dumps({"id": "other", "type": "tab"})
+        rel = "node_red_data/shamrock_flows.json"
+        found = vf.validate_flow_text(rel, text)
+        secret_fields = [item for item in found if item.rule == "secret-field"]
+        self.assertEqual([(item.node_id, item.field) for item in secret_fields], [("sf", "API_KEY")])
+        exceptions = vf.load_allowlist(vf.DEFAULT_ALLOWLIST)
+        _allowed, blocking = vf.partition_allowlist(found, exceptions)
+        self.assertFalse(any(item.rule == "json-parse" for item in blocking))
+        self.assertEqual([item.field for item in blocking if item.rule == "secret-field"], ["API_KEY"])
+
+    def test_real_shamrock_export_has_no_secret_fields(self):
+        text = (ROOT / "node_red_data" / "shamrock_flows.json").read_text(encoding="utf-8")
+        found = vf.validate_flow_text("node_red_data/shamrock_flows.json", text)
+        self.assertTrue(any(item.rule == "json-parse" for item in found))
+        self.assertFalse(any(item.rule == "secret-field" for item in found))
+
     def test_non_array_shape(self):
         self.assertEqual(rules('{"id": "a", "type": "tab"}'), ["flow-shape"])
 
