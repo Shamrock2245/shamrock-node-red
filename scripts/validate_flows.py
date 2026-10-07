@@ -313,6 +313,41 @@ def _nearest_node_id(text: str, index: int) -> str | None:
     return matches[-1].group(1)
 
 
+def iter_json_values(text: str):
+    """Yield every JSON value that can be decoded out of concatenated text."""
+    decoder = json.JSONDecoder()
+    index = 0
+    length = len(text)
+    while index < length:
+        while index < length and text[index].isspace():
+            index += 1
+        if index >= length:
+            return
+        try:
+            value, end = decoder.raw_decode(text, index)
+        except json.JSONDecodeError:
+            index += 1
+            continue
+        if end <= index:
+            index += 1
+            continue
+        yield value
+        index = end
+
+
+def find_recovered_secret_fields(text: str) -> list[tuple[str | None, str, str]]:
+    """Run the structured secret-field walk on each recovered JSON value.
+
+    Concatenated exports fail ``json.loads`` on the whole file, but each
+    object is still JSON. That walk is what flags a subflow env entry such
+    as ``{"name": "API_KEY", "type": "str", "value": "literal-secret"}``.
+    """
+    hits: list[tuple[str | None, str, str]] = []
+    for value in iter_json_values(text):
+        _walk_secret_fields(value, None, hits)
+    return hits
+
+
 def find_raw_secret_fields(text: str) -> list[tuple[str | None, str, str]]:
     """Find credential-like keys with non-empty literal values in raw text.
 
@@ -375,9 +410,11 @@ def validate_flow_text(rel: str, text: str) -> list[Finding]:
         )
         for token, label in find_secret_literals(text, set()).items():
             findings.append(_secret_finding(rel, token, label))
-        # Parse failures still have to catch "password": "hunter2". The
-        # json-parse allowlist does not cover secret-field findings.
-        findings.extend(_secret_field_findings(rel, find_raw_secret_fields(text)))
+        # Parse failures still have to catch "password": "hunter2" and a
+        # subflow env entry {"name":"API_KEY","type":"str","value":"..."}.
+        # The json-parse allowlist does not cover secret-field findings.
+        raw_hits = find_raw_secret_fields(text) + find_recovered_secret_fields(text)
+        findings.extend(_secret_field_findings(rel, raw_hits))
         return findings
 
     if not isinstance(data, list) or any(not isinstance(node, dict) for node in data):

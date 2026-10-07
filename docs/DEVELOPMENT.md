@@ -200,7 +200,7 @@ node -e "const f = require('./node_red_data/flows.json'); console.log('Nodes:', 
 
 ### Flow validation and production deploy
 
-Pull requests and pushes to `main` run **Validate Node-RED Flows** (`python3 scripts/validate_flows.py`). Deploy is still `.github/workflows/deploy-flows.yml`, which starts on its own for `node_red_data/flows.json` pushes to `main` and for manual runs.
+Pull requests and pushes to `main` run **Validate Node-RED Flows** (`python3 scripts/validate_flows.py`). Deploy is still `.github/workflows/deploy-flows.yml`. A push to `main` starts it when `node_red_data/flows.json`, `node_red_data/settings.js`, or `node_red_data/package.json` changes, and a manual `workflow_dispatch` starts it too.
 
 To hold a deploy until validation passes:
 

@@ -61,7 +61,7 @@ cp .env.example .env
 
 ## Flow validation and deploy
 
-Pull requests and pushes to `main` run **Validate Node-RED Flows** (`scripts/validate_flows.py`). Deploy stays a separate workflow, `.github/workflows/deploy-flows.yml`. It starts on its own when `main` changes `node_red_data/flows.json`, and when someone runs it by hand.
+Pull requests and pushes to `main` run **Validate Node-RED Flows** (`scripts/validate_flows.py`). Deploy stays a separate workflow, `.github/workflows/deploy-flows.yml`. It starts on its own when a push to `main` changes `node_red_data/flows.json`, `node_red_data/settings.js`, or `node_red_data/package.json`, and when someone runs it by hand (`workflow_dispatch`).
 
 To make a failing validation hold production back, pick one of these later:
 
