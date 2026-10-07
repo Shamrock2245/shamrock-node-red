@@ -12,7 +12,10 @@ Checks every ``*flow*.json`` file under the repository:
 * config-node references (``server``, ``broker``, dashboard ``group``/``page``/``ui``,
   and the other ids listed in ``CONFIG_REF_FIELDS``) resolve to a node id
 * plaintext credentials are rejected: secret-named fields with non-empty
-  literal values, known token shapes, and long high-entropy strings
+  literal values, known token shapes, and long high-entropy strings.
+  A file that does not parse still gets that secret-field scan, via a
+  regex over the raw text, so an allowlisted parse error cannot hide a
+  new ``password`` / ``token`` / ``apiKey`` literal
 
 Documented exceptions live in ``flow_validation_allowlist.json``. The
 allowlist suppresses specific existing findings; it does not turn a rule off.
@@ -48,11 +51,24 @@ CONFIG_REF_FIELDS = (
 # not pointers at another node's id.
 CONFIG_ENDPOINT_FIELDS = frozenset({"server", "broker"})
 
+SECRET_FIELD_ALTERNATION = (
+    r"password|passwd|pwd|token|api[_-]?key|apikey|secret|"
+    r"access[_-]?token|refresh[_-]?token|auth[_-]?token|client[_-]?secret"
+)
 SECRET_FIELD_NAME = re.compile(
-    r"^(?:password|passwd|pwd|token|api[_-]?key|apikey|secret|"
-    r"access[_-]?token|refresh[_-]?token|auth[_-]?token|client[_-]?secret)$",
+    rf"^(?:{SECRET_FIELD_ALTERNATION})$",
     re.IGNORECASE,
 )
+# Used when the file is not valid JSON, so the structured field walk cannot run.
+RAW_SECRET_FIELD = re.compile(
+    rf"""
+    ["'](?P<field>{SECRET_FIELD_ALTERNATION})["']
+    \s*:\s*
+    (?P<value>"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)
+RAW_NODE_ID = re.compile(r'["\']id["\']\s*:\s*["\']([^"\']+)["\']')
 
 # Literal env references are not embedded secrets.
 ENV_REFERENCE = re.compile(
@@ -276,6 +292,44 @@ def find_secret_literals(text: str, node_ids: set[str]) -> dict[str, str]:
     return found
 
 
+def _decode_quoted_literal(quoted: str) -> str:
+    if len(quoted) >= 2 and quoted[0] == quoted[-1] and quoted[0] in {'"', "'"}:
+        inner = quoted[1:-1]
+        if quoted[0] == '"':
+            try:
+                decoded = json.loads(quoted)
+            except json.JSONDecodeError:
+                return inner
+            if isinstance(decoded, str):
+                return decoded
+        return inner
+    return quoted
+
+
+def _nearest_node_id(text: str, index: int) -> str | None:
+    matches = list(RAW_NODE_ID.finditer(text, 0, index))
+    if not matches:
+        return None
+    return matches[-1].group(1)
+
+
+def find_raw_secret_fields(text: str) -> list[tuple[str | None, str, str]]:
+    """Find credential-like keys with non-empty literal values in raw text.
+
+    Concatenated Node-RED exports such as ``shamrock_flows.json`` are not one
+    JSON value, so ``_walk_secret_fields`` never sees them. This catches the
+    same keys (``password``, ``token``, ``apiKey``, ``secret``, ``authToken``,
+    and the other names in ``SECRET_FIELD_ALTERNATION``).
+    """
+    hits: list[tuple[str | None, str, str]] = []
+    for match in RAW_SECRET_FIELD.finditer(text):
+        value = _decode_quoted_literal(match.group("value"))
+        if is_non_literal(value):
+            continue
+        hits.append((_nearest_node_id(text, match.start()), match.group("field"), value))
+    return hits
+
+
 def _walk_secret_fields(obj: object, node_id: str | None, findings: list[tuple[str | None, str, str]]) -> None:
     if isinstance(obj, dict):
         current = node_id
@@ -321,6 +375,9 @@ def validate_flow_text(rel: str, text: str) -> list[Finding]:
         )
         for token, label in find_secret_literals(text, set()).items():
             findings.append(_secret_finding(rel, token, label))
+        # Parse failures still have to catch "password": "hunter2". The
+        # json-parse allowlist does not cover secret-field findings.
+        findings.extend(_secret_field_findings(rel, find_raw_secret_fields(text)))
         return findings
 
     if not isinstance(data, list) or any(not isinstance(node, dict) for node in data):
@@ -442,12 +499,23 @@ def validate_flow_text(rel: str, text: str) -> list[Finding]:
 
     field_hits: list[tuple[str | None, str, str]] = []
     _walk_secret_fields(data, None, field_hits)
-    seen_fields: set[tuple[str | None, str, str]] = set()
-    for node_id, field, value in field_hits:
+    findings.extend(_secret_field_findings(rel, field_hits))
+
+    for token, label in find_secret_literals(text, node_ids).items():
+        findings.append(_secret_finding(rel, token, label))
+    return findings
+
+
+def _secret_field_findings(
+    rel: str, hits: list[tuple[str | None, str, str]]
+) -> list[Finding]:
+    findings: list[Finding] = []
+    seen: set[tuple[str | None, str, str]] = set()
+    for node_id, field, value in hits:
         key = (node_id, field, value)
-        if key in seen_fields:
+        if key in seen:
             continue
-        seen_fields.add(key)
+        seen.add(key)
         findings.append(
             Finding(
                 rule="secret-field",
@@ -461,9 +529,6 @@ def validate_flow_text(rel: str, text: str) -> list[Finding]:
                 secret_sha256=sha256_text(value),
             )
         )
-
-    for token, label in find_secret_literals(text, node_ids).items():
-        findings.append(_secret_finding(rel, token, label))
     return findings
 
 

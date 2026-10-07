@@ -59,6 +59,15 @@ cp .env.example .env
 # - LEADS_PUBLIC_URL / SHAMROCK_DASHBOARD_URL → https://leads.shamrockbailbonds.biz
 ```
 
+## Flow validation and deploy
+
+Pull requests and pushes to `main` run **Validate Node-RED Flows** (`scripts/validate_flows.py`). Deploy stays a separate workflow, `.github/workflows/deploy-flows.yml`. It starts on its own when `main` changes `node_red_data/flows.json`, and when someone runs it by hand.
+
+To make a failing validation hold production back, pick one of these later:
+
+1. **Required check.** In the ruleset or branch protection rule for `main`, require the status check `Validate Node-RED Flows / Validate flows` before merging. A pull request that fails validation cannot land, so the push that starts deploy has already passed the check.
+2. **Make deploy wait.** In `.github/workflows/deploy-flows.yml`, run `python3 scripts/validate_flows.py` inside the existing validate job and fail that job when the script fails. The deploy job already needs that validate job, so a bad flow never ships. This also covers a manual deploy and a direct push to `main`.
+
 ---
 
 ## Documentation Index

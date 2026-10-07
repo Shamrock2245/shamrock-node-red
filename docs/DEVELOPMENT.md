@@ -198,6 +198,15 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:1880/dashboard/ | grep 2
 node -e "const f = require('./node_red_data/flows.json'); console.log('Nodes:', f.length, '| Tabs:', f.filter(n=>n.type==='tab').length)"
 ```
 
+### Flow validation and production deploy
+
+Pull requests and pushes to `main` run **Validate Node-RED Flows** (`python3 scripts/validate_flows.py`). Deploy is still `.github/workflows/deploy-flows.yml`, which starts on its own for `node_red_data/flows.json` pushes to `main` and for manual runs.
+
+To hold a deploy until validation passes:
+
+1. **Required check.** On the `main` ruleset or branch protection rule, require `Validate Node-RED Flows / Validate flows`. A failing pull request cannot merge, so the push that starts deploy has already passed.
+2. **Make deploy wait.** Add `python3 scripts/validate_flows.py` to the validate job in `.github/workflows/deploy-flows.yml` and fail that job on a non-zero exit. The deploy job already `needs` that validate job. That also covers manual deploys and direct pushes to `main`.
+
 ---
 
 ## AI Agent Instructions
