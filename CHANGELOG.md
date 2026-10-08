@@ -2,6 +2,12 @@
 
 All notable changes to Shamrock Node-RED are documented in this file.
 
+## [Unreleased] — 2026-10-08
+
+### Fixed
+
+- **#alerts "No url specified" flood:** The 5-minute arrest poll (`fn-mongo-poll-prep`) no longer fires `📊 GAS: Fetch Arrests (Fallback)` when `GAS_WEBHOOK_URL` is empty. It fails closed with one clear error per 6h. In "Format Error Alert" (`error_handler_fn_node`), "No url specified" from any http request node now shares one throttle signature (at most 1 post per 6h, with suppressed count and source names, plus a GAS_WEBHOOK_URL hint). All other alerts are deduped per source+message for 30 minutes. State is kept in flow context `alertThrottle`. Tests: `scripts/test_alert_throttle.py` with `scripts/fn_node_harness.js`.
+
 ## [Unreleased] — 2026-09-22
 
 ### Added
