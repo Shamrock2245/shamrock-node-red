@@ -6,6 +6,10 @@ All notable changes to Shamrock Node-RED are documented in this file.
 
 ### Fixed
 
+- **System Health Check uptime resets on every Node-RED start:** `🖥️ System Health Check` (`0c7112e935114ef7`) set `nodeRedStartedAt` only when it was missing. Flow context uses the `localfilesystem` default store, which is restored after a restart, so the start time survived restarts and uptime kept counting from the first start ever.
+  - The node's On Start (initialize) code now sets `nodeRedStartedAt = Date.now()`. Node-RED runs it every time the node starts, so a restart replaces any persisted value. The check still sets the value if it is missing.
+  - On Start also runs when a deploy restarts this node (a full deploy, or a deploy that changes this node or its flow). Uptime then counts from that deploy. `settings.js` is unchanged.
+  - `scripts/fn_node_harness.js` can run a node's On Start code: `"initialize": true` on a call. Tests: `scripts/test_health_uptime_restart.py` simulates a restart with the persisted flow store and checks that uptime goes back to 0h. 3 of its 4 tests fail on main.
 - **No hardcoded GAS deployment URL left in `flows.json`:** The `POST to GAS (with error handling)` subflow (`subflow-gas-post`) carried the full `script.google.com/macros/s/…/exec` URL in its `GAS_URL` env default, and its `🌐 GAS Call` used `${GAS_URL}`.
   - The subflow input now goes through a `🔗 Resolve GAS URL` node (`gasurl-sf-http-req`). It is identical to the #19 resolvers, with an empty `GAS_QUERY`, and feeds the blank-URL `🌐 GAS Call`, so the request goes to `GAS_WEBHOOK_URL`. That is the same request as before when the env var points at the same deployment.
   - When `GAS_WEBHOOK_URL` is unset, the call uses the same fail-quiet guard as #19: red status, one local warn per 6h, and no `node.error` or Slack alert.

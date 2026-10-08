@@ -3,7 +3,9 @@
 // Node-RED-like sandbox (async wrapper, msg/node/context/flow/global/env) with a fake clock.
 // Usage: node scripts/fn_node_harness.js < scenario.json
 // scenario: { "nodeId": "...", "env": {...}, "global": {...}, "flow": {...}, "context": {...},
-//             "calls": [ { "now": <ms>, "msg": {...} }, ... ] }
+//             "calls": [ { "now": <ms>, "msg": {...}, "initialize": true }, ... ] }
+// When call.initialize is true, the node's On Start (initialize) code runs first at that
+// fake `now`. Use it again on a later call to simulate a Node-RED restart.
 // Prints JSON: { results: [ { ret, warns, errors, status } ], flow, context }
 'use strict';
 const fs = require('fs');
@@ -68,8 +70,12 @@ class FakeDate extends Date {
       env: { get: (k) => envVars[k] },
       __result: undefined,
     };
-    const src = '__result = (async function(msg){\n' + fnNode.func + '\n})(msg);';
     vm.createContext(sandbox);
+    if (call.initialize || call.init) {
+      const initSrc = '(async function(){\n' + (fnNode.initialize || '') + '\n})()';
+      await vm.runInContext(initSrc, sandbox, { filename: fnNode.id + '.init.js' });
+    }
+    const src = '__result = (async function(msg){\n' + fnNode.func + '\n})(msg);';
     await vm.runInContext(src, sandbox, { filename: fnNode.id + '.js' });
     rec.ret = await sandbox.__result;
     results.push(rec);
