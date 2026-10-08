@@ -6,6 +6,11 @@ All notable changes to Shamrock Node-RED are documented in this file.
 
 ### Fixed
 
+- **No hardcoded GAS deployment URL left in `flows.json`:** The `POST to GAS (with error handling)` subflow (`subflow-gas-post`) carried the full `script.google.com/macros/s/…/exec` URL in its `GAS_URL` env default, and its `🌐 GAS Call` used `${GAS_URL}`.
+  - The subflow input now goes through a `🔗 Resolve GAS URL` node (`gasurl-sf-http-req`). It is identical to the #19 resolvers, with an empty `GAS_QUERY`, and feeds the blank-URL `🌐 GAS Call`, so the request goes to `GAS_WEBHOOK_URL`. That is the same request as before when the env var points at the same deployment.
+  - When `GAS_WEBHOOK_URL` is unset, the call uses the same fail-quiet guard as #19: red status, one local warn per 6h, and no `node.error` or Slack alert.
+  - The `GAS_URL` env entry is removed from the subflow. Its now-unused `flow_validation_allowlist.json` exception for `flows.json` is also dropped, so the secret scan fails if the ID comes back.
+  - Tests: `scripts/test_no_hardcoded_gas_url.py` fails on any literal `script.google.com/macros/s/` in `flows.json`.
 - **PANIC webhook fallback errors no longer quote the webhook URL:** On a connect error or timeout, Node-RED's http request node sets `msg.payload` to `"<error> : <full request URL>"`. `✅ PANIC: check Slack response` quoted that payload in its `node.error`, which exposed the full `SLACK_WEBHOOK_ALERTS` URL (the path is a credential).
   - URLs in its error and status text are now cut down to the host (`hooks.slack.com`), and `xox…` tokens are redacted. Slack's `error` field is also capped at 100 characters.
   - I checked every error, warn and status string from `panic-slack-check` and `panic-gasurl-alert`. I also checked the two tab catch formatters (`error_handler_fn_node`, `fmt-19cd52abe46`), which handle errors from `panic-slack-fallback` and `panic-gasurl-slack`. None of them contains the webhook path or the bot token.
