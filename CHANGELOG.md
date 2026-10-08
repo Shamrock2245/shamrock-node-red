@@ -6,6 +6,10 @@ All notable changes to Shamrock Node-RED are documented in this file.
 
 ### Fixed
 
+- **PANIC webhook fallback errors no longer quote the webhook URL:** On a connect error or timeout, Node-RED's http request node sets `msg.payload` to `"<error> : <full request URL>"`. `✅ PANIC: check Slack response` quoted that payload in its `node.error`, which exposed the full `SLACK_WEBHOOK_ALERTS` URL (the path is a credential).
+  - URLs in its error and status text are now cut down to the host (`hooks.slack.com`), and `xox…` tokens are redacted. Slack's `error` field is also capped at 100 characters.
+  - I checked every error, warn and status string from `panic-slack-check` and `panic-gasurl-alert`. I also checked the two tab catch formatters (`error_handler_fn_node`, `fmt-19cd52abe46`), which handle errors from `panic-slack-fallback` and `panic-gasurl-slack`. None of them contains the webhook path or the bot token.
+  - Tests: `scripts/test_panic_no_secret_leak.py` simulates connect-refused, timeout and DNS failures through `fn_node_harness.js`.
 - **Function nodes no longer reference `process`:** `process` is not available in the Node-RED function sandbox, so these nodes threw a `ReferenceError` whenever they ran. Five nodes are fixed:
   - `Evaluate iMessage Health` (`3c6515d49baf42dc`) now reads `env.get("SLACK_WEBHOOK_ERRORS")`.
   - `Format Auto-CRM Results` (`834e920b69f94fab`) and `Format Lee Auto-Pilot Alert` (`lee_ap_format`) now read `env.get("SLACK_WEBHOOK_LEADS")`.
