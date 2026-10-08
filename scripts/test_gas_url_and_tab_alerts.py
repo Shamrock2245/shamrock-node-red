@@ -191,7 +191,8 @@ class TabAlertThrottleTest(unittest.TestCase):
                 self.assertEqual(out[0]["ret"]["payload"]["channel"], "#alerts")
                 self.assertEqual(out[0]["ret"]["payload"]["text"],
                                  "🚨 *" + label + "*: Request timed out after 15000ms")
-                self.assertNotIn("url", out[0]["ret"], "fresh msg; upstream url never reaches Slack")
+                self.assertEqual(out[0]["ret"]["url"], "https://slack.com/api/chat.postMessage",
+                                 "fresh msg; upstream url never reaches Slack")
                 self.assertIsNone(out[1]["ret"])
                 self.assertTrue(out[1]["warns"])
                 self.assertTrue(out[2]["ret"], "different message posts")
