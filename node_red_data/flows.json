@@ -632,7 +632,7 @@
     "y": 220,
     "wires": [
       [
-        "bf1c096ea7754c98"
+        "gasurl-bf1c096ea7754c98"
       ]
     ]
   },
@@ -1290,7 +1290,7 @@
     "y": 1360,
     "wires": [
       [
-        "84baa60c49364c11"
+        "gasurl-84baa60c49364c11"
       ]
     ]
   },
@@ -1435,6 +1435,26 @@
     ]
   },
   {
+    "id": "gasurl-bf1c096ea7754c98",
+    "type": "function",
+    "z": "tab-shamrock",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=scrape\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 550,
+    "y": 260,
+    "wires": [
+      [
+        "bf1c096ea7754c98"
+      ]
+    ]
+  },
+  {
     "id": "bf1c096ea7754c98",
     "type": "http request",
     "z": "tab-shamrock",
@@ -1442,7 +1462,7 @@
     "method": "POST",
     "ret": "json",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=scrape",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -1579,6 +1599,26 @@
     "reqTimeout": 15000
   },
   {
+    "id": "gasurl-84baa60c49364c11",
+    "type": "function",
+    "z": "tab-shamrock",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=shutdown\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 550,
+    "y": 1400,
+    "wires": [
+      [
+        "84baa60c49364c11"
+      ]
+    ]
+  },
+  {
     "id": "84baa60c49364c11",
     "type": "http request",
     "z": "tab-shamrock",
@@ -1586,7 +1626,7 @@
     "method": "POST",
     "ret": "json",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=shutdown",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -3473,7 +3513,7 @@
     "wires": [
       [
         "4a0a3b8e",
-        "node-trigger-gas-twilio"
+        "gasurl-node-trigger-gas-twilio"
       ]
     ]
   },
@@ -3488,13 +3528,33 @@
     "wires": []
   },
   {
+    "id": "gasurl-node-trigger-gas-twilio",
+    "type": "function",
+    "z": "tab-advanced",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=twilioProcess\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 120,
+    "wires": [
+      [
+        "node-trigger-gas-twilio"
+      ]
+    ]
+  },
+  {
     "id": "node-trigger-gas-twilio",
     "type": "http request",
     "z": "tab-advanced",
     "name": "Trigger GAS (Twilio)",
     "method": "POST",
     "ret": "txt",
-    "url": "${GAS_WEBHOOK_URL}?action=twilioProcess",
+    "url": "",
     "x": 420,
     "y": 80,
     "wires": [
@@ -3526,7 +3586,7 @@
     "wires": [
       [
         "node-telegram-resp",
-        "node-trigger-gas-telegram"
+        "gasurl-node-trigger-gas-telegram"
       ]
     ]
   },
@@ -3541,13 +3601,33 @@
     "wires": []
   },
   {
+    "id": "gasurl-node-trigger-gas-telegram",
+    "type": "function",
+    "z": "tab-advanced",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=telegramProcess\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 200,
+    "wires": [
+      [
+        "node-trigger-gas-telegram"
+      ]
+    ]
+  },
+  {
     "id": "node-trigger-gas-telegram",
     "type": "http request",
     "z": "tab-advanced",
     "name": "Trigger GAS (Telegram)",
     "method": "POST",
     "ret": "txt",
-    "url": "${GAS_WEBHOOK_URL}?action=telegramProcess",
+    "url": "",
     "x": 420,
     "y": 160,
     "wires": [
@@ -3718,8 +3798,28 @@
     "y": 560,
     "wires": [
       [
-        "tg-bot-gas-forward",
+        "gasurl-tg-bot-gas-forward",
         "tg-bot-debug"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-tg-bot-gas-forward",
+    "type": "function",
+    "z": "tab-advanced",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=telegramBotUpdate\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 640,
+    "y": 580,
+    "wires": [
+      [
+        "tg-bot-gas-forward"
       ]
     ]
   },
@@ -3731,7 +3831,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=telegramBotUpdate",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -3808,8 +3908,28 @@
     "y": 660,
     "wires": [
       [
-        "tg-convo-gas",
+        "gasurl-tg-convo-gas",
         "tg-convo-debug"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-tg-convo-gas",
+    "type": "function",
+    "z": "tab-advanced",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=processConversation\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 670,
+    "y": 680,
+    "wires": [
+      [
+        "tg-convo-gas"
       ]
     ]
   },
@@ -3821,7 +3941,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=processConversation",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -3897,9 +4017,29 @@
     "y": 760,
     "wires": [
       [
-        "11labs-gas-log",
+        "gasurl-11labs-gas-log",
         "11labs-slack-alert",
         "11labs-status-debug"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-11labs-gas-log",
+    "type": "function",
+    "z": "tab-advanced",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=logVoiceCallEvent\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 680,
+    "y": 780,
+    "wires": [
+      [
+        "11labs-gas-log"
       ]
     ]
   },
@@ -3911,7 +4051,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=logVoiceCallEvent",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -4025,8 +4165,28 @@
     "y": 860,
     "wires": [
       [
-        "tg-miniapp-gas",
+        "gasurl-tg-miniapp-gas",
         "tg-miniapp-debug"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-tg-miniapp-gas",
+    "type": "function",
+    "z": "tab-advanced",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=processMiniAppSubmission\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 670,
+    "y": 880,
+    "wires": [
+      [
+        "tg-miniapp-gas"
       ]
     ]
   },
@@ -4038,7 +4198,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=processMiniAppSubmission",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -4120,6 +4280,26 @@
         "scout_filter_bounty"
       ],
       [
+        "gasurl-scraper-log-gas"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-scraper-log-gas",
+    "type": "function",
+    "z": "tab-advanced",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=logScraperResults\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 680,
+    "y": 1020,
+    "wires": [
+      [
         "scraper-log-gas"
       ]
     ]
@@ -4132,7 +4312,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=logScraperResults",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -4308,6 +4488,26 @@
     "y": 180,
     "wires": [
       [
+        "gasurl-48611752b91644a7"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-48611752b91644a7",
+    "type": "function",
+    "z": "075324f9f77c4bfe",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=publishSocial\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 600,
+    "y": 220,
+    "wires": [
+      [
         "48611752b91644a7"
       ]
     ]
@@ -4320,7 +4520,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=publishSocial",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -4481,6 +4681,26 @@
     "y": 160,
     "wires": [
       [
+        "gasurl-beb6a63c81cd4173"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-beb6a63c81cd4173",
+    "type": "function",
+    "z": "349776f462c04333",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=processCourtEmails\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 560,
+    "y": 200,
+    "wires": [
+      [
         "beb6a63c81cd4173"
       ]
     ]
@@ -4493,7 +4713,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=processCourtEmails",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -4654,6 +4874,26 @@
     "y": 160,
     "wires": [
       [
+        "gasurl-34acc7bee38d471e"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-34acc7bee38d471e",
+    "type": "function",
+    "z": "3b50687c49b34aab",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=runTheCloser\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 560,
+    "y": 200,
+    "wires": [
+      [
         "34acc7bee38d471e"
       ]
     ]
@@ -4666,7 +4906,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=runTheCloser",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -4828,6 +5068,26 @@
     "y": 120,
     "wires": [
       [
+        "gasurl-1ec0a8b04bd84690"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-1ec0a8b04bd84690",
+    "type": "function",
+    "z": "62372935a6134827",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=sendDailyOpsReport\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 580,
+    "y": 160,
+    "wires": [
+      [
         "1ec0a8b04bd84690"
       ]
     ]
@@ -4840,7 +5100,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=sendDailyOpsReport",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -7537,6 +7797,26 @@
     "y": 160,
     "wires": [
       [
+        "gasurl-2f40ac0ecefd44ee"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-2f40ac0ecefd44ee",
+    "type": "function",
+    "z": "e6949e9df6bc4905",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=getAbandonedIntakes\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 540,
+    "y": 200,
+    "wires": [
+      [
         "2f40ac0ecefd44ee"
       ]
     ]
@@ -7549,7 +7829,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=getAbandonedIntakes",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -7609,6 +7889,26 @@
     "y": 160,
     "wires": [
       [
+        "gasurl-5c04fc2f4c05479a"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-5c04fc2f4c05479a",
+    "type": "function",
+    "z": "e6949e9df6bc4905",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=sendWhatsAppBatch\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1180,
+    "y": 200,
+    "wires": [
+      [
         "5c04fc2f4c05479a"
       ]
     ]
@@ -7621,7 +7921,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=sendWhatsAppBatch",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -7782,6 +8082,26 @@
     "y": 160,
     "wires": [
       [
+        "gasurl-7edd402207f2459e"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-7edd402207f2459e",
+    "type": "function",
+    "z": "2916c0669be64f55",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=getRecentlyPostedBonds\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 560,
+    "y": 200,
+    "wires": [
+      [
         "7edd402207f2459e"
       ]
     ]
@@ -7794,7 +8114,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=getRecentlyPostedBonds",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -7854,6 +8174,26 @@
     "y": 160,
     "wires": [
       [
+        "gasurl-9ef857bb09304ee5"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-9ef857bb09304ee5",
+    "type": "function",
+    "z": "2916c0669be64f55",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=sendReviewRequests\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1220,
+    "y": 200,
+    "wires": [
+      [
         "9ef857bb09304ee5"
       ]
     ]
@@ -7866,7 +8206,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=sendReviewRequests",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -8007,6 +8347,26 @@
     "y": 160,
     "wires": [
       [
+        "gasurl-cac38cf037c44f33"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-cac38cf037c44f33",
+    "type": "function",
+    "z": "3f0cdaee1ab64048",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=getUpcomingPayments\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 540,
+    "y": 200,
+    "wires": [
+      [
         "cac38cf037c44f33"
       ]
     ]
@@ -8019,7 +8379,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=getUpcomingPayments",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -8079,6 +8439,26 @@
     "y": 160,
     "wires": [
       [
+        "gasurl-5255ea36eb974904"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-5255ea36eb974904",
+    "type": "function",
+    "z": "3f0cdaee1ab64048",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=sendPaymentReminders\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1160,
+    "y": 200,
+    "wires": [
+      [
         "5255ea36eb974904"
       ]
     ]
@@ -8091,7 +8471,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=sendPaymentReminders",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -8232,6 +8612,26 @@
     "y": 180,
     "wires": [
       [
+        "gasurl-d3ebf4360cb74503"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-d3ebf4360cb74503",
+    "type": "function",
+    "z": "92127b16db094acd",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=getComplianceStatus\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 540,
+    "y": 220,
+    "wires": [
+      [
         "d3ebf4360cb74503"
       ]
     ]
@@ -8244,7 +8644,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=getComplianceStatus",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -8428,6 +8828,26 @@
     "y": 160,
     "wires": [
       [
+        "gasurl-aa682054eefd4cf6"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-aa682054eefd4cf6",
+    "type": "function",
+    "z": "c9cd99104acc4337",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=getDailyRevenueData\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 540,
+    "y": 200,
+    "wires": [
+      [
         "aa682054eefd4cf6"
       ]
     ]
@@ -8440,7 +8860,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=getDailyRevenueData",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -8601,6 +9021,26 @@
     "y": 180,
     "wires": [
       [
+        "gasurl-5a7d50feb8d14ad9"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-5a7d50feb8d14ad9",
+    "type": "function",
+    "z": "887060be91704551",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=scrapeExpansionCounties\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 600,
+    "y": 220,
+    "wires": [
+      [
         "5a7d50feb8d14ad9"
       ]
     ]
@@ -8613,7 +9053,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=scrapeExpansionCounties",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -8774,6 +9214,26 @@
     "y": 160,
     "wires": [
       [
+        "gasurl-cbc48d02efa945ab"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-cbc48d02efa945ab",
+    "type": "function",
+    "z": "50d6f3b3f3794f04",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=getStaffPerformanceData\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 540,
+    "y": 200,
+    "wires": [
+      [
         "cbc48d02efa945ab"
       ]
     ]
@@ -8786,7 +9246,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=getStaffPerformanceData",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -8992,6 +9452,26 @@
     "y": 180,
     "wires": [
       [
+        "gasurl-667075d4ea4047f3"
+      ]
+    ]
+  },
+  {
+    "id": "gasurl-667075d4ea4047f3",
+    "type": "function",
+    "z": "3733b542a5e24d06",
+    "name": "\ud83d\udd17 Resolve GAS URL",
+    "func": "const GAS_QUERY = \"action=publishSocial\";\n// ---- Shared GAS URL resolver (identical in every \"\ud83d\udd17 Resolve GAS URL\" node; only GAS_QUERY differs) ----\n// The next http request node's URL is blank on purpose: Node-RED only substitutes a node property\n// that is exactly \"${VAR}\", so \"${GAS_WEBHOOK_URL}?action=...\" was sent literally (host \"${gas_webhook_url}\").\n// Here msg.url = GAS_WEBHOOK_URL + GAS_QUERY. Fail-quiet when GAS_WEBHOOK_URL is empty: skip the\n// request, show a red status, local warn at most once per 6h, no node.error (so no Slack alert).\nconst GAS_MISSING_WARN_MS = 6 * 60 * 60 * 1000;\nconst base = String(env.get('GAS_WEBHOOK_URL') || '').trim();\nif (!base) {\n    node.status({ fill: 'red', shape: 'ring', text: 'GAS_WEBHOOK_URL not set \u2014 skipped' });\n    const now = Date.now();\n    const last = context.get('gasUrlMissingWarnAt') || 0;\n    if (!last || (now - last) >= GAS_MISSING_WARN_MS) {\n        context.set('gasUrlMissingWarnAt', now);\n        node.warn('GAS_WEBHOOK_URL is empty in the Node-RED env; skipped GAS call ' + GAS_QUERY + ' (fail-quiet, no alert)');\n    }\n    return null;\n}\nif (context.get('gasUrlMissingWarnAt')) context.set('gasUrlMissingWarnAt', undefined);\nmsg.url = base + (GAS_QUERY ? (base.indexOf('?') === -1 ? '?' : '&') + GAS_QUERY : '');\nnode.status({});\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 980,
+    "y": 220,
+    "wires": [
+      [
         "667075d4ea4047f3"
       ]
     ]
@@ -9004,7 +9484,7 @@
     "method": "POST",
     "ret": "txt",
     "paytoqs": "",
-    "url": "${GAS_WEBHOOK_URL}?action=publishSocial",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -17810,7 +18290,7 @@
     "type": "function",
     "z": "tab_court_ops",
     "name": "Format Error",
-    "func": "msg.headers = {\n  Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n  'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = { channel: '#alerts', text: '\ud83d\udea8 *Court Email & Reports error*: ' + ((msg.error&&msg.error.message)||'unknown') };\nreturn msg;",
+    "func": "const ALERT_LABEL = \"Court Email & Reports error\";\nconst SELF_IDS = [\"co_err\", \"co_err_slack\"];\n// ---- Shared #alerts formatter (identical in lq_err_fmt, bl_err_fmt, rm_err_fmt, co_err; only ALERT_LABEL / SELF_IDS differ) ----\n// Same rules as \"Format Error Alert\" (error_handler_fn_node) on Shamrock Automations:\n//  - loop guard: errors from this alert path are logged locally, never re-alerted;\n//  - no Slack token -> local warn, no post;\n//  - redacted message, capped at 500 chars; fresh msg so upstream url/headers never reach Slack;\n//  - throttle/dedup (flow context 'alertThrottle'): \"No url specified\" from any http request node\n//    posts at most once per NOURL_WINDOW_MS (one shared signature); every other alert is deduped\n//    per source node id + normalized message for DEDUP_WINDOW_MS; the next post carries the\n//    suppressed count. Set THROTTLE_ENABLED = false to post every error.\nconst THROTTLE_ENABLED = true;\nconst NOURL_WINDOW_MS = 6 * 60 * 60 * 1000;\nconst DEDUP_WINDOW_MS = 30 * 60 * 1000;\nconst THROTTLE_MAX_KEYS = 200;\nfunction redact(s) {\n    return String(s)\n        .replace(/(mongodb(?:\\+srv)?:\\/\\/)[^\\s\\/@]+@/gi, '$1<redacted>@')\n        .replace(/(script\\.google\\.com\\/macros\\/s\\/)[A-Za-z0-9_-]+/gi, '$1<redacted>')\n        .replace(/https?:\\/\\/[^\\s]*(?:key|token|secret|sig)[^\\s]*/gi, '<redacted-url>')\n        .replace(/xox[abprs]-[A-Za-z0-9-]+/g, 'xox-<redacted>')\n        .replace(/(authorization[\"']?\\s*[:=]\\s*[\"']?)(?:(?:bearer|basic|token)\\s+)?[^\\s\"',}]+/gi, '$1<redacted>')\n        .replace(/(bearer\\s+)[^\\s\"',}]+/gi, '$1<redacted>')\n        .replace(/([A-Za-z0-9_.-]*(?:key|token|secret|password|passwd|pwd)[A-Za-z0-9_]*[\"']?\\s*[=:]\\s*[\"']?)(?!<redacted)[^\\s\"'&,}]+/gi, '$1<redacted>')\n        .replace(/\\b[A-Fa-f0-9]{32,}\\b/g, '<redacted-hex>')\n        .replace(/(?<![A-Za-z0-9+\\/_=-])(?=[A-Za-z0-9+\\/_=-]*[0-9])(?=[A-Za-z0-9+\\/_=-]*[a-z])(?=[A-Za-z0-9+\\/_=-]*[A-Z])[A-Za-z0-9+\\/_-]{32,}={0,2}/g, '<redacted-b64>');\n}\nfunction fmtWindow(ms) {\n    return ms >= 3600000 ? (Math.round(ms / 360000) / 10) + 'h' : Math.round(ms / 60000) + 'm';\n}\nconst err = (msg.error && typeof msg.error === 'object') ? msg.error : { message: msg.error };\nconst src = (err.source && typeof err.source === 'object') ? err.source : {};\nlet rawMsg = (typeof err.message === 'string' && err.message) ? err.message : '';\nif (!rawMsg) { try { rawMsg = JSON.stringify(err).slice(0, 300); } catch (e) { rawMsg = 'Unknown error'; } }\nconst errMsg = redact(rawMsg.slice(0, 2000)).slice(0, 500);\nconst srcName = redact(String(src.name || src.type || 'unknown node')).slice(0, 100);\nconst srcType = String(src.type || 'unknown').slice(0, 60);\nconst srcId = String(src.id || '').slice(0, 40);\nif (SELF_IDS.indexOf(srcId) !== -1) {\n    node.warn('[error-alert] suppressed error from alert path ' + srcId + ': ' + errMsg.slice(0, 120));\n    return null;\n}\nconst genv = global.get('env') || {};\nconst token = global.get('SLACK_BOT_TOKEN') || genv.SLACK_BOT_TOKEN || env.get('SLACK_BOT_TOKEN') || global.get('SLACK_TOKEN') || '';\nif (!token) {\n    node.warn('[error-alert] Slack token not configured; alert not sent: ' + srcName + ': ' + errMsg.slice(0, 200));\n    return null;\n}\nconst isNoUrl = /no url specified/i.test(rawMsg) && srcType === 'http request';\nlet suppressedNote = '';\nconst hint = isNoUrl ? '\\n*Hint:* an http request node resolved to an empty URL; check that GAS_WEBHOOK_URL is set (non-empty) in the Node-RED container env.' : '';\nif (THROTTLE_ENABLED) {\n    const now = Date.now();\n    const sigKey = isNoUrl ? 'nourl' : (srcId + '|' + rawMsg.toLowerCase().replace(/\\d+/g, '#').replace(/\\s+/g, ' ').slice(0, 200));\n    const windowMs = isNoUrl ? NOURL_WINDOW_MS : DEDUP_WINDOW_MS;\n    let st = flow.get('alertThrottle');\n    if (!st || typeof st !== 'object' || Array.isArray(st)) st = {};\n    Object.keys(st).forEach(function (k) {\n        const e = st[k];\n        if (!e || typeof e.last !== 'number' || (now - e.last > 2 * NOURL_WINDOW_MS && !e.suppressed)) delete st[k];\n    });\n    const keys = Object.keys(st);\n    if (keys.length > THROTTLE_MAX_KEYS) {\n        keys.sort(function (a, b) { return st[a].last - st[b].last; })\n            .slice(0, keys.length - THROTTLE_MAX_KEYS).forEach(function (k) { delete st[k]; });\n    }\n    const entry = st[sigKey];\n    if (entry && (now - entry.last) < windowMs) {\n        entry.suppressed = (entry.suppressed || 0) + 1;\n        st[sigKey] = entry;\n        flow.set('alertThrottle', st);\n        node.warn('[error-alert] duplicate alert throttled (' + entry.suppressed + ' suppressed since last post; source ' + srcId + ')');\n        node.status({ fill: 'yellow', shape: 'ring', text: (isNoUrl ? 'no-url' : 'dup') + ' throttled: ' + entry.suppressed });\n        return null;\n    }\n    if (entry && entry.suppressed) {\n        suppressedNote = '\\n_(' + entry.suppressed + ' identical alert' + (entry.suppressed === 1 ? '' : 's') +\n            ' suppressed in the last ' + fmtWindow(windowMs) + ')_';\n    }\n    st[sigKey] = { last: now, suppressed: 0 };\n    flow.set('alertThrottle', st);\n}\nnode.status({ fill: 'red', shape: 'dot', text: (srcName + ': ' + errMsg).substring(0, 30) });\nreturn {\n    topic: 'node-red-error',\n    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8' },\n    payload: {\n        channel: '#alerts',\n        text: '\ud83d\udea8 *' + ALERT_LABEL + '*: ' + errMsg + hint + suppressedNote\n    },\n    error: { message: errMsg, source: { id: srcId, name: srcName, type: srcType } }\n};\n",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -19058,7 +19538,7 @@
     "type": "function",
     "z": "tab_lead_qual",
     "name": "Format LQ Error",
-    "func": "const err = msg.error || {};\nmsg.headers = {\n    Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n    'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = {\n    channel: '#alerts',\n    text: '\ud83d\udea8 *Lead Qualification Engine error*: ' + (err.message || JSON.stringify(err).slice(0, 300))\n};\nreturn msg;",
+    "func": "const ALERT_LABEL = \"Lead Qualification Engine error\";\nconst SELF_IDS = [\"lq_err_fmt\", \"lq_slack_err\"];\n// ---- Shared #alerts formatter (identical in lq_err_fmt, bl_err_fmt, rm_err_fmt, co_err; only ALERT_LABEL / SELF_IDS differ) ----\n// Same rules as \"Format Error Alert\" (error_handler_fn_node) on Shamrock Automations:\n//  - loop guard: errors from this alert path are logged locally, never re-alerted;\n//  - no Slack token -> local warn, no post;\n//  - redacted message, capped at 500 chars; fresh msg so upstream url/headers never reach Slack;\n//  - throttle/dedup (flow context 'alertThrottle'): \"No url specified\" from any http request node\n//    posts at most once per NOURL_WINDOW_MS (one shared signature); every other alert is deduped\n//    per source node id + normalized message for DEDUP_WINDOW_MS; the next post carries the\n//    suppressed count. Set THROTTLE_ENABLED = false to post every error.\nconst THROTTLE_ENABLED = true;\nconst NOURL_WINDOW_MS = 6 * 60 * 60 * 1000;\nconst DEDUP_WINDOW_MS = 30 * 60 * 1000;\nconst THROTTLE_MAX_KEYS = 200;\nfunction redact(s) {\n    return String(s)\n        .replace(/(mongodb(?:\\+srv)?:\\/\\/)[^\\s\\/@]+@/gi, '$1<redacted>@')\n        .replace(/(script\\.google\\.com\\/macros\\/s\\/)[A-Za-z0-9_-]+/gi, '$1<redacted>')\n        .replace(/https?:\\/\\/[^\\s]*(?:key|token|secret|sig)[^\\s]*/gi, '<redacted-url>')\n        .replace(/xox[abprs]-[A-Za-z0-9-]+/g, 'xox-<redacted>')\n        .replace(/(authorization[\"']?\\s*[:=]\\s*[\"']?)(?:(?:bearer|basic|token)\\s+)?[^\\s\"',}]+/gi, '$1<redacted>')\n        .replace(/(bearer\\s+)[^\\s\"',}]+/gi, '$1<redacted>')\n        .replace(/([A-Za-z0-9_.-]*(?:key|token|secret|password|passwd|pwd)[A-Za-z0-9_]*[\"']?\\s*[=:]\\s*[\"']?)(?!<redacted)[^\\s\"'&,}]+/gi, '$1<redacted>')\n        .replace(/\\b[A-Fa-f0-9]{32,}\\b/g, '<redacted-hex>')\n        .replace(/(?<![A-Za-z0-9+\\/_=-])(?=[A-Za-z0-9+\\/_=-]*[0-9])(?=[A-Za-z0-9+\\/_=-]*[a-z])(?=[A-Za-z0-9+\\/_=-]*[A-Z])[A-Za-z0-9+\\/_-]{32,}={0,2}/g, '<redacted-b64>');\n}\nfunction fmtWindow(ms) {\n    return ms >= 3600000 ? (Math.round(ms / 360000) / 10) + 'h' : Math.round(ms / 60000) + 'm';\n}\nconst err = (msg.error && typeof msg.error === 'object') ? msg.error : { message: msg.error };\nconst src = (err.source && typeof err.source === 'object') ? err.source : {};\nlet rawMsg = (typeof err.message === 'string' && err.message) ? err.message : '';\nif (!rawMsg) { try { rawMsg = JSON.stringify(err).slice(0, 300); } catch (e) { rawMsg = 'Unknown error'; } }\nconst errMsg = redact(rawMsg.slice(0, 2000)).slice(0, 500);\nconst srcName = redact(String(src.name || src.type || 'unknown node')).slice(0, 100);\nconst srcType = String(src.type || 'unknown').slice(0, 60);\nconst srcId = String(src.id || '').slice(0, 40);\nif (SELF_IDS.indexOf(srcId) !== -1) {\n    node.warn('[error-alert] suppressed error from alert path ' + srcId + ': ' + errMsg.slice(0, 120));\n    return null;\n}\nconst genv = global.get('env') || {};\nconst token = global.get('SLACK_BOT_TOKEN') || genv.SLACK_BOT_TOKEN || env.get('SLACK_BOT_TOKEN') || global.get('SLACK_TOKEN') || '';\nif (!token) {\n    node.warn('[error-alert] Slack token not configured; alert not sent: ' + srcName + ': ' + errMsg.slice(0, 200));\n    return null;\n}\nconst isNoUrl = /no url specified/i.test(rawMsg) && srcType === 'http request';\nlet suppressedNote = '';\nconst hint = isNoUrl ? '\\n*Hint:* an http request node resolved to an empty URL; check that GAS_WEBHOOK_URL is set (non-empty) in the Node-RED container env.' : '';\nif (THROTTLE_ENABLED) {\n    const now = Date.now();\n    const sigKey = isNoUrl ? 'nourl' : (srcId + '|' + rawMsg.toLowerCase().replace(/\\d+/g, '#').replace(/\\s+/g, ' ').slice(0, 200));\n    const windowMs = isNoUrl ? NOURL_WINDOW_MS : DEDUP_WINDOW_MS;\n    let st = flow.get('alertThrottle');\n    if (!st || typeof st !== 'object' || Array.isArray(st)) st = {};\n    Object.keys(st).forEach(function (k) {\n        const e = st[k];\n        if (!e || typeof e.last !== 'number' || (now - e.last > 2 * NOURL_WINDOW_MS && !e.suppressed)) delete st[k];\n    });\n    const keys = Object.keys(st);\n    if (keys.length > THROTTLE_MAX_KEYS) {\n        keys.sort(function (a, b) { return st[a].last - st[b].last; })\n            .slice(0, keys.length - THROTTLE_MAX_KEYS).forEach(function (k) { delete st[k]; });\n    }\n    const entry = st[sigKey];\n    if (entry && (now - entry.last) < windowMs) {\n        entry.suppressed = (entry.suppressed || 0) + 1;\n        st[sigKey] = entry;\n        flow.set('alertThrottle', st);\n        node.warn('[error-alert] duplicate alert throttled (' + entry.suppressed + ' suppressed since last post; source ' + srcId + ')');\n        node.status({ fill: 'yellow', shape: 'ring', text: (isNoUrl ? 'no-url' : 'dup') + ' throttled: ' + entry.suppressed });\n        return null;\n    }\n    if (entry && entry.suppressed) {\n        suppressedNote = '\\n_(' + entry.suppressed + ' identical alert' + (entry.suppressed === 1 ? '' : 's') +\n            ' suppressed in the last ' + fmtWindow(windowMs) + ')_';\n    }\n    st[sigKey] = { last: now, suppressed: 0 };\n    flow.set('alertThrottle', st);\n}\nnode.status({ fill: 'red', shape: 'dot', text: (srcName + ': ' + errMsg).substring(0, 30) });\nreturn {\n    topic: 'node-red-error',\n    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8' },\n    payload: {\n        channel: '#alerts',\n        text: '\ud83d\udea8 *' + ALERT_LABEL + '*: ' + errMsg + hint + suppressedNote\n    },\n    error: { message: errMsg, source: { id: srcId, name: srcName, type: srcType } }\n};\n",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -19331,7 +19811,7 @@
     "type": "function",
     "z": "tab_bond_life",
     "name": "Format BL Error",
-    "func": "const err = msg.error || {};\nmsg.headers = {\n    Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n    'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = {\n    channel: '#alerts',\n    text: '\ud83d\udea8 *Bond Lifecycle Manager error*: ' + (err.message || JSON.stringify(err).slice(0, 300))\n};\nreturn msg;",
+    "func": "const ALERT_LABEL = \"Bond Lifecycle Manager error\";\nconst SELF_IDS = [\"bl_err_fmt\", \"bl_slack_err\"];\n// ---- Shared #alerts formatter (identical in lq_err_fmt, bl_err_fmt, rm_err_fmt, co_err; only ALERT_LABEL / SELF_IDS differ) ----\n// Same rules as \"Format Error Alert\" (error_handler_fn_node) on Shamrock Automations:\n//  - loop guard: errors from this alert path are logged locally, never re-alerted;\n//  - no Slack token -> local warn, no post;\n//  - redacted message, capped at 500 chars; fresh msg so upstream url/headers never reach Slack;\n//  - throttle/dedup (flow context 'alertThrottle'): \"No url specified\" from any http request node\n//    posts at most once per NOURL_WINDOW_MS (one shared signature); every other alert is deduped\n//    per source node id + normalized message for DEDUP_WINDOW_MS; the next post carries the\n//    suppressed count. Set THROTTLE_ENABLED = false to post every error.\nconst THROTTLE_ENABLED = true;\nconst NOURL_WINDOW_MS = 6 * 60 * 60 * 1000;\nconst DEDUP_WINDOW_MS = 30 * 60 * 1000;\nconst THROTTLE_MAX_KEYS = 200;\nfunction redact(s) {\n    return String(s)\n        .replace(/(mongodb(?:\\+srv)?:\\/\\/)[^\\s\\/@]+@/gi, '$1<redacted>@')\n        .replace(/(script\\.google\\.com\\/macros\\/s\\/)[A-Za-z0-9_-]+/gi, '$1<redacted>')\n        .replace(/https?:\\/\\/[^\\s]*(?:key|token|secret|sig)[^\\s]*/gi, '<redacted-url>')\n        .replace(/xox[abprs]-[A-Za-z0-9-]+/g, 'xox-<redacted>')\n        .replace(/(authorization[\"']?\\s*[:=]\\s*[\"']?)(?:(?:bearer|basic|token)\\s+)?[^\\s\"',}]+/gi, '$1<redacted>')\n        .replace(/(bearer\\s+)[^\\s\"',}]+/gi, '$1<redacted>')\n        .replace(/([A-Za-z0-9_.-]*(?:key|token|secret|password|passwd|pwd)[A-Za-z0-9_]*[\"']?\\s*[=:]\\s*[\"']?)(?!<redacted)[^\\s\"'&,}]+/gi, '$1<redacted>')\n        .replace(/\\b[A-Fa-f0-9]{32,}\\b/g, '<redacted-hex>')\n        .replace(/(?<![A-Za-z0-9+\\/_=-])(?=[A-Za-z0-9+\\/_=-]*[0-9])(?=[A-Za-z0-9+\\/_=-]*[a-z])(?=[A-Za-z0-9+\\/_=-]*[A-Z])[A-Za-z0-9+\\/_-]{32,}={0,2}/g, '<redacted-b64>');\n}\nfunction fmtWindow(ms) {\n    return ms >= 3600000 ? (Math.round(ms / 360000) / 10) + 'h' : Math.round(ms / 60000) + 'm';\n}\nconst err = (msg.error && typeof msg.error === 'object') ? msg.error : { message: msg.error };\nconst src = (err.source && typeof err.source === 'object') ? err.source : {};\nlet rawMsg = (typeof err.message === 'string' && err.message) ? err.message : '';\nif (!rawMsg) { try { rawMsg = JSON.stringify(err).slice(0, 300); } catch (e) { rawMsg = 'Unknown error'; } }\nconst errMsg = redact(rawMsg.slice(0, 2000)).slice(0, 500);\nconst srcName = redact(String(src.name || src.type || 'unknown node')).slice(0, 100);\nconst srcType = String(src.type || 'unknown').slice(0, 60);\nconst srcId = String(src.id || '').slice(0, 40);\nif (SELF_IDS.indexOf(srcId) !== -1) {\n    node.warn('[error-alert] suppressed error from alert path ' + srcId + ': ' + errMsg.slice(0, 120));\n    return null;\n}\nconst genv = global.get('env') || {};\nconst token = global.get('SLACK_BOT_TOKEN') || genv.SLACK_BOT_TOKEN || env.get('SLACK_BOT_TOKEN') || global.get('SLACK_TOKEN') || '';\nif (!token) {\n    node.warn('[error-alert] Slack token not configured; alert not sent: ' + srcName + ': ' + errMsg.slice(0, 200));\n    return null;\n}\nconst isNoUrl = /no url specified/i.test(rawMsg) && srcType === 'http request';\nlet suppressedNote = '';\nconst hint = isNoUrl ? '\\n*Hint:* an http request node resolved to an empty URL; check that GAS_WEBHOOK_URL is set (non-empty) in the Node-RED container env.' : '';\nif (THROTTLE_ENABLED) {\n    const now = Date.now();\n    const sigKey = isNoUrl ? 'nourl' : (srcId + '|' + rawMsg.toLowerCase().replace(/\\d+/g, '#').replace(/\\s+/g, ' ').slice(0, 200));\n    const windowMs = isNoUrl ? NOURL_WINDOW_MS : DEDUP_WINDOW_MS;\n    let st = flow.get('alertThrottle');\n    if (!st || typeof st !== 'object' || Array.isArray(st)) st = {};\n    Object.keys(st).forEach(function (k) {\n        const e = st[k];\n        if (!e || typeof e.last !== 'number' || (now - e.last > 2 * NOURL_WINDOW_MS && !e.suppressed)) delete st[k];\n    });\n    const keys = Object.keys(st);\n    if (keys.length > THROTTLE_MAX_KEYS) {\n        keys.sort(function (a, b) { return st[a].last - st[b].last; })\n            .slice(0, keys.length - THROTTLE_MAX_KEYS).forEach(function (k) { delete st[k]; });\n    }\n    const entry = st[sigKey];\n    if (entry && (now - entry.last) < windowMs) {\n        entry.suppressed = (entry.suppressed || 0) + 1;\n        st[sigKey] = entry;\n        flow.set('alertThrottle', st);\n        node.warn('[error-alert] duplicate alert throttled (' + entry.suppressed + ' suppressed since last post; source ' + srcId + ')');\n        node.status({ fill: 'yellow', shape: 'ring', text: (isNoUrl ? 'no-url' : 'dup') + ' throttled: ' + entry.suppressed });\n        return null;\n    }\n    if (entry && entry.suppressed) {\n        suppressedNote = '\\n_(' + entry.suppressed + ' identical alert' + (entry.suppressed === 1 ? '' : 's') +\n            ' suppressed in the last ' + fmtWindow(windowMs) + ')_';\n    }\n    st[sigKey] = { last: now, suppressed: 0 };\n    flow.set('alertThrottle', st);\n}\nnode.status({ fill: 'red', shape: 'dot', text: (srcName + ': ' + errMsg).substring(0, 30) });\nreturn {\n    topic: 'node-red-error',\n    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8' },\n    payload: {\n        channel: '#alerts',\n        text: '\ud83d\udea8 *' + ALERT_LABEL + '*: ' + errMsg + hint + suppressedNote\n    },\n    error: { message: errMsg, source: { id: srcId, name: srcName, type: srcType } }\n};\n",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
@@ -19716,7 +20196,7 @@
     "type": "function",
     "z": "tab_risk_mit",
     "name": "Format RM Error",
-    "func": "const err = msg.error || {};\nmsg.headers = {\n    Authorization: 'Bearer ' + (global.get('SLACK_TOKEN') || env.get('SLACK_BOT_TOKEN') || ''),\n    'Content-Type': 'application/json; charset=utf-8'\n};\nmsg.payload = {\n    channel: '#alerts',\n    text: '\ud83d\udea8 *Risk Mitigation Loop error*: ' + (err.message || JSON.stringify(err).slice(0, 300))\n};\nreturn msg;",
+    "func": "const ALERT_LABEL = \"Risk Mitigation Loop error\";\nconst SELF_IDS = [\"rm_err_fmt\", \"rm_slack_err\"];\n// ---- Shared #alerts formatter (identical in lq_err_fmt, bl_err_fmt, rm_err_fmt, co_err; only ALERT_LABEL / SELF_IDS differ) ----\n// Same rules as \"Format Error Alert\" (error_handler_fn_node) on Shamrock Automations:\n//  - loop guard: errors from this alert path are logged locally, never re-alerted;\n//  - no Slack token -> local warn, no post;\n//  - redacted message, capped at 500 chars; fresh msg so upstream url/headers never reach Slack;\n//  - throttle/dedup (flow context 'alertThrottle'): \"No url specified\" from any http request node\n//    posts at most once per NOURL_WINDOW_MS (one shared signature); every other alert is deduped\n//    per source node id + normalized message for DEDUP_WINDOW_MS; the next post carries the\n//    suppressed count. Set THROTTLE_ENABLED = false to post every error.\nconst THROTTLE_ENABLED = true;\nconst NOURL_WINDOW_MS = 6 * 60 * 60 * 1000;\nconst DEDUP_WINDOW_MS = 30 * 60 * 1000;\nconst THROTTLE_MAX_KEYS = 200;\nfunction redact(s) {\n    return String(s)\n        .replace(/(mongodb(?:\\+srv)?:\\/\\/)[^\\s\\/@]+@/gi, '$1<redacted>@')\n        .replace(/(script\\.google\\.com\\/macros\\/s\\/)[A-Za-z0-9_-]+/gi, '$1<redacted>')\n        .replace(/https?:\\/\\/[^\\s]*(?:key|token|secret|sig)[^\\s]*/gi, '<redacted-url>')\n        .replace(/xox[abprs]-[A-Za-z0-9-]+/g, 'xox-<redacted>')\n        .replace(/(authorization[\"']?\\s*[:=]\\s*[\"']?)(?:(?:bearer|basic|token)\\s+)?[^\\s\"',}]+/gi, '$1<redacted>')\n        .replace(/(bearer\\s+)[^\\s\"',}]+/gi, '$1<redacted>')\n        .replace(/([A-Za-z0-9_.-]*(?:key|token|secret|password|passwd|pwd)[A-Za-z0-9_]*[\"']?\\s*[=:]\\s*[\"']?)(?!<redacted)[^\\s\"'&,}]+/gi, '$1<redacted>')\n        .replace(/\\b[A-Fa-f0-9]{32,}\\b/g, '<redacted-hex>')\n        .replace(/(?<![A-Za-z0-9+\\/_=-])(?=[A-Za-z0-9+\\/_=-]*[0-9])(?=[A-Za-z0-9+\\/_=-]*[a-z])(?=[A-Za-z0-9+\\/_=-]*[A-Z])[A-Za-z0-9+\\/_-]{32,}={0,2}/g, '<redacted-b64>');\n}\nfunction fmtWindow(ms) {\n    return ms >= 3600000 ? (Math.round(ms / 360000) / 10) + 'h' : Math.round(ms / 60000) + 'm';\n}\nconst err = (msg.error && typeof msg.error === 'object') ? msg.error : { message: msg.error };\nconst src = (err.source && typeof err.source === 'object') ? err.source : {};\nlet rawMsg = (typeof err.message === 'string' && err.message) ? err.message : '';\nif (!rawMsg) { try { rawMsg = JSON.stringify(err).slice(0, 300); } catch (e) { rawMsg = 'Unknown error'; } }\nconst errMsg = redact(rawMsg.slice(0, 2000)).slice(0, 500);\nconst srcName = redact(String(src.name || src.type || 'unknown node')).slice(0, 100);\nconst srcType = String(src.type || 'unknown').slice(0, 60);\nconst srcId = String(src.id || '').slice(0, 40);\nif (SELF_IDS.indexOf(srcId) !== -1) {\n    node.warn('[error-alert] suppressed error from alert path ' + srcId + ': ' + errMsg.slice(0, 120));\n    return null;\n}\nconst genv = global.get('env') || {};\nconst token = global.get('SLACK_BOT_TOKEN') || genv.SLACK_BOT_TOKEN || env.get('SLACK_BOT_TOKEN') || global.get('SLACK_TOKEN') || '';\nif (!token) {\n    node.warn('[error-alert] Slack token not configured; alert not sent: ' + srcName + ': ' + errMsg.slice(0, 200));\n    return null;\n}\nconst isNoUrl = /no url specified/i.test(rawMsg) && srcType === 'http request';\nlet suppressedNote = '';\nconst hint = isNoUrl ? '\\n*Hint:* an http request node resolved to an empty URL; check that GAS_WEBHOOK_URL is set (non-empty) in the Node-RED container env.' : '';\nif (THROTTLE_ENABLED) {\n    const now = Date.now();\n    const sigKey = isNoUrl ? 'nourl' : (srcId + '|' + rawMsg.toLowerCase().replace(/\\d+/g, '#').replace(/\\s+/g, ' ').slice(0, 200));\n    const windowMs = isNoUrl ? NOURL_WINDOW_MS : DEDUP_WINDOW_MS;\n    let st = flow.get('alertThrottle');\n    if (!st || typeof st !== 'object' || Array.isArray(st)) st = {};\n    Object.keys(st).forEach(function (k) {\n        const e = st[k];\n        if (!e || typeof e.last !== 'number' || (now - e.last > 2 * NOURL_WINDOW_MS && !e.suppressed)) delete st[k];\n    });\n    const keys = Object.keys(st);\n    if (keys.length > THROTTLE_MAX_KEYS) {\n        keys.sort(function (a, b) { return st[a].last - st[b].last; })\n            .slice(0, keys.length - THROTTLE_MAX_KEYS).forEach(function (k) { delete st[k]; });\n    }\n    const entry = st[sigKey];\n    if (entry && (now - entry.last) < windowMs) {\n        entry.suppressed = (entry.suppressed || 0) + 1;\n        st[sigKey] = entry;\n        flow.set('alertThrottle', st);\n        node.warn('[error-alert] duplicate alert throttled (' + entry.suppressed + ' suppressed since last post; source ' + srcId + ')');\n        node.status({ fill: 'yellow', shape: 'ring', text: (isNoUrl ? 'no-url' : 'dup') + ' throttled: ' + entry.suppressed });\n        return null;\n    }\n    if (entry && entry.suppressed) {\n        suppressedNote = '\\n_(' + entry.suppressed + ' identical alert' + (entry.suppressed === 1 ? '' : 's') +\n            ' suppressed in the last ' + fmtWindow(windowMs) + ')_';\n    }\n    st[sigKey] = { last: now, suppressed: 0 };\n    flow.set('alertThrottle', st);\n}\nnode.status({ fill: 'red', shape: 'dot', text: (srcName + ': ' + errMsg).substring(0, 30) });\nreturn {\n    topic: 'node-red-error',\n    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8' },\n    payload: {\n        channel: '#alerts',\n        text: '\ud83d\udea8 *' + ALERT_LABEL + '*: ' + errMsg + hint + suppressedNote\n    },\n    error: { message: errMsg, source: { id: srcId, name: srcName, type: srcType } }\n};\n",
     "outputs": 1,
     "timeout": 0,
     "noerr": 0,
