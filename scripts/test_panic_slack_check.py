@@ -117,7 +117,7 @@ class PanicSlackCheckTest(unittest.TestCase):
 
     def test_panic_alert_carries_text_for_fallback(self):
         res = run("panic-gasurl-alert", [{"now": T0, "msg": {"payload": "shut_down"}}],
-                  env={"SLACK_BOT_TOKEN": "t", "GAS_WEBHOOK_URL": ""})["results"][0]["ret"]
+                  env={"SLACK_BOT_TOKEN": "t", "GAS_WEBHOOK_URL": ""})["results"][0]["ret"][0]
         self.assertEqual(res["_panicText"], res["payload"]["text"])
         self.assertIn("PANIC", res["_panicText"])
 

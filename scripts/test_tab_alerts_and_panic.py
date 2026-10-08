@@ -167,7 +167,8 @@ class PanicButtonTest(unittest.TestCase):
         presses = [{"now": T0 + i * 1000, "msg": {"payload": "shut_down", "topic": "topic"}} for i in range(3)]
         out = run(PANIC_ALERT, presses, env={**TOKEN, "GAS_WEBHOOK_URL": ""})["results"]
         self.assertEqual(len([r for r in out if r["ret"]]), 3, "one alert per press, never throttled")
-        msg = out[0]["ret"]
+        msg, fallback = out[0]["ret"]  # output 1 = bot post, output 2 = webhook fallback (unused with a token)
+        self.assertIsNone(fallback)
         self.assertEqual(msg["payload"]["channel"], "#alerts")
         self.assertIn("PANIC", msg["payload"]["text"])
         self.assertIn("GAS URL not set", msg["payload"]["text"])

@@ -6,6 +6,26 @@ All notable changes to Shamrock Node-RED are documented in this file.
 
 ### Fixed
 
+- **No hardcoded GAS deployment URL left in `flows.json`:** The `POST to GAS (with error handling)` subflow (`subflow-gas-post`) carried the full `script.google.com/macros/s/…/exec` URL in its `GAS_URL` env default, and its `🌐 GAS Call` used `${GAS_URL}`.
+  - The subflow input now goes through a `🔗 Resolve GAS URL` node (`gasurl-sf-http-req`). It is identical to the #19 resolvers, with an empty `GAS_QUERY`, and feeds the blank-URL `🌐 GAS Call`, so the request goes to `GAS_WEBHOOK_URL`. That is the same request as before when the env var points at the same deployment.
+  - When `GAS_WEBHOOK_URL` is unset, the call uses the same fail-quiet guard as #19: red status, one local warn per 6h, and no `node.error` or Slack alert.
+  - The `GAS_URL` env entry is removed from the subflow. Its now-unused `flow_validation_allowlist.json` exception for `flows.json` is also dropped, so the secret scan fails if the ID comes back.
+  - Tests: `scripts/test_no_hardcoded_gas_url.py` fails on any literal `script.google.com/macros/s/` in `flows.json`.
+- **PANIC webhook fallback errors no longer quote the webhook URL:** On a connect error or timeout, Node-RED's http request node sets `msg.payload` to `"<error> : <full request URL>"`. `✅ PANIC: check Slack response` quoted that payload in its `node.error`, which exposed the full `SLACK_WEBHOOK_ALERTS` URL (the path is a credential).
+  - URLs in its error and status text are now cut down to the host (`hooks.slack.com`), and `xox…` tokens are redacted. Slack's `error` field is also capped at 100 characters.
+  - I checked every error, warn and status string from `panic-slack-check` and `panic-gasurl-alert`. I also checked the two tab catch formatters (`error_handler_fn_node`, `fmt-19cd52abe46`), which handle errors from `panic-slack-fallback` and `panic-gasurl-slack`. None of them contains the webhook path or the bot token.
+  - Tests: `scripts/test_panic_no_secret_leak.py` simulates connect-refused, timeout and DNS failures through `fn_node_harness.js`.
+- **Function nodes no longer reference `process`:** `process` is not available in the Node-RED function sandbox, so these nodes threw a `ReferenceError` whenever they ran. Five nodes are fixed:
+  - `Evaluate iMessage Health` (`3c6515d49baf42dc`) now reads `env.get("SLACK_WEBHOOK_ERRORS")`.
+  - `Format Auto-CRM Results` (`834e920b69f94fab`) and `Format Lee Auto-Pilot Alert` (`lee_ap_format`) now read `env.get("SLACK_WEBHOOK_LEADS")`.
+  - `Load Tenant Config` (`tenant_fn_001`) now reads `env.get('TENANT_ID')`. It also no longer crashes when global `env` is unset.
+  - `🖥️ System Health Check` (`0c7112e935114ef7`) measures uptime from a start timestamp in flow context (`nodeRedStartedAt`, set once on the first check after a restart) instead of `process.uptime()`. The report line is unchanged (`⏱️ Node-RED uptime: Nh`).
+  - Global-context values still take precedence, and no env names changed. A test fails if any function node in `flows.json` references `process`.
+- **PANIC alert without a Slack bot token:** `🚨 PANIC: alert if GAS URL missing` (`panic-gasurl-alert`) used to raise an error and send nothing when no bot token was configured. It now has a second output wired to the existing `📤 Slack webhook fallback (PANIC)`, and with no token it sends the alert once through `SLACK_WEBHOOK_ALERTS`.
+  - The webhook is looked up the same way as `panic-slack-check` (global context, `global.env`, env) and must start with `https://hooks.slack.com/`.
+  - The msg is fresh, with no `Authorization` header. It is marked `_panicFallback`, so `✅ PANIC: check Slack response` checks the reply but never re-sends it (no loop). Posts are never throttled.
+  - If there is no webhook either, `node.error` states that the PANIC alert was NOT delivered. With a token, behaviour is unchanged (output 1 → bot post).
+  - Tests: `scripts/test_function_env_and_panic_fallback.py`.
 - **PANIC Slack post is now checked:** `📤 Slack: #alerts (PANIC)` used to send its response nowhere, and Slack's chat.postMessage answers HTTP 200 with `ok:false` when it rejects a post. A new `✅ PANIC: check Slack response` node (`panic-slack-check`) now inspects the reply.
   - On `ok:false`, a non-2xx status, a transport error, or an unparsable body, it raises a local `node.error` with Slack's error code.
   - It then re-sends the same text through the existing `SLACK_WEBHOOK_ALERTS` incoming-webhook fallback (global, `global.env`, or env; `https://hooks.slack.com/` only) via `📤 Slack webhook fallback (PANIC)`. No new env or secrets were added.

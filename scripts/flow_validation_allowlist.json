@@ -19,12 +19,6 @@
       "reason": "Legacy GAS web-app deployment id (AKfycbwe-uOTz…, 72 chars) hardcoded in this export. Same migration debt as the other GAS URLs in docs/SECURITY.md. Suppressed only for this exact id."
     },
     {
-      "file": "node_red_data/flows.json",
-      "rule": "secret-literal",
-      "secret_sha256": "f12e2ed192da02fc99c5cbc0f57737562e44acd2891086c4afa2ef9ef0f81633",
-      "reason": "Existing GAS web-app deployment id (AKfycbyCIDPzA…, 72 chars) stored on the subflow env GAS_URL in the deployed flows.json. docs/SECURITY.md calls hardcoded GAS webhook URLs migration debt. Suppressed only for this exact id."
-    },
-    {
       "file": "automation_flows.json",
       "rule": "secret-literal",
       "secret_sha256": "f12e2ed192da02fc99c5cbc0f57737562e44acd2891086c4afa2ef9ef0f81633",
