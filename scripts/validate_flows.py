@@ -126,7 +126,7 @@ def discover_flow_files(root: Path) -> list[Path]:
     found: list[Path] = []
     for path in root.rglob("*.json"):
         rel = path.relative_to(root)
-        if any(part in {"node_modules", ".git"} or part.startswith(".") for part in rel.parts):
+        if any(part in {"node_modules", ".git", "context"} or part.startswith(".") for part in rel.parts):
             continue
         if FLOW_NAME.search(path.name) or rel.parts[0] == "scaffolds":
             found.append(path)
