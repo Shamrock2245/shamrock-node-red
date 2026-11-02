@@ -35,10 +35,10 @@ RUN chmod 755 /usr/src/shamrock/entrypoint.sh /usr/src/shamrock/check-nodered-no
 USER node-red
 
 # ── Health check ──
-# Modules must resolve from the userDir, and the editor must be listening.
-# start_period covers the first userDir npm install.
+# Shell-form CMD. A Compose-style SHELL healthcheck keyword is invalid here
+# and `docker compose build` rejects the file. start_period covers the first userDir npm install.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=3 \
-    CMD-SHELL "node /usr/src/shamrock/check-nodered-nodes.js /data && curl -fsS http://127.0.0.1:1880/ >/dev/null"
+    CMD node /usr/src/shamrock/check-nodered-nodes.js /data && curl -fsS http://127.0.0.1:1880/ >/dev/null
 
 ENTRYPOINT ["/usr/src/shamrock/entrypoint.sh"]
 

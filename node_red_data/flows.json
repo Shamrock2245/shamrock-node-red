@@ -115,7 +115,7 @@
     "id": "3733b542a5e24d06",
     "type": "tab",
     "label": "Weather Posting",
-    "disabled": false,
+    "disabled": true,
     "info": "Adjusts social posting based on local weather and events.\nStorms + holidays = higher arrest rates = more posts."
   },
   {

@@ -29,3 +29,13 @@ jobs:
 
       - name: Test the validator
         run: python3 -m unittest discover -s scripts -p "test_*.py" -v
+
+  docker-build:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build the Node-RED image
+        run: docker build -t shamrock-node-red:ci .

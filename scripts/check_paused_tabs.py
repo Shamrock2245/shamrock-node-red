@@ -26,8 +26,8 @@ def assert_repo_tabs() -> None:
     tabs = _tabs()
     disabled = registry["forceDisabled"]
     enabled = registry["keepEnabled"]
-    if len(disabled) != 5:
-        raise SystemExit(f"expected 5 forceDisabled tabs, found {len(disabled)}")
+    if len(disabled) != 6:
+        raise SystemExit(f"expected 6 forceDisabled tabs, found {len(disabled)}")
     for item in disabled:
         tab = tabs.get(item["id"])
         if tab is None:
