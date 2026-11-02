@@ -19,9 +19,13 @@ if [[ -f "$ROOT/node_red_data/static/shamrock-logo.png" ]]; then
   cp -f "$ROOT/node_red_data/static/shamrock-logo.png" "$VOL/static/shamrock-logo.png"
 fi
 
-# Keep package deps (mongodb4, dashboard) — only refresh package.json if kit needs it
+# Keep package deps (mongodb4, dashboard). Copying package.json does not
+# install modules. The container entrypoint installs /data deps before
+# Node-RED starts. Do not restart until outbound tabs are paused (RB-012).
 if [[ -f "$ROOT/node_red_data/package.json" ]]; then
   cp -f "$ROOT/node_red_data/package.json" "$VOL/package.json" || true
+  echo "package.json synced. Modules install on container start (docker/entrypoint.sh)."
+  echo "Do not restart shamrock-node-red until RB-012 pauses are decided."
 fi
 
 echo "Deploying flows to $URL ..."

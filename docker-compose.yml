@@ -53,7 +53,12 @@ services:
       - GITHUB_PAT=${GITHUB_PAT}
       # ShamrockLeads Dashboard (BlueBubbles Integration)
       - SHAMROCK_DASHBOARD_URL=${SHAMROCK_DASHBOARD_URL:-https://leads.shamrockbailbonds.biz}
-      - SHAMROCK_DASHBOARD_API_KEY=${SHAMROCK_DASHBOARD_API_KEY:-shamrock-bb-sync-2245}
+      # Optional docker-network base for the iMessage watchdog. No key material.
+      - SHAMROCK_DASHBOARD_INTERNAL_URL=${SHAMROCK_DASHBOARD_INTERNAL_URL:-http://shamrock-dashboard:5050}
+      # Legacy alias only. Dashboard machine auth is GAS_API_KEY (see .env.example). No default.
+      - SHAMROCK_DASHBOARD_API_KEY=${SHAMROCK_DASHBOARD_API_KEY:-}
+      - LEADS_INTERNAL_TOKEN=${LEADS_INTERNAL_TOKEN:-}
+      - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-}
       - ELEVENLABS_PHONE_ID=${ELEVENLABS_PHONE_ID:-}
       # Super CRM public URL (automation sweeps + env checklist)
       - LEADS_PUBLIC_URL=${LEADS_PUBLIC_URL:-https://leads.shamrockbailbonds.biz}
@@ -75,11 +80,11 @@ services:
       - ./node_red_data:/data
     
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:1880/"]
+      test: ["CMD-SHELL", "node /usr/src/shamrock/check-nodered-nodes.js /data && curl -fsS http://127.0.0.1:1880/ >/dev/null"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 15s
+      start_period: 180s
     
     logging:
       driver: "json-file"

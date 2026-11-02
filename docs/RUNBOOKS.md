@@ -355,3 +355,45 @@ docker stats shamrock-node-red
 # Log rotation is configured (10MB × 3 files)
 docker-compose logs --tail=100 shamrock-nr
 ```
+
+---
+
+## RB-012: Node-RED stuck on missing types (BlueBubbles routes 404)
+
+### What broke
+After a container restart, Node-RED can log `Waiting for missing types` for `@flowfuse/node-red-dashboard` (`ui-base`, `ui-group`, `ui-page`, `ui-template`, …) and `node-red-contrib-mongodb4`. `/data/package.json` lists the modules, but a volume on `/data` hides the copy installed at image build time. No flows start. `/internal/bb-send`, `/webhook/bluebubbles`, and `/webhook/speed-to-contact` all 404.
+
+The iMessage watchdog (`GET /api/bb-health/status`) also 401s unless it sends `X-API-Key`. The dashboard accepts that header when it matches the dashboard process env **`GAS_API_KEY`**, or **`LEADS_INTERNAL_TOKEN`** / **`INTERNAL_API_TOKEN`**.
+
+### Env that must be set (names only)
+On the Node-RED container, set **`GAS_API_KEY`** to the same value as the dashboard container's **`GAS_API_KEY`**. Alternates the dashboard also accepts: **`LEADS_INTERNAL_TOKEN`**, **`INTERNAL_API_TOKEN`**. Optional watchdog base URL: **`SHAMROCK_DASHBOARD_INTERNAL_URL`** (default `http://shamrock-dashboard:5050`). Missing-module alerts use **`SLACK_WEBHOOK_ALERTS`**, then **`SLACK_WEBHOOK_ERRORS`**, then **`SLACK_WEBHOOK_OPS`**.
+
+### Pause outbound automations before any restart
+Restarting Node-RED re-registers every flow. These start texting real people. Disable the tab in `flows.json` (`"disabled": true`) on the volume **before** restart if it should stay quiet. Re-enable only when you want it live.
+
+| Tab id | Label | What it sends | When it fires after start |
+|---|---|---|---|
+| `tab_court_ops` | Court Email & Reports | iMessages via dashboard `POST /api/automation/court-email-scan`, and it schedules further court reminders | 45 seconds, then every 15 minutes |
+| `tab_risk_mit` | Risk Mitigation Loop | GAS `sendAutomatedCheckIns` (check-in texts) | 120 seconds, then every 2 hours |
+| `tab-speed-to-contact` | Speed-to-Contact (iMessage) | iMessage via `POST /api/imessage/send`, Twilio SMS if the bridge fails (not on HTTP 401/403) | As soon as something POSTs `/webhook/speed-to-contact` |
+| `tab-bb-router` | BlueBubbles iMessage Router | `POST /internal/bb-send` sends an iMessage. Inbound `/webhook/bluebubbles` is forwarded to dashboard `POST /api/webhooks/bluebubbles`, which can auto-reply | As soon as a caller hits those routes |
+| `tab-paperwork-chase` | Paperwork Chase (iMessage) | Would iMessage/SMS/voice, but it still calls `GET /api/paperwork/pending`, which the dashboard does not implement, so it should not obtain recipients | First run 2 hours later |
+| `3b50687c49b34aab` | The Closer | Follow-up SMS drip | Next 2-hour cron |
+| `3f0cdaee1ab64048` | Payment Reminders | Payment reminder texts | Next 9:00 cron |
+| `tab-bond-renewal` | Bond Renewal Reminders | Renewal reminder texts | Next 8:00 cron |
+| `92127b16db094acd` | No-Show Escalation | No-show escalation texts | Next hourly cron |
+| `349776f462c04333` | The Court Clerk | Court-date reminder path | Its own schedule |
+
+The dashboard's own in-process crons (speed-to-contact, paperwork chase) are not restarted by a Node-RED restart. This runbook is only the Node-RED side.
+
+### Live steps (do not run until approved)
+1. Confirm Node-RED `GAS_API_KEY` matches the dashboard `GAS_API_KEY`.
+2. Pause any tab in the table above that should not text.
+3. Pull this repo on the VPS and rebuild so `docker/entrypoint.sh` is in the image. Recreate the container (this installs `/data` modules, then starts Node-RED). Do not use `--force` on git.
+4. If a rebuild is not approved yet, the current container can be repaired in place: `docker exec` as the `node-red` user, `npm install --prefix /data --omit=dev --unsafe-perm --no-audit --no-fund`, copy the updated `flows.json` into the volume, then restart. That unblocks this boot only. The next restart can strand flows again until the new image is what starts the container.
+5. Confirm Node-RED is not logging `Waiting for missing types`.
+6. Confirm `POST /internal/bb-send` with an empty JSON body returns 400 (route is up, nothing sent) rather than 404.
+7. Confirm the watchdog log is not `auth 401`. A healthy dashboard body uses `overall_status` of `healthy` or `degraded`.
+
+### Risk
+The container restart is what turns the automations back on. Installing modules alone does not send texts. The restart does.

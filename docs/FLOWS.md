@@ -191,7 +191,7 @@ Dashboard UI + crons → Orchestrate scraper fleet (Lee, Charlotte, Collier, DeS
 
 ## Tabs 23-26: BlueBubbles & iMessage Integration (NEW — May 2026)
 
-> These tabs connect Node-RED directly to the ShamrockLeads Python dashboard (`https://leads.shamrockbailbonds.biz`) and the BlueBubbles iMessage server. All outbound iMessages go through the dashboard's `/api/imessage/send` endpoint. All env vars use `SHAMROCK_DASHBOARD_URL` and `SHAMROCK_DASHBOARD_API_KEY` (canonical: `https://leads.shamrockbailbonds.biz`; raw Hetzner `:8088` deprecated).
+> These tabs connect Node-RED directly to the ShamrockLeads Python dashboard (`https://leads.shamrockbailbonds.biz`) and the BlueBubbles iMessage server. All outbound iMessages go through the dashboard's `/api/imessage/send` endpoint. The dashboard URL is `SHAMROCK_DASHBOARD_URL`. Machine auth is the `X-API-Key` header set from `GAS_API_KEY` (same value as the dashboard's `GAS_API_KEY`), with `LEADS_INTERNAL_TOKEN` / `INTERNAL_API_TOKEN` as alternates. `SHAMROCK_DASHBOARD_API_KEY` is only a legacy alias and has no default.
 
 ### BlueBubbles iMessage Router (22 nodes)
 ```
@@ -200,7 +200,7 @@ POST /webhook/bluebubbles  ──→ ACK 200 (immediate)
                                     ↓ new-message
                            Classify Inbound (check_in | intake_inquiry | geo_inquiry | general)
                                     ├──→ Log to Slack #leads (intake_inquiry only)
-                                    └──→ Forward to Dashboard /api/webhooks/bb-inbound
+                                    └──→ Forward original event to Dashboard POST /api/webhooks/bluebubbles
 
 POST /internal/bb-send     ──→ Prep BB Send ──→ Dashboard /api/imessage/send ──→ Result
 ```

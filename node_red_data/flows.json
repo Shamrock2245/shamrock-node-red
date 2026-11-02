@@ -16986,7 +16986,7 @@
     "type": "function",
     "z": "tab-bb-router",
     "name": "\ud83d\udce1 Prep Dashboard Fwd",
-    "func": "/* Forward inbound BB message to ShamrockLeads dashboard for processing */\nconst dashUrl = env.get('SHAMROCK_DASHBOARD_URL') || 'http://178.156.179.237:8088';\nconst apiKey = env.get('SHAMROCK_DASHBOARD_API_KEY') || 'shamrock-bb-sync-2245';\n\nmsg.url = dashUrl + '/api/webhooks/bb-inbound';\nmsg.method = 'POST';\nmsg.headers = {\n    'Content-Type': 'application/json',\n    'X-API-Key': apiKey\n};\nmsg.payload = {\n    from_handle: msg.fromHandle,\n    from_phone: msg.fromPhone,\n    text: msg.inboundText,\n    chat_guid: msg.chatGuid,\n    message_guid: msg.messageGuid,\n    category: msg.messageCategory,\n    raw_event: msg.bbData\n};\nreturn msg;\n",
+    "func": "/* Forward the original BlueBubbles event to ShamrockLeads.\n   The dashboard receiver is POST /api/webhooks/bluebubbles and expects {type, data}.\n   Machine auth matches dashboard env GAS_API_KEY, else LEADS_INTERNAL_TOKEN / INTERNAL_API_TOKEN.\n   SHAMROCK_DASHBOARD_API_KEY is a legacy alias with no built-in default. */\nconst dashUrl = String(env.get('SHAMROCK_DASHBOARD_URL') || 'http://178.156.179.237:8088').replace(/\\/$/, '');\nconst apiKey = env.get('GAS_API_KEY') || env.get('LEADS_INTERNAL_TOKEN') || env.get('INTERNAL_API_TOKEN') || env.get('SHAMROCK_DASHBOARD_API_KEY') || '';\nif (!apiKey) {\n    node.warn('[BB Inbound] No dashboard machine key (GAS_API_KEY or LEADS_INTERNAL_TOKEN); forward may be rejected');\n}\nmsg.url = dashUrl + '/api/webhooks/bluebubbles';\nmsg.method = 'POST';\nmsg.headers = {\n    'Content-Type': 'application/json',\n    'X-API-Key': apiKey,\n    'X-Api-Key': apiKey\n};\nreturn msg;\n",
     "outputs": 1,
     "x": 760,
     "y": 120,
@@ -17078,7 +17078,7 @@
     "type": "function",
     "z": "tab-bb-router",
     "name": "\ud83d\udd27 Prep BB Send",
-    "func": "/* Prepare outbound iMessage via ShamrockLeads dashboard */\nconst dashUrl = env.get('SHAMROCK_DASHBOARD_URL') || 'http://178.156.179.237:8088';\nconst apiKey = env.get('SHAMROCK_DASHBOARD_API_KEY') || 'shamrock-bb-sync-2245';\n\nconst body = msg.payload || {};\nconst phone = body.phone || msg.phone || '';\nconst message = body.message || msg.message || '';\n\nif (!phone || !message) {\n    node.warn('[BB Send] Missing phone or message');\n    msg.statusCode = 400;\n    msg.payload = { error: 'phone and message required' };\n    return [null, msg];\n}\n\nmsg.url = dashUrl + '/api/imessage/send';\nmsg.method = 'POST';\nmsg.headers = {\n    'Content-Type': 'application/json',\n    'X-API-Key': apiKey\n};\nmsg.payload = { phone, message };\nreturn [msg, null];\n",
+    "func": "/* Prepare outbound iMessage via ShamrockLeads dashboard POST /api/imessage/send */\nconst dashUrl = String(env.get('SHAMROCK_DASHBOARD_URL') || 'http://178.156.179.237:8088').replace(/\\/$/, '');\nconst apiKey = env.get('GAS_API_KEY') || env.get('LEADS_INTERNAL_TOKEN') || env.get('INTERNAL_API_TOKEN') || env.get('SHAMROCK_DASHBOARD_API_KEY') || '';\n\nconst body = msg.payload || {};\nconst phone = body.phone || msg.phone || '';\nconst message = body.message || msg.message || '';\n\nif (!phone || !message) {\n    node.warn('[BB Send] Missing phone or message');\n    msg.statusCode = 400;\n    msg.payload = { error: 'phone and message required' };\n    return [null, msg];\n}\nif (!apiKey) {\n    node.error('[BB Send] No dashboard machine key. Set GAS_API_KEY to the dashboard GAS_API_KEY (or LEADS_INTERNAL_TOKEN).');\n    msg.statusCode = 500;\n    msg.payload = { error: 'dashboard machine key not configured' };\n    return [null, msg];\n}\n\nmsg.url = dashUrl + '/api/imessage/send';\nmsg.method = 'POST';\nmsg.headers = {\n    'Content-Type': 'application/json',\n    'X-API-Key': apiKey,\n    'X-Api-Key': apiKey\n};\nmsg.payload = {\n    phone: phone,\n    message: message,\n    booking_number: body.booking_number || body.booking || '',\n    defendant_name: body.defendant_name || body.name || ''\n};\nreturn [msg, null];\n",
     "outputs": 2,
     "x": 280,
     "y": 440,
@@ -17265,7 +17265,7 @@
     "type": "function",
     "z": "tab-findmy-tracker",
     "name": "\ud83d\udd27 Prep FindMy Request",
-    "func": "if (global.get('SYSTEM_SHUTDOWN')) return null;\nconst dashUrl = env.get('SHAMROCK_DASHBOARD_URL') || 'http://178.156.179.237:8088';\nconst apiKey = env.get('SHAMROCK_DASHBOARD_API_KEY') || 'shamrock-bb-sync-2245';\n\nmsg.url = dashUrl + '/api/imessage/findmy?refresh=true';\nmsg.method = 'GET';\nmsg.headers = {\n    'Content-Type': 'application/json',\n    'X-API-Key': apiKey\n};\nnode.status({fill:'blue', shape:'ring', text:'polling...'});\nreturn msg;\n",
+    "func": "if (global.get('SYSTEM_SHUTDOWN')) return null;\nconst dashUrl = env.get('SHAMROCK_DASHBOARD_URL') || 'http://178.156.179.237:8088';\nconst apiKey = env.get('GAS_API_KEY') || env.get('LEADS_INTERNAL_TOKEN') || env.get('INTERNAL_API_TOKEN') || env.get('SHAMROCK_DASHBOARD_API_KEY') || '';\n\nmsg.url = dashUrl + '/api/imessage/findmy?refresh=true';\nmsg.method = 'GET';\nmsg.headers = {\n    'Content-Type': 'application/json',\n    'X-API-Key': apiKey\n};\nnode.status({fill:'blue', shape:'ring', text:'polling...'});\nreturn msg;\n",
     "outputs": 1,
     "x": 280,
     "y": 120,
@@ -17470,7 +17470,7 @@
     "type": "function",
     "z": "tab-speed-to-contact",
     "name": "\ud83d\udcf1 Try iMessage (BB)",
-    "func": "/* Try to send via BlueBubbles iMessage first */\nconst dashUrl = env.get('SHAMROCK_DASHBOARD_URL') || 'http://178.156.179.237:8088';\nconst apiKey = env.get('SHAMROCK_DASHBOARD_API_KEY') || 'shamrock-bb-sync-2245';\n\nmsg.url = dashUrl + '/api/imessage/send';\nmsg.method = 'POST';\nmsg.headers = { 'Content-Type': 'application/json', 'X-API-Key': apiKey };\nmsg.payload = {\n    phone: msg.outreachPhone,\n    message: msg.outreachMessage\n};\nmsg._bbAttempt = true;\nreturn msg;\n",
+    "func": "/* Try to send via BlueBubbles iMessage first. Dashboard POST /api/imessage/send. */\nconst dashUrl = String(env.get('SHAMROCK_DASHBOARD_URL') || 'http://178.156.179.237:8088').replace(/\\/$/, '');\nconst apiKey = env.get('GAS_API_KEY') || env.get('LEADS_INTERNAL_TOKEN') || env.get('INTERNAL_API_TOKEN') || env.get('SHAMROCK_DASHBOARD_API_KEY') || '';\nif (!apiKey) {\n    node.error('[S2C] No dashboard machine key. Set GAS_API_KEY to the dashboard GAS_API_KEY (or LEADS_INTERNAL_TOKEN).');\n    return null;\n}\n\nmsg.url = dashUrl + '/api/imessage/send';\nmsg.method = 'POST';\nmsg.headers = { 'Content-Type': 'application/json', 'X-API-Key': apiKey, 'X-Api-Key': apiKey };\nmsg.payload = {\n    phone: msg.outreachPhone,\n    message: msg.outreachMessage,\n    booking_number: msg.bookingNumber || '',\n    defendant_name: msg.defendantName || ''\n};\nmsg._bbAttempt = true;\nreturn msg;\n",
     "outputs": 1,
     "x": 520,
     "y": 120,
@@ -17502,7 +17502,7 @@
     "type": "function",
     "z": "tab-speed-to-contact",
     "name": "\u2705 Check BB Result",
-    "func": "/* Check if BB send succeeded; fall back to Twilio SMS if not */\nconst result = msg.payload || {};\nconst ok = result.success === true || (msg.statusCode >= 200 && msg.statusCode < 300 && result.success !== false);\n\nif (ok) {\n    node.status({fill:'green', shape:'dot', text:'iMessage sent \u2713'});\n    node.warn('[S2C] iMessage sent successfully to ' + msg.outreachPhone);\n    msg.channel = 'imessage';\n    return [msg, null];  // Output 1: success\n} else {\n    node.warn('[S2C] BB failed (' + msg.statusCode + ') \u2014 falling back to Twilio SMS');\n    return [null, msg];  // Output 2: fallback to SMS\n}\n",
+    "func": "/* Check if BB send succeeded; fall back to Twilio SMS if the bridge failed.\n   Auth failures must not fall through to SMS \u2014 that would text the contact\n   because the dashboard key was missing or wrong. */\nconst result = msg.payload || {};\nif (msg.statusCode === 401 || msg.statusCode === 403) {\n    node.error('[S2C] Dashboard rejected the machine key (HTTP ' + msg.statusCode + '). Not falling back to Twilio. Set GAS_API_KEY to the dashboard GAS_API_KEY.');\n    node.status({fill:'red', shape:'ring', text:'auth ' + msg.statusCode});\n    return null;\n}\nconst ok = result.success === true || (msg.statusCode >= 200 && msg.statusCode < 300 && result.success !== false);\n\nif (ok) {\n    node.status({fill:'green', shape:'dot', text:'iMessage sent \\u2713'});\n    node.warn('[S2C] iMessage sent successfully to ' + msg.outreachPhone);\n    msg.channel = 'imessage';\n    return [msg, null];\n} else {\n    node.warn('[S2C] BB failed (' + msg.statusCode + ') \\u2014 falling back to Twilio SMS');\n    return [null, msg];\n}\n",
     "outputs": 2,
     "x": 1000,
     "y": 120,
@@ -17669,7 +17669,7 @@
     "type": "function",
     "z": "tab-paperwork-chase",
     "name": "\ud83d\udd27 Fetch Unsigned Docs",
-    "func": "/* Fetch list of bonds with unsigned paperwork from dashboard */\nif (global.get('SYSTEM_SHUTDOWN')) return null;\n\nconst dashUrl = env.get('SHAMROCK_DASHBOARD_URL') || 'http://178.156.179.237:8088';\nconst apiKey = env.get('SHAMROCK_DASHBOARD_API_KEY') || 'shamrock-bb-sync-2245';\n\nmsg.url = dashUrl + '/api/paperwork/pending?status=unsigned&limit=50';\nmsg.method = 'GET';\nmsg.headers = { 'Content-Type': 'application/json', 'X-API-Key': apiKey };\nnode.status({fill:'blue', shape:'ring', text:'fetching...'});\nreturn msg;\n",
+    "func": "/* Fetch list of bonds with unsigned paperwork from dashboard */\nif (global.get('SYSTEM_SHUTDOWN')) return null;\n\nconst dashUrl = env.get('SHAMROCK_DASHBOARD_URL') || 'http://178.156.179.237:8088';\nconst apiKey = env.get('GAS_API_KEY') || env.get('LEADS_INTERNAL_TOKEN') || env.get('INTERNAL_API_TOKEN') || env.get('SHAMROCK_DASHBOARD_API_KEY') || '';\n\nmsg.url = dashUrl + '/api/paperwork/pending?status=unsigned&limit=50';\nmsg.method = 'GET';\nmsg.headers = { 'Content-Type': 'application/json', 'X-API-Key': apiKey };\nnode.status({fill:'blue', shape:'ring', text:'fetching...'});\nreturn msg;\n",
     "outputs": 1,
     "x": 280,
     "y": 120,
@@ -17701,7 +17701,7 @@
     "type": "function",
     "z": "tab-paperwork-chase",
     "name": "\ud83d\udd01 Send Reminders Loop",
-    "func": "/* Send each reminder via appropriate channel */\nconst reminders = msg.pendingReminders || [];\nconst dashUrl = env.get('SHAMROCK_DASHBOARD_URL') || 'http://178.156.179.237:8088';\nconst apiKey = env.get('SHAMROCK_DASHBOARD_API_KEY') || 'shamrock-bb-sync-2245';\n\n// Emit one message per reminder\nconst outputs = [];\nreminders.forEach((r, i) => {\n    if (r.escalation === 'imessage' || r.escalation === 'sms') {\n        outputs.push({\n            ...msg,\n            payload: { phone: r.phone, message: r.message },\n            _reminder: r,\n            url: dashUrl + '/api/imessage/send',\n            method: 'POST',\n            headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey }\n        });\n    } else if (r.escalation === 'voice') {\n        outputs.push({\n            ...msg,\n            payload: { phone: r.phone, defendant: r.defendant, booking: r.booking },\n            _reminder: r,\n            _useVoice: true\n        });\n    }\n});\n\n// Node-RED doesn't support dynamic multi-output, so we use a split approach\n// Send first reminder, store rest in flow context\nif (outputs.length === 0) return null;\n\nflow.set('pc_remaining', outputs.slice(1));\nreturn outputs[0];\n",
+    "func": "/* Send each reminder via appropriate channel */\nconst reminders = msg.pendingReminders || [];\nconst dashUrl = env.get('SHAMROCK_DASHBOARD_URL') || 'http://178.156.179.237:8088';\nconst apiKey = env.get('GAS_API_KEY') || env.get('LEADS_INTERNAL_TOKEN') || env.get('INTERNAL_API_TOKEN') || env.get('SHAMROCK_DASHBOARD_API_KEY') || '';\n\n// Emit one message per reminder\nconst outputs = [];\nreminders.forEach((r, i) => {\n    if (r.escalation === 'imessage' || r.escalation === 'sms') {\n        outputs.push({\n            ...msg,\n            payload: { phone: r.phone, message: r.message },\n            _reminder: r,\n            url: dashUrl + '/api/imessage/send',\n            method: 'POST',\n            headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey }\n        });\n    } else if (r.escalation === 'voice') {\n        outputs.push({\n            ...msg,\n            payload: { phone: r.phone, defendant: r.defendant, booking: r.booking },\n            _reminder: r,\n            _useVoice: true\n        });\n    }\n});\n\n// Node-RED doesn't support dynamic multi-output, so we use a split approach\n// Send first reminder, store rest in flow context\nif (outputs.length === 0) return null;\n\nflow.set('pc_remaining', outputs.slice(1));\nreturn outputs[0];\n",
     "outputs": 1,
     "x": 1000,
     "y": 120,
@@ -22260,7 +22260,7 @@
     "y": 140,
     "wires": [
       [
-        "490573d95d0d467f"
+        "bbhealth_prep_auth"
       ]
     ]
   },
@@ -22269,10 +22269,10 @@
     "type": "http request",
     "z": "tab-imessage-healer",
     "name": "GET /api/bb-health/status",
-    "method": "GET",
+    "method": "use",
     "ret": "obj",
     "paytoqs": "ignore",
-    "url": "http://shamrock-dashboard:5050/api/bb-health/status",
+    "url": "",
     "tls": "",
     "persist": false,
     "proxy": "",
@@ -22294,7 +22294,7 @@
     "type": "function",
     "z": "tab-imessage-healer",
     "name": "Evaluate iMessage Health",
-    "func": "const data = msg.payload || {};\nconst isHealthy = data.healthy === true || data.status === \"online\";\nconst lastState = global.get(\"imessage_watchdog_state\") || \"unknown\";\nconst webhook = global.get(\"SLACK_WEBHOOK_ALERTS\") || env.get(\"SLACK_WEBHOOK_ERRORS\") || \"\";\n\nif (!isHealthy && lastState !== \"offline\") {\n    global.set(\"imessage_watchdog_state\", \"offline\");\n    if (webhook) {\n        msg.url = webhook;\n        msg.payload = {\n            text: \"\ud83d\udea8 *iMessage Bridge / Tunnel Alert*\\n- *Status*: Unreachable or Offline\\n- *Primary URL*: \" + (data.primary_url || \"N/A\") + \"\\n- *Issue*: \" + (data.error || data.message || \"Host unreachable\") + \"\\n- *Action*: Check Office iMac power/internet or update tunnel URL on Dashboard.\"\n        };\n        return msg;\n    }\n} else if (isHealthy && lastState === \"offline\") {\n    global.set(\"imessage_watchdog_state\", \"online\");\n    if (webhook) {\n        msg.url = webhook;\n        msg.payload = {\n            text: \"\u2705 *iMessage Bridge Connectivity Restored*\\n- *Primary URL*: \" + (data.primary_url || \"N/A\") + \"\\n- *Response Time*: \" + (data.ping_ms || \"OK\")\n        };\n        return msg;\n    }\n}\nnode.status({fill: isHealthy ? \"green\" : \"red\", shape: \"dot\", text: isHealthy ? \"Online\" : \"Offline\"});\nreturn null;",
+    "func": "const data = (msg.payload && typeof msg.payload === 'object') ? msg.payload : {};\nconst code = Number(msg.statusCode) || 0;\nif (code === 401 || code === 403) {\n    node.error('[iMessage watchdog] /api/bb-health/status rejected the machine key (HTTP ' + code + '). Set GAS_API_KEY on this container to the dashboard GAS_API_KEY, or LEADS_INTERNAL_TOKEN / INTERNAL_API_TOKEN. Header is X-API-Key.');\n    node.status({fill:'red', shape:'ring', text:'auth ' + code});\n    return null;\n}\nconst overall = String(data.overall_status || data.status || '').toLowerCase();\nconst isHealthy = code >= 200 && code < 300 && !data.error && (\n    data.healthy === true ||\n    overall === 'healthy' ||\n    overall === 'online' ||\n    overall === 'degraded'\n);\nconst lastState = global.get('imessage_watchdog_state') || 'unknown';\nconst webhook = global.get('SLACK_WEBHOOK_ALERTS') || env.get('SLACK_WEBHOOK_ALERTS') || env.get('SLACK_WEBHOOK_ERRORS') || '';\nconst primary = data.primary_url || (Array.isArray(data.servers) && data.servers[0] && (data.servers[0].url_used || data.servers[0].server)) || 'N/A';\n\nif (!isHealthy && lastState !== 'offline') {\n    global.set('imessage_watchdog_state', 'offline');\n    if (webhook) {\n        msg.url = webhook;\n        msg.method = 'POST';\n        msg.headers = { 'Content-Type': 'application/json' };\n        msg.payload = {\n            text: '\ud83d\udea8 *iMessage Bridge / Tunnel Alert*\\n- *Status*: Unreachable or Offline\\n- *Primary URL*: ' + primary + '\\n- *Issue*: ' + (data.error || data.message || data.overall_status || 'Host unreachable') + '\\n- *Action*: Check Office iMac power/internet or update tunnel URL on Dashboard.'\n        };\n        return msg;\n    }\n} else if (isHealthy && lastState === 'offline') {\n    global.set('imessage_watchdog_state', 'online');\n    if (webhook) {\n        msg.url = webhook;\n        msg.method = 'POST';\n        msg.headers = { 'Content-Type': 'application/json' };\n        msg.payload = {\n            text: '\u2705 *iMessage Bridge Connectivity Restored*\\n- *Primary URL*: ' + primary + '\\n- *Response Time*: ' + (data.ping_ms || 'OK')\n        };\n        return msg;\n    }\n}\nnode.status({fill: isHealthy ? 'green' : 'red', shape: 'dot', text: isHealthy ? 'Online' : 'Offline'});\nreturn null;\n",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
@@ -22829,5 +22829,24 @@
     "x": 1470,
     "y": 120,
     "wires": []
+  },
+  {
+    "id": "bbhealth_prep_auth",
+    "type": "function",
+    "z": "tab-imessage-healer",
+    "name": "Prep BB Health Auth",
+    "func": "/* Auth for GET /api/bb-health/status.\n   ShamrockLeads PinAuthMiddleware accepts the call when X-API-Key matches the\n   dashboard process env GAS_API_KEY, or LEADS_INTERNAL_TOKEN / INTERNAL_API_TOKEN.\n   Optional SHAMROCK_DASHBOARD_INTERNAL_URL overrides the docker DNS host. */\nif (global.get('SYSTEM_SHUTDOWN')) return null;\nconst apiKey = env.get('GAS_API_KEY') || env.get('LEADS_INTERNAL_TOKEN') || env.get('INTERNAL_API_TOKEN') || env.get('SHAMROCK_DASHBOARD_API_KEY') || '';\nif (!apiKey) {\n    node.error('[iMessage watchdog] missing machine key \u2014 set GAS_API_KEY to the same value as the dashboard GAS_API_KEY, or set LEADS_INTERNAL_TOKEN');\n}\nconst base = String(env.get('SHAMROCK_DASHBOARD_INTERNAL_URL') || 'http://shamrock-dashboard:5050').replace(/\\/$/, '');\nmsg.url = base + '/api/bb-health/status';\nmsg.method = 'GET';\nmsg.headers = {\n    'Accept': 'application/json',\n    'X-API-Key': apiKey,\n    'X-Api-Key': apiKey\n};\nreturn msg;\n",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 80,
+    "wires": [
+      [
+        "490573d95d0d467f"
+      ]
+    ]
   }
 ]
