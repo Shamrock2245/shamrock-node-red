@@ -39,3 +39,18 @@ jobs:
 
       - name: Build the Node-RED image
         run: docker build -t shamrock-node-red:ci .
+
+  entrypoint-boot:
+    name: Entrypoint boot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Empty node_modules and root-owned flows.json
+        run: bash scripts/test_entrypoint_boot.sh
