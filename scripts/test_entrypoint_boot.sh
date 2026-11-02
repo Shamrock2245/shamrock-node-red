@@ -60,7 +60,15 @@ for (const spec of specs) {
     const name = specToName(spec);
     const dir = path.join(prefix, 'node_modules', name);
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: name, version: '0.0.0-test' }) + '\n');
+    // Exports only '.', matching bcryptjs 3.x. Resolving name/package.json
+    // throws ERR_PACKAGE_PATH_NOT_EXPORTED. The post-install check must still pass.
+    fs.writeFileSync(path.join(dir, 'index.js'), 'module.exports = {};\n');
+    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({
+        name: name,
+        version: '0.0.0-test',
+        main: 'index.js',
+        exports: { '.': './index.js' },
+    }) + '\n');
 }
 JS
     exit 0
@@ -195,7 +203,40 @@ const byId = Object.fromEntries(flows.map((node) => [node.id, node]));
 if (byId.tab_risk_mit.disabled !== true) process.exit(1);
 if (byId.tab_court_ops.disabled !== false) process.exit(1);
 JS
+node "$CHECK" "$OK" >"$WORK/ok-post.check" 2>&1 \
+    || { cat "$WORK/ok-post.check" >&2; die "check mode failed after a successful exports-only install"; }
+grep -F 'Node-RED userDir modules ok' "$WORK/ok-post.check" >/dev/null \
+    || die "successful install did not produce a passing check"
+if grep -F 'Missing Node-RED modules' "$WORK/ok-post.check" >/dev/null; then
+    die "passing check still reported missing modules"
+fi
+node - "$OK" <<'JS'
+const fs = require('fs');
+const path = require('path');
+const Module = require('module');
+const user = process.argv[2];
+const req = Module.createRequire(path.join(user, 'package.json'));
+for (const name of ['bcryptjs', '@flowfuse/node-red-dashboard']) {
+    let code = '';
+    try {
+        req.resolve(name + '/package.json');
+    } catch (err) {
+        code = err && err.code;
+    }
+    if (code !== 'ERR_PACKAGE_PATH_NOT_EXPORTED') {
+        console.error(name + ' install fixture did not reproduce the exports-map failure: ' + code);
+        process.exit(1);
+    }
+    const segments = name.split('/');
+    const pkg = path.join(user, 'node_modules', ...segments, 'package.json');
+    if (!fs.existsSync(pkg)) {
+        console.error('missing installed package.json for ' + name);
+        process.exit(1);
+    }
+}
+JS
 pass "empty node_modules installs, locks the paused tab, and leaves keepEnabled alone"
+pass "successful exports-only install passes check mode"
 
 # Root-owned flows.json + empty node_modules: install, then fail closed.
 BAD="$WORK/bad"
