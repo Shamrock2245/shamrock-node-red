@@ -376,6 +376,17 @@ The dashboard owns inbound. BlueBubbles already posts to dashboard `POST /api/we
 ### What a restart runs
 `docker/entrypoint.sh` and `start.sh` run `scripts/enforce-paused-tabs.js` before Node-RED starts. That rewrites `/data/flows.json` (the live volume, which overrides git) and sets `disabled: true` on the locked tabs. Turning one of them back on in the editor lasts only until the next container start. The lock does not re-enable anything else.
 
+The container user is uid 1000. If `/data/flows.json` is not writable by that user, the entrypoint refuses to start and does not skip the paused-tab lock. A `git pull` on the VPS as root leaves the bind-mounted data files owned by root, which is what makes them unwritable inside the container.
+
+### File ownership after git pull
+After any `git pull` on the VPS run as root, run:
+
+```bash
+chown 1000:1000 node_red_data/{flows.json,package.json,settings.js}
+```
+
+Do that before recreating the container. The entrypoint installs missing `/data` modules before it runs check mode, including when `node_modules` is empty. Check mode (`node check-nodered-nodes.js /data`, the same command as the image HEALTHCHECK) is what fails if modules are still missing, and it runs only after that install.
+
 **Stays off (forced every start):**
 
 | Tab id | Label | Would have sent |
@@ -414,7 +425,7 @@ The dashboard's own in-process crons (speed-to-contact, paperwork chase) are not
 ### Live steps (do not run until approved)
 1. Confirm Node-RED `GAS_API_KEY` matches the dashboard `GAS_API_KEY`. Leave `BB_INBOUND_FORWARD_TO_DASHBOARD` unset.
 2. The locked tabs are forced off at container start, including GAS Scheduler (9:00 court and 11:00 check-ins). Do not rely on a manual pause for those tabs. Anything in the "comes back on" table above will text on its schedule.
-3. Pull this repo on the VPS and rebuild so `docker/entrypoint.sh` is in the image. Recreate the container (this installs `/data` modules, locks the paused tabs in the volume `flows.json`, then starts Node-RED). Do not use `--force` on git.
+3. Pull this repo on the VPS and rebuild so `docker/entrypoint.sh` is in the image. After any `git pull` on the VPS run as root, run `chown 1000:1000 node_red_data/{flows.json,package.json,settings.js}`. Recreate the container (this installs `/data` modules, locks the paused tabs in the volume `flows.json`, then starts Node-RED). Do not use `--force` on git.
 4. If a rebuild is not approved yet, the current container can be repaired in place: `docker exec` as the `node-red` user, `npm install --prefix /data --omit=dev --unsafe-perm --no-audit --no-fund`, copy the updated `flows.json` into the volume, then restart. That unblocks this boot only. The next restart can strand flows again until the new image is what starts the container.
 5. Confirm Node-RED is not logging `Waiting for missing types`.
 6. Confirm `POST /internal/bb-send` with an empty JSON body returns 400 (route is up, nothing sent) rather than 404.

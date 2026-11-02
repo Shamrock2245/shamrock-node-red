@@ -11,6 +11,7 @@
  * A present tab whose label does not match the registry fails the boot, so a
  * reused id cannot be switched off by mistake or left running under a new name.
  * Tabs in keepEnabled are never modified.
+ * A missing or unwritable flows.json fails the boot. The lock is not skipped.
  */
 'use strict';
 
@@ -24,8 +25,16 @@ function loadJson(file) {
 
 function enforce(flowsPath, registryPath) {
     if (!fs.existsSync(flowsPath)) {
-        console.error('[shamrock] flows.json not found, paused-tab lock skipped: ' + flowsPath);
-        return { changed: [], missing: [], kept: [] };
+        const missingFile = new Error('flows.json not found: ' + flowsPath);
+        missingFile.code = 'ENOENT';
+        throw missingFile;
+    }
+    try {
+        fs.accessSync(flowsPath, fs.constants.W_OK);
+    } catch (err) {
+        const denied = new Error('flows.json is not writable by the container user (uid 1000): ' + flowsPath);
+        denied.code = 'EACCES';
+        throw denied;
     }
     const registry = loadJson(registryPath);
     const flows = loadJson(flowsPath);
@@ -96,6 +105,18 @@ function selfTest() {
     if (!fs.readFileSync(flowsPath).equals(stamp)) {
         throw new Error('second pass rewrote flows.json');
     }
+    if (typeof process.getuid === 'function' && process.getuid() !== 0) {
+        const lockedPath = path.join(root, 'locked.json');
+        fs.writeFileSync(lockedPath, JSON.stringify(flows));
+        fs.chmodSync(lockedPath, 0o444);
+        let denied = false;
+        try {
+            enforce(lockedPath, registryPath);
+        } catch (err) {
+            denied = err && err.code === 'EACCES';
+        }
+        if (!denied) throw new Error('unwritable flows.json should fail the paused-tab lock');
+    }
     const mismatchPath = path.join(root, 'mismatch.json');
     fs.writeFileSync(mismatchPath, JSON.stringify([
         { id: 'tab_risk_mit', type: 'tab', label: 'Not Risk', disabled: false },
@@ -126,6 +147,15 @@ function main(argv) {
 try {
     main(process.argv.slice(2));
 } catch (err) {
+    if (err && (err.code === 'EACCES' || err.code === 'EPERM' || err.code === 'EROFS')) {
+        console.error('[shamrock] FATAL: flows.json is not writable by the container user (uid 1000).');
+        console.error('[shamrock] On the host, as root, run: chown 1000:1000 node_red_data/{flows.json,package.json,settings.js}');
+        process.exit(1);
+    }
+    if (err && err.code === 'ENOENT') {
+        console.error('[shamrock] FATAL: flows.json not found; refusing to skip the paused-tab lock.');
+        process.exit(1);
+    }
     console.error('[shamrock] FATAL: ' + (err && err.message ? err.message : err));
     process.exit(1);
 }

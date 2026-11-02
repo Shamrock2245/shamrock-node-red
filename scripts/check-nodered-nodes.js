@@ -13,7 +13,13 @@
  *   node scripts/check-nodered-nodes.js --alert /data
  *   node scripts/check-nodered-nodes.js --self-test
  *
- * Exit 0 when the userDir resolves. Exit 1 when modules are missing.
+ * Check mode (no flags) exits 0 when the userDir resolves every required
+ * module and exits 1 when modules are missing. That is what the Docker
+ * HEALTHCHECK runs (`node check-nodered-nodes.js /data`), and what the
+ * entrypoint runs only after it has tried to install.
+ * --ensure-package-json exits 0 once package.json exists or has been
+ * written, whether or not modules are missing.
+ * --missing prints npm specs and exits 0 so `set -e` can install them.
  * --alert posts one Slack message per distinct failure (no secret values).
  */
 'use strict';
@@ -25,6 +31,7 @@ const http = require('http');
 const https = require('https');
 const crypto = require('crypto');
 const Module = require('module');
+const { spawnSync } = require('child_process');
 
 // Packages whose node types appear in flows.json, plus bcryptjs (settings.js).
 // Versions are ranges only. Never put key material here.
@@ -180,6 +187,13 @@ async function alertOnce(userDir, names) {
     }
 }
 
+function isCheckMode(flags) {
+    return !flags.has('--missing')
+        && !flags.has('--ensure-package-json')
+        && !flags.has('--seed-from')
+        && !flags.has('--alert');
+}
+
 function clearMarker(userDir) {
     const marker = path.join(userDir, ALERT_MARKER);
     if (fs.existsSync(marker)) {
@@ -196,6 +210,29 @@ function selfTest() {
         name: 'fixture',
         dependencies: { '@flowfuse/node-red-dashboard': '^1.30.2' },
     }));
+    const ensured = spawnSync(process.execPath, [__filename, '--ensure-package-json', user], {
+        encoding: 'utf8',
+    });
+    if (ensured.status !== 0) {
+        throw new Error('--ensure-package-json must exit 0 when modules are missing: ' + ensured.stderr + ensured.stdout);
+    }
+    if (!fs.existsSync(path.join(user, 'package.json'))) {
+        throw new Error('--ensure-package-json did not leave package.json in place');
+    }
+    const checked = spawnSync(process.execPath, [__filename, user], { encoding: 'utf8' });
+    if (checked.status === 0) {
+        throw new Error('check mode must exit non-zero when modules are missing');
+    }
+    if (!String(checked.stderr).includes('Missing Node-RED modules')) {
+        throw new Error('check mode must report missing modules: ' + checked.stderr);
+    }
+    const listed = spawnSync(process.execPath, [__filename, '--missing', user], { encoding: 'utf8' });
+    if (listed.status !== 0) {
+        throw new Error('--missing must exit 0 when modules are absent so install can run: ' + listed.stderr);
+    }
+    if (!String(listed.stdout).includes('node-red-contrib-mongodb4@')) {
+        throw new Error('--missing did not print an npm spec: ' + listed.stdout);
+    }
     const before = missingNames(user);
     if (!before.includes('@flowfuse/node-red-dashboard')) {
         throw new Error('expected dashboard to be missing before seed');
@@ -246,7 +283,25 @@ async function main(argv) {
         process.exit(1);
     }
     if (flags.has('--ensure-package-json')) {
-        ensurePackageJson(userDir);
+        try {
+            ensurePackageJson(userDir);
+        } catch (err) {
+            const code = err && err.code;
+            console.error('[shamrock] could not write package.json in ' + userDir + ': ' + (err && err.message ? err.message : err));
+            if (code === 'EACCES' || code === 'EPERM' || code === 'EROFS') {
+                console.error('[shamrock] On the host, as root, run: chown 1000:1000 node_red_data/{flows.json,package.json,settings.js}');
+            }
+            process.exit(1);
+        }
+        if (!fs.existsSync(path.join(userDir, 'package.json'))) {
+            console.error('[shamrock] package.json missing after ensure in ' + userDir);
+            process.exit(1);
+        }
+        // Package.json is in place. Do not fail on missing modules here.
+        // Check mode is what fails, and the entrypoint runs it after install.
+        if (!flags.has('--seed-from') && !flags.has('--missing') && !flags.has('--alert')) {
+            return;
+        }
     }
     if (flags.has('--seed-from')) {
         if (!imageNodes) {
@@ -264,8 +319,11 @@ async function main(argv) {
         await alertOnce(userDir, missing);
     }
     if (missing.length) {
-        console.error('[shamrock] Missing Node-RED modules in ' + userDir + ': ' + missing.join(', '));
-        process.exit(1);
+        if (isCheckMode(flags)) {
+            console.error('[shamrock] Missing Node-RED modules in ' + userDir + ': ' + missing.join(', '));
+            process.exit(1);
+        }
+        return;
     }
     if (!flags.has('--missing') && !flags.has('--ensure-package-json') && !flags.has('--seed-from')) {
         clearMarker(userDir);
