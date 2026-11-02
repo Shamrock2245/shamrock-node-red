@@ -52,5 +52,5 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Empty node_modules and root-owned flows.json
+      - name: Empty node_modules, exports-only install, and root-owned flows.json
         run: bash scripts/test_entrypoint_boot.sh

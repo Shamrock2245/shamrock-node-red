@@ -56,10 +56,27 @@ function writePackage(userDir, pkg) {
     );
 }
 
+function packageJsonPath(userDir, name) {
+    // npm installs a scoped name as node_modules/@scope/pkg, not one path segment.
+    if (typeof name !== 'string' || name.length === 0) return '';
+    const segments = name.split('/');
+    if (segments.length > 2) return '';
+    if (segments.some((segment) => segment === '' || segment === '.' || segment === '..')) return '';
+    return path.join(userDir, 'node_modules', ...segments, 'package.json');
+}
+
 function resolveFrom(userDir, name) {
     try {
         return Module.createRequire(path.join(userDir, 'package.json')).resolve(name + '/package.json');
     } catch (err) {
+        // bcryptjs 3.x exports only '.'. require.resolve('bcryptjs/package.json')
+        // throws ERR_PACKAGE_PATH_NOT_EXPORTED when the module is installed.
+        // The other seven userDir dependencies do not publish an exports map, so
+        // their package.json subpath resolves. A scoped package that later adds
+        // an exports map hits the same error. The on-disk package.json counts.
+        const onDisk = packageJsonPath(userDir, name);
+        if (onDisk && fs.existsSync(onDisk)) return onDisk;
+        if (err && err.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED') return name;
         return null;
     }
 }
@@ -265,7 +282,82 @@ function selfTest() {
     if (!fs.existsSync(path.join(user, 'node_modules', 'left-pad', 'package.json'))) {
         throw new Error('seed did not copy a direct dependency');
     }
+    assertExportsOnlyCountsAsInstalled();
     console.log('self-test ok');
+}
+
+function writeExportsOnlyPackage(dir, name) {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({
+        name: name,
+        version: '0.0.0-test',
+        main: 'index.js',
+        exports: { '.': './index.js' },
+    }) + '\n');
+    fs.writeFileSync(path.join(dir, 'index.js'), 'module.exports = {};\n');
+}
+
+function assertExportsOnlyCountsAsInstalled() {
+    // Every direct dependency in node_red_data/package.json. bcryptjs is the
+    // one that publishes an exports map today. The scoped names use the same
+    // map so a later exports field cannot look missing.
+    const deps = {
+        bcryptjs: '3.0.3',
+        '@flowfuse/node-red-dashboard': '1.30.2',
+        '@node-red-contrib-themes/theme-collection': '4.1.1',
+        'node-red-contrib-mongodb4': '3.1.0',
+        'node-red-contrib-slack': '2.1.0',
+        'node-red-contrib-telegrambot': '17.1.0',
+        'node-red-node-mongodb': '0.2.5',
+        'node-red-node-twilio': '0.1.0',
+    };
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nr-exports-'));
+    const user = path.join(root, 'user');
+    fs.mkdirSync(user, { recursive: true });
+    fs.writeFileSync(path.join(user, 'package.json'), JSON.stringify({
+        name: 'node-red-project',
+        dependencies: deps,
+    }));
+    Object.keys(deps).forEach((name) => {
+        writeExportsOnlyPackage(path.join(user, 'node_modules', ...name.split('/')), name);
+    });
+    const req = Module.createRequire(path.join(user, 'package.json'));
+    ['bcryptjs', '@flowfuse/node-red-dashboard'].forEach((name) => {
+        let code = '';
+        try {
+            req.resolve(name + '/package.json');
+        } catch (err) {
+            code = err && err.code;
+        }
+        if (code !== 'ERR_PACKAGE_PATH_NOT_EXPORTED') {
+            throw new Error(name + ' fixture did not throw ERR_PACKAGE_PATH_NOT_EXPORTED, got ' + code);
+        }
+        if (!resolveFrom(user, name)) {
+            throw new Error(name + ' exports-only install was treated as missing');
+        }
+    });
+    const missing = missingNames(user);
+    if (missing.length) {
+        throw new Error('exports-only packages were reported missing: ' + missing.join(', '));
+    }
+    const checked = spawnSync(process.execPath, [__filename, user], { encoding: 'utf8' });
+    if (checked.status !== 0) {
+        throw new Error('check mode failed after an exports-only install: ' + checked.stderr + checked.stdout);
+    }
+    const partial = path.join(root, 'partial');
+    fs.mkdirSync(partial, { recursive: true });
+    fs.writeFileSync(path.join(partial, 'package.json'), JSON.stringify({
+        name: 'partial',
+        dependencies: { bcryptjs: '3.0.3', 'not-installed': '1.0.0' },
+    }));
+    writeExportsOnlyPackage(path.join(partial, 'node_modules', 'bcryptjs'), 'bcryptjs');
+    const partialMissing = missingNames(partial);
+    if (partialMissing.includes('bcryptjs')) {
+        throw new Error('exports-only bcryptjs was reported missing');
+    }
+    if (!partialMissing.includes('not-installed')) {
+        throw new Error('absent package was not reported missing: ' + partialMissing.join(','));
+    }
 }
 
 async function main(argv) {
