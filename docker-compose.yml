@@ -59,6 +59,8 @@ services:
       - SHAMROCK_DASHBOARD_API_KEY=${SHAMROCK_DASHBOARD_API_KEY:-}
       - LEADS_INTERNAL_TOKEN=${LEADS_INTERNAL_TOKEN:-}
       - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-}
+      # Inbound BlueBubbles is owned by the dashboard. Forward only when exactly true.
+      - BB_INBOUND_FORWARD_TO_DASHBOARD=${BB_INBOUND_FORWARD_TO_DASHBOARD:-}
       - ELEVENLABS_PHONE_ID=${ELEVENLABS_PHONE_ID:-}
       # Super CRM public URL (automation sweeps + env checklist)
       - LEADS_PUBLIC_URL=${LEADS_PUBLIC_URL:-https://leads.shamrockbailbonds.biz}

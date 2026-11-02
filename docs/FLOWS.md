@@ -200,7 +200,9 @@ POST /webhook/bluebubbles  ──→ ACK 200 (immediate)
                                     ↓ new-message
                            Classify Inbound (check_in | intake_inquiry | geo_inquiry | general)
                                     ├──→ Log to Slack #leads (intake_inquiry only)
-                                    └──→ Forward original event to Dashboard POST /api/webhooks/bluebubbles
+                                    └──→ Forward only when BB_INBOUND_FORWARD_TO_DASHBOARD=true
+                                         (default off; dashboard already receives BlueBubbles.
+                                          Same message GUID forwarded at most once per 24h.)
 
 POST /internal/bb-send     ──→ Prep BB Send ──→ Dashboard /api/imessage/send ──→ Result
 ```

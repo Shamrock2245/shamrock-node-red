@@ -63,6 +63,9 @@ if ! node scripts/check-nodered-nodes.js node_red_data; then
     exit 1
 fi
 
+# Volume/userDir flows.json wins over git. Force the four paused tabs off.
+node scripts/enforce-paused-tabs.js node_red_data/flows.json scripts/paused-outbound-tabs.json
+
 # Step 4: Start Node-RED
 echo -e "${YELLOW}[4/4]${NC} Starting Node-RED..."
 echo ""

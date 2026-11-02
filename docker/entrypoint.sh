@@ -42,5 +42,13 @@ if ! node "$CHECK" "$USERDIR"; then
     exit 1
 fi
 
+# The volume flows.json overrides the git copy. Re-disable the four outbound
+# tabs on every start so a restart cannot turn them back on.
+if [ -f "$USERDIR/flows.json" ]; then
+    node /usr/src/shamrock/enforce-paused-tabs.js \
+        "$USERDIR/flows.json" \
+        /usr/src/shamrock/paused-outbound-tabs.json
+fi
+
 cd /usr/src/node-red
 exec npm --no-update-notifier --no-fund start --cache /data/.npm -- --userDir /data "$@"

@@ -78,6 +78,9 @@ class BlueBubblesFlowTests(unittest.TestCase):
         forward = nodes["bb_forward_to_dashboard"]["func"]
         self.assertIn("/api/webhooks/bluebubbles", forward)
         self.assertNotIn("/api/webhooks/bb-inbound", forward)
+        self.assertIn("BB_INBOUND_FORWARD_TO_DASHBOARD", forward)
+        self.assertIn("bbInboundForwarded", forward)
+        self.assertIn("=== 'true'", forward)
         self.assertIn("GAS_API_KEY", forward)
         send = nodes["bb_send_prep"]["func"]
         self.assertIn("/api/imessage/send", send)
@@ -89,6 +92,16 @@ class BlueBubblesFlowTests(unittest.TestCase):
         check = nodes["s2c_check_bb_result"]["func"]
         self.assertIn("Not falling back to Twilio", check)
         self.assertIn("401", check)
+
+    def test_paused_tabs_ci_check(self) -> None:
+        script = ROOT / "scripts" / "check_paused_tabs.py"
+        result = subprocess.run(
+            ["python3", str(script)],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
 
     def test_checker_self_test(self) -> None:
         script = ROOT / "scripts" / "check-nodered-nodes.js"

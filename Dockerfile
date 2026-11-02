@@ -25,6 +25,8 @@ RUN apk add --no-cache \
 # The entrypoint installs or seeds these into the mounted userDir before start.
 COPY node_red_data/package.json /usr/src/shamrock/nodes/package.json
 COPY scripts/check-nodered-nodes.js /usr/src/shamrock/check-nodered-nodes.js
+COPY scripts/enforce-paused-tabs.js /usr/src/shamrock/enforce-paused-tabs.js
+COPY scripts/paused-outbound-tabs.json /usr/src/shamrock/paused-outbound-tabs.json
 COPY docker/entrypoint.sh /usr/src/shamrock/entrypoint.sh
 RUN chmod 755 /usr/src/shamrock/entrypoint.sh /usr/src/shamrock/check-nodered-nodes.js \
     && cd /usr/src/shamrock/nodes \

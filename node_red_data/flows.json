@@ -24,14 +24,14 @@
     "id": "349776f462c04333",
     "type": "tab",
     "label": "The Court Clerk",
-    "disabled": false,
+    "disabled": true,
     "info": "Processes court emails every 30 min via GAS CourtEmailProcessor"
   },
   {
     "id": "3b50687c49b34aab",
     "type": "tab",
     "label": "The Closer",
-    "disabled": false,
+    "disabled": true,
     "info": "Automated drip campaigns for abandoned intakes \u2014 SMS follow-up at 1h, 24h, 72h"
   },
   {
@@ -87,7 +87,7 @@
     "id": "92127b16db094acd",
     "type": "tab",
     "label": "No-Show Escalation",
-    "disabled": false,
+    "disabled": true,
     "info": "Monitors check-ins and court appearances.\nMissed check-in or court date \u2192 instant Slack + staff call.\nProtects the bottom line on active bonds."
   },
   {
@@ -16986,7 +16986,7 @@
     "type": "function",
     "z": "tab-bb-router",
     "name": "\ud83d\udce1 Prep Dashboard Fwd",
-    "func": "/* Forward the original BlueBubbles event to ShamrockLeads.\n   The dashboard receiver is POST /api/webhooks/bluebubbles and expects {type, data}.\n   Machine auth matches dashboard env GAS_API_KEY, else LEADS_INTERNAL_TOKEN / INTERNAL_API_TOKEN.\n   SHAMROCK_DASHBOARD_API_KEY is a legacy alias with no built-in default. */\nconst dashUrl = String(env.get('SHAMROCK_DASHBOARD_URL') || 'http://178.156.179.237:8088').replace(/\\/$/, '');\nconst apiKey = env.get('GAS_API_KEY') || env.get('LEADS_INTERNAL_TOKEN') || env.get('INTERNAL_API_TOKEN') || env.get('SHAMROCK_DASHBOARD_API_KEY') || '';\nif (!apiKey) {\n    node.warn('[BB Inbound] No dashboard machine key (GAS_API_KEY or LEADS_INTERNAL_TOKEN); forward may be rejected');\n}\nmsg.url = dashUrl + '/api/webhooks/bluebubbles';\nmsg.method = 'POST';\nmsg.headers = {\n    'Content-Type': 'application/json',\n    'X-API-Key': apiKey,\n    'X-Api-Key': apiKey\n};\nreturn msg;\n",
+    "func": "/* Inbound owner is the dashboard. BlueBubbles already posts to\n   POST /api/webhooks/bluebubbles. This Node-RED forward stays off unless\n   BB_INBOUND_FORWARD_TO_DASHBOARD is exactly 'true'. When it is on, the same\n   message GUID is forwarded at most once per 24 hours. */\nconst forwardOn = String(env.get('BB_INBOUND_FORWARD_TO_DASHBOARD') || '').trim() === 'true';\nif (!forwardOn) {\n    node.status({fill:'grey', shape:'ring', text:'forward off'});\n    return null;\n}\nconst body = (msg.payload && typeof msg.payload === 'object') ? msg.payload : {};\nconst data = (msg.bbData && typeof msg.bbData === 'object') ? msg.bbData : (body.data || body);\nconst guid = String(msg.messageGuid || (data && (data.guid || data.messageGuid)) || '').trim();\nconst TTL_MS = 24 * 60 * 60 * 1000;\nconst MAX_KEYS = 500;\nconst now = Date.now();\nlet seen = flow.get('bbInboundForwarded');\nif (!seen || typeof seen !== 'object' || Array.isArray(seen)) seen = {};\nObject.keys(seen).forEach(function (k) {\n    if (typeof seen[k] !== 'number' || (now - seen[k]) > TTL_MS) delete seen[k];\n});\nlet keys = Object.keys(seen);\nif (keys.length > MAX_KEYS) {\n    keys.sort(function (a, b) { return seen[a] - seen[b]; });\n    keys.slice(0, keys.length - MAX_KEYS).forEach(function (k) { delete seen[k]; });\n}\nif (guid && seen[guid]) {\n    flow.set('bbInboundForwarded', seen);\n    node.status({fill:'yellow', shape:'ring', text:'deduped'});\n    node.warn('[BB Inbound] duplicate message GUID skipped');\n    return null;\n}\nif (guid) {\n    seen[guid] = now;\n    flow.set('bbInboundForwarded', seen);\n} else {\n    node.warn('[BB Inbound] no message GUID; this forward is not deduped');\n}\nconst dashUrl = String(env.get('SHAMROCK_DASHBOARD_URL') || 'http://178.156.179.237:8088').replace(/\\/$/, '');\nconst apiKey = env.get('GAS_API_KEY') || env.get('LEADS_INTERNAL_TOKEN') || env.get('INTERNAL_API_TOKEN') || env.get('SHAMROCK_DASHBOARD_API_KEY') || '';\nif (!apiKey) {\n    node.warn('[BB Inbound] No dashboard machine key (GAS_API_KEY or LEADS_INTERNAL_TOKEN); forward may be rejected');\n}\nmsg.url = dashUrl + '/api/webhooks/bluebubbles';\nmsg.method = 'POST';\nmsg.headers = {\n    'Content-Type': 'application/json',\n    'X-API-Key': apiKey,\n    'X-Api-Key': apiKey\n};\nreturn msg;\n",
     "outputs": 1,
     "x": 760,
     "y": 120,
@@ -19360,7 +19360,7 @@
     "id": "tab_risk_mit",
     "type": "tab",
     "label": "Risk Mitigation Loop",
-    "disabled": false,
+    "disabled": true,
     "info": "Risk intelligence + mitigation actions.\n\nDaily 7:15 AM + every 2h daytime:\n1) GAS runRiskIntelligenceLoop\n2) GAS checkCourtDateProximity + sendAutomatedCheckIns\n3) Leads POST /api/automation/risk-mitigation\n4) Slack #alerts on high risk / FTA / forfeiture"
   },
   {
