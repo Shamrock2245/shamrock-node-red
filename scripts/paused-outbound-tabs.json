@@ -3,7 +3,8 @@
     {"id": "tab_risk_mit", "label": "Risk Mitigation Loop"},
     {"id": "3b50687c49b34aab", "label": "The Closer"},
     {"id": "92127b16db094acd", "label": "No-Show Escalation"},
-    {"id": "349776f462c04333", "label": "The Court Clerk"}
+    {"id": "349776f462c04333", "label": "The Court Clerk"},
+    {"id": "47a279345d2c43f7", "label": "GAS Scheduler"}
   ],
   "keepEnabled": [
     {"id": "tab_court_ops", "label": "Court Email & Reports"},

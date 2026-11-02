@@ -374,7 +374,7 @@ On the Node-RED container, set **`GAS_API_KEY`** to the same value as the dashbo
 The dashboard owns inbound. BlueBubbles already posts to dashboard `POST /api/webhooks/bluebubbles`. Node-RED `POST /webhook/bluebubbles` still ACKs, classifies, and can log an intake inquiry to Slack. It does **not** forward to the dashboard unless `BB_INBOUND_FORWARD_TO_DASHBOARD` is exactly `true`. When that flag is on, a message GUID is forwarded at most once per 24 hours (`bbInboundForwarded` on the router tab).
 
 ### What a restart runs
-`docker/entrypoint.sh` and `start.sh` run `scripts/enforce-paused-tabs.js` before Node-RED starts. That rewrites `/data/flows.json` (the live volume, which overrides git) and sets `disabled: true` on the four locked tabs. Turning one of them back on in the editor lasts only until the next container start. The lock does not re-enable anything else.
+`docker/entrypoint.sh` and `start.sh` run `scripts/enforce-paused-tabs.js` before Node-RED starts. That rewrites `/data/flows.json` (the live volume, which overrides git) and sets `disabled: true` on the locked tabs. Turning one of them back on in the editor lasts only until the next container start. The lock does not re-enable anything else.
 
 **Stays off (forced every start):**
 
@@ -384,6 +384,7 @@ The dashboard owns inbound. BlueBubbles already posts to dashboard `POST /api/we
 | `3b50687c49b34aab` | The Closer | SMS drip on its 2-hour cron |
 | `92127b16db094acd` | No-Show Escalation | No-show texts on its hourly cron |
 | `349776f462c04333` | The Court Clerk | Court-date reminder path |
+| `47a279345d2c43f7` | GAS Scheduler | Whole tab, including 9:00 court (`0 9 * * *`, `processDailyCourtReminders`) and 11:00 check-ins (`3 11 * * *`, `sendAutomatedCheckIns`), plus the other GAS crons on that tab |
 
 **Comes back on and can text:**
 
@@ -400,7 +401,6 @@ The dashboard owns inbound. BlueBubbles already posts to dashboard `POST /api/we
 | Tab | What a restart does |
 |---|---|
 | Paperwork Chase (`tab-paperwork-chase`) | Timer arms, first pass 2 hours later. It still calls `GET /api/paperwork/pending`, which the dashboard does not implement, so it should not obtain recipients |
-| GAS Scheduler (`47a279345d2c43f7`) | Its crons keep running, including 9:00 court (`0 9 * * *`) and 11:00 check-ins (`3 11 * * *`, GAS `sendAutomatedCheckIns`). This tab was not in the lock list |
 | iMessage watchdog, FindMy | Health and geofence Slack only. They do not text customers |
 | Other enabled tabs | Editor, scrapers, lead sweeps, and morning prospecting (staff Slack) resume on their own schedules |
 
@@ -408,8 +408,8 @@ The dashboard's own in-process crons (speed-to-contact, paperwork chase) are not
 
 ### Live steps (do not run until approved)
 1. Confirm Node-RED `GAS_API_KEY` matches the dashboard `GAS_API_KEY`. Leave `BB_INBOUND_FORWARD_TO_DASHBOARD` unset.
-2. The four locked tabs are forced off at container start. Do not rely on a manual pause for those four. Anything in the "comes back on" table above will text on its schedule.
-3. Pull this repo on the VPS and rebuild so `docker/entrypoint.sh` is in the image. Recreate the container (this installs `/data` modules, locks the four tabs in the volume `flows.json`, then starts Node-RED). Do not use `--force` on git.
+2. The locked tabs are forced off at container start, including GAS Scheduler (9:00 court and 11:00 check-ins). Do not rely on a manual pause for those tabs. Anything in the "comes back on" table above will text on its schedule.
+3. Pull this repo on the VPS and rebuild so `docker/entrypoint.sh` is in the image. Recreate the container (this installs `/data` modules, locks the paused tabs in the volume `flows.json`, then starts Node-RED). Do not use `--force` on git.
 4. If a rebuild is not approved yet, the current container can be repaired in place: `docker exec` as the `node-red` user, `npm install --prefix /data --omit=dev --unsafe-perm --no-audit --no-fund`, copy the updated `flows.json` into the volume, then restart. That unblocks this boot only. The next restart can strand flows again until the new image is what starts the container.
 5. Confirm Node-RED is not logging `Waiting for missing types`.
 6. Confirm `POST /internal/bb-send` with an empty JSON body returns 400 (route is up, nothing sent) rather than 404.

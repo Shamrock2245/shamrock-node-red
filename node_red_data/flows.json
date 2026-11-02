@@ -59,7 +59,7 @@
     "id": "47a279345d2c43f7",
     "type": "tab",
     "label": "GAS Scheduler",
-    "disabled": false,
+    "disabled": true,
     "info": "CENTRALIZED SCHEDULER \u2014 Node-RED is the single control plane.\nAll GAS time-driven triggers have been migrated here.\nRun migrateTriggersToNodeRED() in GAS to remove old triggers."
   },
   {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CI check: four outbound tabs stay disabled, and startup re-applies that lock."""
+"""CI check: locked outbound tabs stay disabled, and startup re-applies that lock."""
 
 from __future__ import annotations
 
@@ -26,8 +26,8 @@ def assert_repo_tabs() -> None:
     tabs = _tabs()
     disabled = registry["forceDisabled"]
     enabled = registry["keepEnabled"]
-    if len(disabled) != 4:
-        raise SystemExit(f"expected 4 forceDisabled tabs, found {len(disabled)}")
+    if len(disabled) != 5:
+        raise SystemExit(f"expected 5 forceDisabled tabs, found {len(disabled)}")
     for item in disabled:
         tab = tabs.get(item["id"])
         if tab is None:

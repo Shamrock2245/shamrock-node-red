@@ -42,7 +42,7 @@ if ! node "$CHECK" "$USERDIR"; then
     exit 1
 fi
 
-# The volume flows.json overrides the git copy. Re-disable the four outbound
+# The volume flows.json overrides the git copy. Re-disable the locked outbound
 # tabs on every start so a restart cannot turn them back on.
 if [ -f "$USERDIR/flows.json" ]; then
     node /usr/src/shamrock/enforce-paused-tabs.js \
