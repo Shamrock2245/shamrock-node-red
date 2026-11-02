@@ -49,6 +49,11 @@ class BlueBubblesFlowTests(unittest.TestCase):
         self.assertNotIn("cd /data && npm install", dockerfile)
         self.assertIn("check-nodered-nodes.js", entry)
         self.assertIn("Refusing to start", entry)
+        self.assertNotIn("CMD-SHELL", dockerfile)
+        self.assertIn(
+            "CMD node /usr/src/shamrock/check-nodered-nodes.js /data && curl -fsS http://127.0.0.1:1880/ >/dev/null",
+            dockerfile,
+        )
 
     def test_watchdog_sends_dashboard_machine_key(self) -> None:
         flows = load_flows()
