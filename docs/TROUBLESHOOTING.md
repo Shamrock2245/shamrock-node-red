@@ -116,10 +116,14 @@ curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
 
 ## 6. Dashboard Not Loading
 
-### Blank Page at `/dashboard`
-1. Check Node-RED console for errors
-2. Verify `@flowfuse/node-red-dashboard` is installed: `npm ls @flowfuse/node-red-dashboard`
-3. Check that `ui-base` node exists in flows.json
+### Blank Page at `/dashboard`, or every HTTP route 404s
+Node-RED logs `Waiting for missing types` (`ui-base`, `ui-group`, `ui-page`, `ui-template`, `mongodb4`) when `/data/package.json` lists a module that is not in `/data/node_modules`. A volume mounted on `/data` hides packages installed in the image at build time, so a restart can strand every flow and return 404 for `/internal/bb-send`, `/webhook/bluebubbles`, and `/webhook/speed-to-contact`.
+
+The container entrypoint (`docker/entrypoint.sh`) installs those modules and exits non-zero if they still do not resolve, which also posts one Slack alert when `SLACK_WEBHOOK_ALERTS` (or `SLACK_WEBHOOK_ERRORS` / `SLACK_WEBHOOK_OPS`) is set. Live recovery steps are RB-012. Do not restart until the outbound tabs listed there are paused.
+
+1. Check Node-RED console for `Waiting for missing types`
+2. Verify the module from the userDir: `npm ls --prefix /data @flowfuse/node-red-dashboard node-red-contrib-mongodb4`
+3. Check that `ui-base` exists in flows.json
 4. Clear browser cache and hard reload
 
 ### Dashboard Shows But Widgets Are Empty

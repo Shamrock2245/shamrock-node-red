@@ -355,3 +355,65 @@ docker stats shamrock-node-red
 # Log rotation is configured (10MB × 3 files)
 docker-compose logs --tail=100 shamrock-nr
 ```
+
+---
+
+## RB-012: Node-RED stuck on missing types (BlueBubbles routes 404)
+
+### What broke
+After a container restart, Node-RED can log `Waiting for missing types` for `@flowfuse/node-red-dashboard` (`ui-base`, `ui-group`, `ui-page`, `ui-template`, …) and `node-red-contrib-mongodb4`. `/data/package.json` lists the modules, but a volume on `/data` hides the copy installed at image build time. No flows start. `/internal/bb-send`, `/webhook/bluebubbles`, and `/webhook/speed-to-contact` all 404.
+
+The iMessage watchdog (`GET /api/bb-health/status`) also 401s unless it sends `X-API-Key`. The dashboard accepts that header when it matches the dashboard process env **`GAS_API_KEY`**, or **`LEADS_INTERNAL_TOKEN`** / **`INTERNAL_API_TOKEN`**.
+
+### Env that must be set (names only)
+On the Node-RED container, set **`GAS_API_KEY`** to the same value as the dashboard container's **`GAS_API_KEY`**. Alternates the dashboard also accepts: **`LEADS_INTERNAL_TOKEN`**, **`INTERNAL_API_TOKEN`**. Optional watchdog base URL: **`SHAMROCK_DASHBOARD_INTERNAL_URL`** (default `http://shamrock-dashboard:5050`). Missing-module alerts use **`SLACK_WEBHOOK_ALERTS`**, then **`SLACK_WEBHOOK_ERRORS`**, then **`SLACK_WEBHOOK_OPS`**.
+
+**`BB_INBOUND_FORWARD_TO_DASHBOARD`** defaults off. Leave it unset. Set it to exactly `true` only if Node-RED should also POST inbound events at the dashboard.
+
+### Who owns inbound BlueBubbles
+The dashboard owns inbound. BlueBubbles already posts to dashboard `POST /api/webhooks/bluebubbles`. Node-RED `POST /webhook/bluebubbles` still ACKs, classifies, and can log an intake inquiry to Slack. It does **not** forward to the dashboard unless `BB_INBOUND_FORWARD_TO_DASHBOARD` is exactly `true`. When that flag is on, a message GUID is forwarded at most once per 24 hours (`bbInboundForwarded` on the router tab).
+
+### What a restart runs
+`docker/entrypoint.sh` and `start.sh` run `scripts/enforce-paused-tabs.js` before Node-RED starts. That rewrites `/data/flows.json` (the live volume, which overrides git) and sets `disabled: true` on the locked tabs. Turning one of them back on in the editor lasts only until the next container start. The lock does not re-enable anything else.
+
+**Stays off (forced every start):**
+
+| Tab id | Label | Would have sent |
+|---|---|---|
+| `tab_risk_mit` | Risk Mitigation Loop | GAS `sendAutomatedCheckIns` 120 seconds after start, then every 2 hours, plus the 7:15 daily pass |
+| `3b50687c49b34aab` | The Closer | SMS drip on its 2-hour cron |
+| `92127b16db094acd` | No-Show Escalation | No-show texts on its hourly cron |
+| `349776f462c04333` | The Court Clerk | Court-date reminder path |
+| `47a279345d2c43f7` | GAS Scheduler | Whole tab, including 9:00 court (`0 9 * * *`, `processDailyCourtReminders`) and 11:00 check-ins (`3 11 * * *`, `sendAutomatedCheckIns`), plus the other GAS crons on that tab |
+
+**Comes back on and can text:**
+
+| Tab id | Label | What it sends | When |
+|---|---|---|---|
+| `tab_court_ops` | Court Email & Reports | iMessages via dashboard `POST /api/automation/court-email-scan`, and it schedules further court reminders | 45 seconds after start, then every 15 minutes |
+| `tab-speed-to-contact` | Speed-to-Contact (iMessage) | iMessage via `POST /api/imessage/send`. Twilio SMS only if the bridge fails. HTTP 401/403 does not fall through to SMS | Next `POST /webhook/speed-to-contact` |
+| `tab-bb-router` | BlueBubbles iMessage Router | `POST /internal/bb-send` sends an iMessage. Inbound is ACK + classify + optional Slack. Forward to the dashboard is off | As soon as those routes are called |
+| `3f0cdaee1ab64048` | Payment Reminders | Payment reminder texts | Next 9:00 cron (`3 9 * * *`) |
+| `tab-bond-renewal` | Bond Renewal Reminders | Renewal reminder texts | Next 8:00 cron |
+
+**Also still enabled, not in the lock list:**
+
+| Tab | What a restart does |
+|---|---|
+| Paperwork Chase (`tab-paperwork-chase`) | Timer arms, first pass 2 hours later. It still calls `GET /api/paperwork/pending`, which the dashboard does not implement, so it should not obtain recipients |
+| iMessage watchdog, FindMy | Health and geofence Slack only. They do not text customers |
+| Other enabled tabs | Editor, scrapers, lead sweeps, and morning prospecting (staff Slack) resume on their own schedules |
+
+The dashboard's own in-process crons (speed-to-contact, paperwork chase) are not restarted by a Node-RED restart. This runbook is only the Node-RED side.
+
+### Live steps (do not run until approved)
+1. Confirm Node-RED `GAS_API_KEY` matches the dashboard `GAS_API_KEY`. Leave `BB_INBOUND_FORWARD_TO_DASHBOARD` unset.
+2. The locked tabs are forced off at container start, including GAS Scheduler (9:00 court and 11:00 check-ins). Do not rely on a manual pause for those tabs. Anything in the "comes back on" table above will text on its schedule.
+3. Pull this repo on the VPS and rebuild so `docker/entrypoint.sh` is in the image. Recreate the container (this installs `/data` modules, locks the paused tabs in the volume `flows.json`, then starts Node-RED). Do not use `--force` on git.
+4. If a rebuild is not approved yet, the current container can be repaired in place: `docker exec` as the `node-red` user, `npm install --prefix /data --omit=dev --unsafe-perm --no-audit --no-fund`, copy the updated `flows.json` into the volume, then restart. That unblocks this boot only. The next restart can strand flows again until the new image is what starts the container.
+5. Confirm Node-RED is not logging `Waiting for missing types`.
+6. Confirm `POST /internal/bb-send` with an empty JSON body returns 400 (route is up, nothing sent) rather than 404.
+7. Confirm the watchdog log is not `auth 401`. A healthy dashboard body uses `overall_status` of `healthy` or `degraded`.
+
+### Risk
+The container restart is what turns the automations back on. Installing modules alone does not send texts. The restart does.

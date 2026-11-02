@@ -47,6 +47,25 @@ fi
 NODES=$(node -e "console.log(require('./node_red_data/flows.json').length)" 2>/dev/null || echo "?")
 echo -e "${YELLOW}[3/4]${NC} Flows loaded: ${GREEN}${NODES} nodes${NC}"
 
+# Install userDir nodes before boot. A restart with package.json but no
+# node_modules leaves Node-RED on "Waiting for missing types".
+if ! node scripts/check-nodered-nodes.js node_red_data >/dev/null 2>&1; then
+    echo -e "${YELLOW}[3b]${NC} Installing Node-RED userDir dependencies..."
+    node scripts/check-nodered-nodes.js --ensure-package-json node_red_data
+    missing=$(node scripts/check-nodered-nodes.js --missing node_red_data || true)
+    if [ -n "$missing" ]; then
+        # shellcheck disable=SC2086
+        npm install --prefix node_red_data --omit=dev --no-audit --no-fund --unsafe-perm --no-save $missing
+    fi
+fi
+if ! node scripts/check-nodered-nodes.js node_red_data; then
+    echo -e "${RED}Node-RED dependencies are still missing. Refusing to start.${NC}" >&2
+    exit 1
+fi
+
+# Volume/userDir flows.json wins over git. Force the locked outbound tabs off.
+node scripts/enforce-paused-tabs.js node_red_data/flows.json scripts/paused-outbound-tabs.json
+
 # Step 4: Start Node-RED
 echo -e "${YELLOW}[4/4]${NC} Starting Node-RED..."
 echo ""

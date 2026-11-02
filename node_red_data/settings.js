@@ -67,6 +67,8 @@ module.exports = {
         env: {
             // GAS Endpoints
             GAS_WEBHOOK_URL: process.env.GAS_WEBHOOK_URL || "",
+            // Same value the ShamrockLeads dashboard uses for machine auth
+            // (X-API-Key on /api/bb-health/status, /api/imessage/send, /api/automation/*).
             GAS_API_KEY: process.env.GAS_API_KEY || "",
             
             // Slack

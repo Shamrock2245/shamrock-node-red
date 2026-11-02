@@ -122,6 +122,7 @@ return msg;""",
         }
 
         inj_id = uid()
+        prep_id = uid()
         req_id = uid()
         eval_id = uid()
         slack_id = uid()
@@ -142,6 +143,31 @@ return msg;""",
             "payloadType": "date",
             "x": 140,
             "y": 140,
+            "wires": [[prep_id]]
+        }
+
+        prep = {
+            "id": prep_id,
+            "type": "function",
+            "z": t_id,
+            "name": "Prep BB Health Auth",
+            "func": """if (global.get('SYSTEM_SHUTDOWN')) return null;
+const apiKey = env.get('GAS_API_KEY') || env.get('LEADS_INTERNAL_TOKEN') || env.get('INTERNAL_API_TOKEN') || env.get('SHAMROCK_DASHBOARD_API_KEY') || '';
+if (!apiKey) {
+    node.error('[iMessage watchdog] missing machine key — set GAS_API_KEY to the dashboard GAS_API_KEY, or LEADS_INTERNAL_TOKEN');
+}
+const base = String(env.get('SHAMROCK_DASHBOARD_INTERNAL_URL') || 'http://shamrock-dashboard:5050').replace(/\\/$/, '');
+msg.url = base + '/api/bb-health/status';
+msg.method = 'GET';
+msg.headers = { 'Accept': 'application/json', 'X-API-Key': apiKey, 'X-Api-Key': apiKey };
+return msg;""",
+            "outputs": 1,
+            "noerr": 0,
+            "initialize": "",
+            "finalize": "",
+            "libs": [],
+            "x": 380,
+            "y": 80,
             "wires": [[req_id]]
         }
 
@@ -150,10 +176,10 @@ return msg;""",
             "type": "http request",
             "z": t_id,
             "name": "GET /api/bb-health/status",
-            "method": "GET",
+            "method": "use",
             "ret": "obj",
             "paytoqs": "ignore",
-            "url": "http://shamrock-dashboard:5050/api/bb-health/status",
+            "url": "",
             "tls": "",
             "persist": False,
             "proxy": "",
@@ -172,10 +198,16 @@ return msg;""",
             "type": "function",
             "z": t_id,
             "name": "Evaluate iMessage Health",
-            "func": """const data = msg.payload || {};
-const isHealthy = data.healthy === true || data.status === "online";
+            "func": """const data = (msg.payload && typeof msg.payload === "object") ? msg.payload : {};
+const code = Number(msg.statusCode) || 0;
+if (code === 401 || code === 403) {
+    node.error("[iMessage watchdog] /api/bb-health/status rejected the machine key. Set GAS_API_KEY to the dashboard GAS_API_KEY.");
+    return null;
+}
+const overall = String(data.overall_status || data.status || "").toLowerCase();
+const isHealthy = code >= 200 && code < 300 && !data.error && (data.healthy === true || overall === "healthy" || overall === "online" || overall === "degraded");
 const lastState = global.get("imessage_watchdog_state") || "unknown";
-const webhook = global.get("SLACK_WEBHOOK_ALERTS") || process.env.SLACK_WEBHOOK_ERRORS || "";
+const webhook = global.get("SLACK_WEBHOOK_ALERTS") || env.get("SLACK_WEBHOOK_ALERTS") || env.get("SLACK_WEBHOOK_ERRORS") || "";
 
 if (!isHealthy && lastState !== "offline") {
     global.set("imessage_watchdog_state", "offline");
@@ -242,7 +274,7 @@ return null;""",
             "wires": [[]]
         }
 
-        nodes.extend([tab_node, inj, req, eval_fn, slack_post, catch_node])
+        nodes.extend([tab_node, inj, prep, req, eval_fn, slack_post, catch_node])
         print("  + Injected 'iMessage & Tunnel Watchdog' flow tab")
 
     # 3. Add First Appearance & Unset Bond Auto-CRM Tab if not present

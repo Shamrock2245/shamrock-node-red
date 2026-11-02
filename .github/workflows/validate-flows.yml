@@ -24,5 +24,8 @@ jobs:
       - name: Validate flow JSON
         run: python3 scripts/validate_flows.py
 
+      - name: Assert paused outbound tabs stay disabled
+        run: python3 scripts/check_paused_tabs.py
+
       - name: Test the validator
         run: python3 -m unittest discover -s scripts -p "test_*.py" -v

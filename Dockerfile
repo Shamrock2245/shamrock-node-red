@@ -19,31 +19,28 @@ RUN apk add --no-cache \
     curl \
     git \
     tzdata
+# Install flow nodes OUTSIDE /data. A runtime volume mounted on /data hides
+# anything written to /data during docker build, which is what left Node-RED
+# on "Waiting for missing types" after the Oct 29 restart.
+# The entrypoint installs or seeds these into the mounted userDir before start.
+COPY node_red_data/package.json /usr/src/shamrock/nodes/package.json
+COPY scripts/check-nodered-nodes.js /usr/src/shamrock/check-nodered-nodes.js
+COPY scripts/enforce-paused-tabs.js /usr/src/shamrock/enforce-paused-tabs.js
+COPY scripts/paused-outbound-tabs.json /usr/src/shamrock/paused-outbound-tabs.json
+COPY docker/entrypoint.sh /usr/src/shamrock/entrypoint.sh
+RUN chmod 755 /usr/src/shamrock/entrypoint.sh /usr/src/shamrock/check-nodered-nodes.js \
+    && cd /usr/src/shamrock/nodes \
+    && npm install --omit=dev --unsafe-perm --no-audit --no-fund --no-update-notifier
+
 USER node-red
 
-# ── Pre-install community nodes ──
-# These are the nodes required by Shamrock workflows
-RUN cd /data && npm install --save \
-    # Dashboard & UI
-    @flowfuse/node-red-dashboard@^1.30.2 \
-    @node-red-contrib-themes/theme-collection@^4.1.1 \
-    # Social & Communication
-    node-red-contrib-slack@^2.1.0 \
-    node-red-contrib-telegrambot@^17.1.0 \
-    node-red-node-twilio@^0.1.0 \
-    # Scheduling & Time
-    node-red-contrib-cron-plus \
-    node-red-contrib-moment \
-    # Resilience & Persistence
-    node-red-contrib-self-healing \
-    # Auth & Security
-    bcryptjs \
-    # Utilities
-    node-red-contrib-string
-
 # ── Health check ──
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD curl -f http://localhost:1880/ || exit 1
+# Modules must resolve from the userDir, and the editor must be listening.
+# start_period covers the first userDir npm install.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=3 \
+    CMD-SHELL "node /usr/src/shamrock/check-nodered-nodes.js /data && curl -fsS http://127.0.0.1:1880/ >/dev/null"
+
+ENTRYPOINT ["/usr/src/shamrock/entrypoint.sh"]
 
 # ── Expose ──
 EXPOSE 1880
