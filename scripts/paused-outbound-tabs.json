@@ -4,7 +4,8 @@
     {"id": "3b50687c49b34aab", "label": "The Closer"},
     {"id": "92127b16db094acd", "label": "No-Show Escalation"},
     {"id": "349776f462c04333", "label": "The Court Clerk"},
-    {"id": "47a279345d2c43f7", "label": "GAS Scheduler"}
+    {"id": "47a279345d2c43f7", "label": "GAS Scheduler"},
+    {"id": "3733b542a5e24d06", "label": "Weather Posting"}
   ],
   "keepEnabled": [
     {"id": "tab_court_ops", "label": "Court Email & Reports"},

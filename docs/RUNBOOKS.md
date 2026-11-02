@@ -385,6 +385,7 @@ The dashboard owns inbound. BlueBubbles already posts to dashboard `POST /api/we
 | `92127b16db094acd` | No-Show Escalation | No-show texts on its hourly cron |
 | `349776f462c04333` | The Court Clerk | Court-date reminder path |
 | `47a279345d2c43f7` | GAS Scheduler | Whole tab, including 9:00 court (`0 9 * * *`, `processDailyCourtReminders`) and 11:00 check-ins (`3 11 * * *`, `sendAutomatedCheckIns`), plus the other GAS crons on that tab |
+| `3733b542a5e24d06` | Weather Posting | 6:00 cron public social post via GAS when the weather or weekend rule matches |
 
 **Comes back on and can text:**
 
@@ -401,6 +402,10 @@ The dashboard owns inbound. BlueBubbles already posts to dashboard `POST /api/we
 | Tab | What a restart does |
 |---|---|
 | Paperwork Chase (`tab-paperwork-chase`) | Timer arms, first pass 2 hours later. It still calls `GET /api/paperwork/pending`, which the dashboard does not implement, so it should not obtain recipients |
+| First Appearance Auto-CRM (`tab-first-appearance-autocrm`) | Stays enabled. Lee sweep about 15 seconds after start, then every 15 minutes, calls `POST /api/lee-county/autopilot/sweep` (family texts). Court-window sweep about 10 seconds after start, then every 30 minutes, posts staff Slack |
+| Bond Lifecycle Manager (`tab_bond_life`) | Stays enabled. About 90 seconds after start, then every 30 minutes, calls GAS `runTheCloser` |
+| Repeat Offender Alerts (`tab_repeat_offender`) | Stays enabled. Every 2 hours, GAS `sendRepeatOffenderOutreach` to cosigner phones, then staff Slack |
+| Social Auto-Pilot (`075324f9f77c4bfe`) | Stays enabled. Public social posts via GAS at 8:00 and 14:00 weekdays and 20:00 daily, plus staff Slack |
 | iMessage watchdog, FindMy | Health and geofence Slack only. They do not text customers |
 | Other enabled tabs | Editor, scrapers, lead sweeps, and morning prospecting (staff Slack) resume on their own schedules |
 
